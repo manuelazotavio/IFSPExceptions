@@ -49,18 +49,29 @@ function NeighborhoodColumnChart({ data }) {
             {data.map((item) => {
               return (
                 <div key={item.label} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2">
-                  <div className="relative flex h-48 w-full items-end justify-center">
-                    <strong
-                      className="absolute text-xs font-800 leading-none text-slate-600"
-                      style={{ bottom: `calc(${height}% + 4px)` }}
-                    >
-                      {item.value}
-                    </strong>
+                  <div className="flex h-48 w-full items-end justify-center gap-1.5">
+                    {urgencyColumns.map((column) => {
+                      const value = item[column.key] || 0
+                      const height = value ? Math.max((value / chartMax) * 100, 8) : 0
+
+                      return (
+                        <div key={column.key} className="relative flex h-full w-3 items-end justify-center sm:w-3.5">
+                          {value > 0 && (
+                            <strong
+                              className="absolute text-[10px] font-800 leading-none text-slate-600"
+                              style={{ bottom: `calc(${height}% + 4px)` }}
+                            >
+                              {value}
+                            </strong>
+                          )}
                     <div
-                      className="w-full max-w-12 rounded-t-sm bg-blue-500 shadow-sm transition hover:bg-blue-600"
+                      className={`w-full rounded-t-sm shadow-sm transition ${column.color} ${column.hover}`}
                       style={{ height: `${height}%` }}
-                      title={`${item.label}: ${item.value} ocorrências`}
+                      title={`${item.label} - ${column.label}: ${value} ocorrências`}
                     />
+                        </div>
+                      )
+                    })}
                   </div>
                   <span className="line-clamp-2 min-h-9 text-center text-[11px] font-semibold leading-tight text-slate-500">
                     {item.label}
@@ -72,9 +83,13 @@ function NeighborhoodColumnChart({ data }) {
         </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-center gap-2 text-xs font-semibold text-slate-500">
-        <span className="h-2.5 w-2.5 rounded-sm bg-blue-500" />
-        Ocorrências
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-xs font-semibold text-slate-500">
+        {urgencyColumns.map((column) => (
+          <span key={column.key} className="flex items-center gap-2">
+            <span className={`h-2.5 w-2.5 rounded-sm ${column.color}`} />
+            {column.label}
+          </span>
+        ))}
       </div>
     </div>
   )
@@ -130,7 +145,14 @@ export function Dashboard({ onNavigate, user }) {
 
   const [chartEscolaId, setChartEscolaId] = useState('')
   const metrics = dashboardMetrics(escopo, isDiretor ? 1 : escolas.length)
-  const porBairro = Object.entries(groupCount(escopo, 'bairro')).map(([label, value]) => ({ label: formatLabel(label), value }))
+  const porBairro = Object.values(escopo.reduce((acc, item) => {
+    const bairro = item.bairro
+    if (!acc[bairro]) {
+      acc[bairro] = { label: formatLabel(bairro), Baixa: 0, Media: 0, Alta: 0, Critica: 0 }
+    }
+    acc[bairro][item.criticidade] += 1
+    return acc
+  }, {}))
   const porTipo = Object.entries(groupCount(escopo, 'tipo')).map(([label, value]) => ({ label: formatLabel(label), value }))
   const ocorrenciasDoChart = isDiretor
     ? escopo
