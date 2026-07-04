@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { categorias, ocorrenciasAprovadas, usuarios } from '../data/mockData.js'
 import { dashboardMetrics, groupCount } from '../utils/metrics.js'
 import { Badge, BarList, Card, MetricCard, Modal } from '../components/ui.jsx'
