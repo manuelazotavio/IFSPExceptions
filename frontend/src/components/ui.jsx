@@ -40,10 +40,25 @@ export function Badge({ children, type = 'status' }) {
   return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${classes[text] || 'bg-slate-100 text-slate-700'}`}>{children}</span>
 }
 
+export function Modal({ open, onClose, title, children }) {
+  if (!open) return null
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4" onClick={onClose}>
+      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-800 text-slate-950">{title}</h3>
+          <button onClick={onClose} aria-label="Fechar" className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700">&times;</button>
+        </div>
+        {children}
+      </div>
+    </div>
+  )
+}
+
 export function FilterSelect({ label, value, onChange, options }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">{label}</span>
+      <span className="mb-1 block text-xs font-bold  tracking-wide text-slate-500">{label}</span>
       <select value={value} onChange={(e) => onChange(e.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-500">
         <option value="">Todos</option>
         {options.map((option) => <option key={option} value={option}>{option}</option>)}

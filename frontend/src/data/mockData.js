@@ -1,14 +1,22 @@
-export const bairros = ['Centro', 'Martim de Sa', 'Massaguacu', 'Porto Novo', 'Travessao', 'Tinga', 'Pereque-Mirim']
+export const bairros = ['Indaia', 'Jardim California', 'Tinga', 'Porto Novo', 'Massaguacu', 'Pereque Mirim', 'Martim de Sa', 'Travessao']
 
 export const escolas = [
-  { id: 'esc-001', nome: 'EMEF Professora Maria Aparecida', bairro: 'Centro', endereco: 'Rua das Palmeiras, 245', status: 'Ativa', dataCadastro: '2026-01-12', x: 50, y: 36 },
-  { id: 'esc-002', nome: 'EMEI Jardim das Palmeiras', bairro: 'Centro', endereco: 'Av. Brasil, 1120', status: 'Ativa', dataCadastro: '2026-01-20', x: 42, y: 43 },
-  { id: 'esc-003', nome: 'EMEF Bairro do Tinga', bairro: 'Tinga', endereco: 'Rua Sete de Setembro, 88', status: 'Ativa', dataCadastro: '2026-02-03', x: 62, y: 50 },
-  { id: 'esc-004', nome: 'CEI Porto Novo', bairro: 'Porto Novo', endereco: 'Av. Jose Herculano, 900', status: 'Ativa', dataCadastro: '2026-02-11', x: 73, y: 66 },
-  { id: 'esc-005', nome: 'EMEF Massaguacu', bairro: 'Massaguacu', endereco: 'Rua Italia Baffi Magni, 74', status: 'Ativa', dataCadastro: '2026-02-14', x: 28, y: 24 },
-  { id: 'esc-006', nome: 'EMEI Pereque-Mirim', bairro: 'Pereque-Mirim', endereco: 'Rua Benedito Bento, 338', status: 'Ativa', dataCadastro: '2026-03-01', x: 78, y: 78 },
-  { id: 'esc-007', nome: 'EMEF Martim de Sa', bairro: 'Martim de Sa', endereco: 'Rua das Gaivotas, 55', status: 'Ativa', dataCadastro: '2026-03-12', x: 39, y: 18 },
-  { id: 'esc-008', nome: 'EMEI Travessao', bairro: 'Travessao', endereco: 'Rua Pedro de Oliveira, 320', status: 'Ativa', dataCadastro: '2026-04-02', x: 67, y: 34 },
+  { id: 'esc-001', nome: 'EMEF Professora Maria Aparecida', bairro: 'Centro', endereco: 'Rua das Palmeiras, 245', status: 'Ativa', dataCadastro: '2026-01-12', x: 50, y: 36, latitude: -23.633, longitude: -45.417 },
+  { id: 'esc-002', nome: 'EMEI Jardim das Palmeiras', bairro: 'Centro', endereco: 'Av. Brasil, 1120', status: 'Ativa', dataCadastro: '2026-01-20', x: 42, y: 43, latitude: -23.642, longitude: -45.429 },
+  { id: 'esc-003', nome: 'EMEF Bairro do Tinga', bairro: 'Tinga', endereco: 'Rua Sete de Setembro, 88', status: 'Ativa', dataCadastro: '2026-02-03', x: 62, y: 50, latitude: -23.621, longitude: -45.466 },
+  { id: 'esc-004', nome: 'CEI Porto Novo', bairro: 'Porto Novo', endereco: 'Av. Jose Herculano, 900', status: 'Ativa', dataCadastro: '2026-02-11', x: 73, y: 66, latitude: -23.704, longitude: -45.428 },
+  { id: 'esc-005', nome: 'EMEF Massaguacu', bairro: 'Massaguacu', endereco: 'Rua Italia Baffi Magni, 74', status: 'Ativa', dataCadastro: '2026-02-14', x: 28, y: 24, latitude: -23.567, longitude: -45.327 },
+  { id: 'esc-006', nome: 'EMEI Pereque-Mirim', bairro: 'Pereque-Mirim', endereco: 'Rua Benedito Bento, 338', status: 'Ativa', dataCadastro: '2026-03-01', x: 78, y: 78, latitude: -23.724, longitude: -45.394 },
+  { id: 'esc-007', nome: 'EMEF Martim de Sa', bairro: 'Martim de Sa', endereco: 'Rua das Gaivotas, 55', status: 'Ativa', dataCadastro: '2026-03-12', x: 39, y: 18, latitude: -23.603, longitude: -45.389 },
+  { id: 'esc-008', nome: 'EMEI Travessao', bairro: 'Travessao', endereco: 'Rua Pedro de Oliveira, 320', status: 'Ativa', dataCadastro: '2026-04-02', x: 67, y: 34, latitude: -23.672, longitude: -45.468 },
+  { id: 'esc-001', nome: 'EMEF Dr. Carlos de Almeida Rodrigues', bairro: 'Indaia', endereco: 'Av. Pernambuco, 1101', status: 'Ativa', dataCadastro: '2026-01-12', x: 50, y: 36 },
+  { id: 'esc-002', nome: 'CEI/EMEI Profa. Ana Maria Aulicino', bairro: 'Jardim California', endereco: 'Rua Manoel Amaral, 51', status: 'Ativa', dataCadastro: '2026-01-20', x: 42, y: 43 },
+  { id: 'esc-003', nome: 'EMEI/EMEF Prof. Lucio Jacinto dos Santos', bairro: 'Tinga', endereco: 'Rua Denilza Sebastiana dos Santos, 75', status: 'Ativa', dataCadastro: '2026-02-03', x: 62, y: 50 },
+  { id: 'esc-004', nome: 'EMEF Profa. Maria Aparecida Ujio', bairro: 'Porto Novo', endereco: 'Av. Ezequiel da Silva Barreto, 285', status: 'Ativa', dataCadastro: '2026-02-11', x: 73, y: 66 },
+  { id: 'esc-005', nome: 'EMEF Profa. Antonia Antunes Arouca', bairro: 'Massaguacu', endereco: 'Rua Italia Baffi Magni, 581', status: 'Ativa', dataCadastro: '2026-02-14', x: 28, y: 24 },
+  { id: 'esc-006', nome: 'EMEI/EMEF Prof. Yasutada Nasu', bairro: 'Pereque Mirim', endereco: 'Av. Pedro Goncalves, 685', status: 'Ativa', dataCadastro: '2026-03-01', x: 78, y: 78 },
+  { id: 'esc-007', nome: 'EMEF Prof. Luiz Ribeiro Muniz', bairro: 'Martim de Sa', endereco: 'Rua Analandia, 355', status: 'Ativa', dataCadastro: '2026-03-12', x: 39, y: 18 },
+  { id: 'esc-008', nome: 'EMEI/EMEF Profa. Alaor Xavier Junqueira', bairro: 'Travessao', endereco: 'Rua Jose Ferreira dos Santos, 381', status: 'Ativa', dataCadastro: '2026-04-02', x: 67, y: 34 },
 ]
 
 const base = [
@@ -39,8 +47,28 @@ const base = [
   ['occ-025', 'esc-005', 'Ocorrencia publica pendente', 'Outros', 'Alta', 'Aberta', 'Portaria', '2026-05-13', false],
 ]
 
+function addDays(dateStr, days) {
+  const date = new Date(`${dateStr}T00:00:00`)
+  date.setDate(date.getDate() + days)
+  return date.toISOString().slice(0, 10)
+}
+
 export const ocorrencias = base.map(([id, escolaId, titulo, tipo, criticidade, status, localizacaoInterna, dataEnvio, aprovadaPelaEscola], index) => {
   const escola = escolas.find((item) => item.id === escolaId)
+  const dataResolucao = status === 'Resolvida' ? addDays(dataEnvio, 8) : ''
+
+  const interacoes = [
+    { origem: 'sistema', autor: 'Sistema', data: dataEnvio, mensagem: 'Ocorrencia aberta pela escola.' },
+    { origem: 'seduc', autor: 'Ernesto Cavalcanti', data: addDays(dataEnvio, 1), mensagem: 'Protocolo homologado, estamos comecando as tratativas.' },
+  ]
+  if (status !== 'Aberta') {
+    interacoes.push({ origem: 'escola', autor: 'Direcao da escola', data: addDays(dataEnvio, 2), mensagem: 'Os tecnicos vieram aqui hoje para avaliar o problema.' })
+    interacoes.push({ origem: 'sistema', autor: 'Sistema', data: addDays(dataEnvio, 3), mensagem: `Status atualizado para "${status}".` })
+  }
+  if (status === 'Resolvida') {
+    interacoes.push({ origem: 'seduc', autor: 'Ernesto Cavalcanti', data: dataResolucao, mensagem: 'Servico concluido. Ocorrencia finalizada.' })
+  }
+
   return {
     id,
     escolaId,
@@ -54,26 +82,13 @@ export const ocorrencias = base.map(([id, escolaId, titulo, tipo, criticidade, s
     status,
     localizacaoInterna,
     dataEnvio,
-    dataAprovacao: '2026-05-14',
+    dataAprovacao: addDays(dataEnvio, 4),
     ultimaAtualizacao: `2026-05-${String(15 + (index % 8)).padStart(2, '0')}`,
-    dataResolucao: status === 'Resolvida' ? '2026-05-18' : '',
+    dataResolucao,
     aprovadaPelaEscola,
     chatPendente: index % 3 === 0,
-    tratativaPendente: index % 4 === 0,
     fotos: ['Foto da area', 'Detalhe do problema', 'Contexto da sala'],
-    historico: [
-      { titulo: 'Criada', data: dataEnvio, descricao: 'Ocorrencia registrada pela escola.' },
-      { titulo: 'Aprovada', data: '2026-05-14', descricao: 'Aprovada pela direcao da unidade.' },
-      { titulo: 'Tratativa registrada', data: `2026-05-${String(15 + (index % 8)).padStart(2, '0')}`, descricao: 'Encaminhada para equipe responsavel.' },
-    ],
-    mensagens: [
-      { autor: 'Escola', origem: 'Escola', data: dataEnvio, mensagem: 'Solicitamos apoio para avaliacao da situacao.' },
-      { autor: 'SEDUC', origem: 'SEDUC', data: '2026-05-15', mensagem: 'Ocorrencia recebida e em triagem pela equipe tecnica.' },
-    ],
-    tratativas: [
-      { responsavel: 'Equipe SEDUC', data: '2026-05-15', texto: 'Encaminhado para equipe responsavel.' },
-      { responsavel: 'Manutencao', data: '2026-05-17', texto: status === 'Resolvida' ? 'Servico executado.' : 'Aguardando visita tecnica.' },
-    ],
+    interacoes,
   }
 })
 
