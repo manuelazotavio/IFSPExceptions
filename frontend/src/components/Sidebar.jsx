@@ -5,7 +5,6 @@ const items = [
   ['mapa', 'Mapa das escolas', '/mapa', 'map'],
   ['ocorrencias', 'Lista de ocorrências', '/ocorrencias', 'alert'],
   ['escolas', 'Escolas cadastradas', '/escolas', 'school'],
-  ['indicadores', 'Indicadores gerais', '/indicadores', 'chart'],
   ['usuarios', 'Gerenciamento de usuários', '/usuarios', 'users'],
   ['categorias', 'Categorias globais', '/categorias', 'tag'],
   ['configuracoes', 'Configurações', '/configuracoes', 'settings'],

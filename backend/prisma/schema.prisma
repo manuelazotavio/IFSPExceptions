@@ -1,0 +1,40 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SEDUC
+  DIRETOR
+  PROFESSOR
+  ALUNO
+}
+
+model Escola {
+  id        String   @id @default(cuid())
+  nome      String
+  bairro    String
+  endereco  String
+  latitude  Float
+  longitude Float
+  criadoEm  DateTime @default(now())
+
+  usuarios User[]
+}
+
+model User {
+  id       String   @id @default(cuid())
+  nome     String
+  email    String   @unique
+  senha    String
+  role     Role
+  ativo    Boolean  @default(true)
+  criadoEm DateTime @default(now())
+
+  escolaId String?
+  escola   Escola? @relation(fields: [escolaId], references: [id])
+}

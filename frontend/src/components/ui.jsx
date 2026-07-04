@@ -8,10 +8,11 @@ export function MetricCard({ label, value, tone = 'blue' }) {
     green: 'bg-emerald-50 text-emerald-700',
     yellow: 'bg-amber-50 text-amber-700',
     red: 'bg-red-50 text-red-700',
+    critical: 'bg-red-100 text-red-700',
     slate: 'bg-slate-50 text-slate-700',
   }
   return (
-    <Card>
+    <Card className={tone === 'critical' ? 'bg-red-100 border-red-200' : ''}>
       <p className="text-sm font-semibold text-slate-500">{label}</p>
       <div className="mt-3 flex items-end justify-between">
         <strong className="text-3xl font-800 text-slate-950">{value}</strong>
