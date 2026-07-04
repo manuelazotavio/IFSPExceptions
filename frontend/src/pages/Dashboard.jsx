@@ -49,13 +49,13 @@ function NeighborhoodColumnChart({ data }) {
             {data.map((item) => {
               return (
                 <div key={item.label} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2">
-                  <div className="flex h-48 w-full items-end justify-center gap-1.5">
+                  <div className="flex h-48 w-full items-end justify-center gap-0.5">
                     {urgencyColumns.map((column) => {
                       const value = item[column.key] || 0
                       const height = value ? Math.max((value / chartMax) * 100, 8) : 0
 
                       return (
-                        <div key={column.key} className="relative flex h-full w-3 items-end justify-center sm:w-3.5">
+                        <div key={column.key} className="relative flex h-full w-3 items-end justify-center">
                           {value > 0 && (
                             <strong
                               className="absolute text-[10px] font-800 leading-none text-slate-600"
