@@ -2,7 +2,7 @@ import { Icon } from './Icons.jsx'
 
 const items = [
   ['dashboard', 'Dashboard geral', '/dashboard', 'dashboard'],
-  ['mapa', 'Mapa das escolas', '/mapa', 'map'],
+  ['mapa', 'Mapa de calor', '/mapa', 'map'],
   ['ocorrencias', 'Lista de ocorrencias', '/ocorrencias', 'alert'],
   ['escolas', 'Escolas cadastradas', '/escolas', 'school'],
   ['indicadores', 'Indicadores gerais', '/indicadores', 'chart'],
