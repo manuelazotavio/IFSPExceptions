@@ -1,16 +1,21 @@
+.app-layout {
+  min-height: 100vh;
+  background: #ffffff;
+  padding-left: 244px;
+}
+
 .escolas-page {
-  max-width: 1080px;
+  max-width: 1120px;
   margin: 0 auto;
-  padding: 40px 24px 60px;
+  padding: 24px 32px 60px;
 }
 
 .escolas-page-header {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  margin-bottom: 24px;
-  padding-bottom: 20px;
-  border-bottom: 2px solid var(--color-primary-dark);
+  gap: 18px;
+  margin-bottom: 18px;
 }
 
 .escolas-page-eyebrow {
@@ -25,9 +30,9 @@
 
 .escolas-page-header h1 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   color: var(--color-primary-dark);
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .escolas-page-toolbar {
@@ -35,17 +40,20 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
+  padding: 0 0 16px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .escolas-page-search {
   flex: 1;
-  max-width: 340px;
+  max-width: 380px;
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius);
-  padding: 9px 12px;
+  padding: 10px 12px;
   font-size: 0.9rem;
-  background: var(--color-surface);
+  background: #fbfcfe;
 }
 
 .escolas-page-search:focus {
@@ -84,4 +92,26 @@
   background: var(--color-danger-bg);
   color: var(--color-danger);
   border-color: #e2c3bf;
+}
+
+@media (max-width: 760px) {
+  .app-layout {
+    padding-left: 0;
+    padding-top: 0;
+  }
+
+  .escolas-page {
+    padding: 24px 18px 48px;
+  }
+
+  .escolas-page-header,
+  .escolas-page-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .escolas-page-search {
+    max-width: none;
+    width: 100%;
+  }
 }

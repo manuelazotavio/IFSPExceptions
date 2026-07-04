@@ -5,12 +5,14 @@ import {
   updateEscola,
 } from '../../services/escolaService.js'
 import { createConfirmDialog } from '../components/ConfirmDialog.js'
+import { createSidebar } from '../components/Sidebar.js'
 import { createModal } from '../components/Modal.js'
 import { createEscolaForm } from '../components/EscolaForm.js'
 import { createEscolaTable } from '../components/EscolaTable.js'
 import './EscolasPage.css'
 import '../components/ConfirmDialog.css'
 import '../components/Modal.css'
+import '../components/Sidebar.css'
 import '../components/EscolaForm.css'
 import '../components/EscolaTable.css'
 
@@ -117,26 +119,28 @@ async function handleDelete() {
 
 function createPageShell(filteredEscolas) {
   const page = document.createElement('div')
-  page.className = 'escolas-page'
+  page.className = 'app-layout'
   page.innerHTML = `
-    <header class="escolas-page-header">
-      <div>
-        <span class="escolas-page-eyebrow">Secretaria de Educacao</span>
-        <h1>Escolas da rede municipal</h1>
+    <main class="escolas-page">
+      <header class="escolas-page-header">
+        <div>
+          <h1>Escolas da rede municipal</h1>
+        </div>
+        <button type="button" class="btn btn-primary" data-action="new-escola">Nova escola</button>
+      </header>
+      <div data-region="feedback"></div>
+      <div class="escolas-page-toolbar">
+        <input
+          type="text"
+          class="escolas-page-search"
+          placeholder="Buscar por nome ou bairro"
+        />
+        <span class="escolas-page-count">${filteredEscolas.length} escola(s)</span>
       </div>
-      <button type="button" class="btn btn-primary" data-action="new-escola">Nova escola</button>
-    </header>
-    <div data-region="feedback"></div>
-    <div class="escolas-page-toolbar">
-      <input
-        type="text"
-        class="escolas-page-search"
-        placeholder="Buscar por nome ou bairro"
-      />
-      <span class="escolas-page-count">${filteredEscolas.length} escola(s)</span>
-    </div>
-    <div data-region="content"></div>
+      <div data-region="content"></div>
+    </main>
   `
+  page.prepend(createSidebar({ activeItem: 'escolas' }))
 
   page.querySelector('[data-action="new-escola"]').addEventListener('click', () => {
     state.formState = {}
