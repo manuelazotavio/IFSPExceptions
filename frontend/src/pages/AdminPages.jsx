@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { categorias, ocorrenciasAprovadas, usuarios } from '../data/mockData.js'
+import { categorias, escolas, ocorrenciasAprovadas, usuarios } from '../data/mockData.js'
 import { dashboardMetrics, groupCount } from '../utils/metrics.js'
 import { Badge, BarList, Card, MetricCard, Modal } from '../components/ui.jsx'
 
@@ -21,12 +21,16 @@ export function Usuarios() {
     setLista((prev) => prev.map((user) => (user.email === email ? { ...user, role } : user)))
   }
 
+  function alterarEscola(email, escolaId) {
+    setLista((prev) => prev.map((user) => (user.email === email ? { ...user, escolaId: escolaId || null } : user)))
+  }
+
   return (
     <div className="overflow-x-auto w-full overflow-x-auto border border-slate-200 rounded-xl shadow-sm">
-      <table className="w-full min-w-[800px] border-collapse rounded-2 text-sm">
+      <table className="w-full min-w-[900px] border-collapse rounded-2 text-sm">
         <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-extrabold tracking-wide">
           <tr className="divide-x divide-slate-200">
-            {['Nome', 'Email', 'Permissão', 'Status', 'Último acesso'].map((head) => (
+            {['Nome', 'Email', 'Permissão', 'Escola vinculada', 'Status', 'Último acesso'].map((head) => (
               <th key={head} className="px-4 py-3">
                 {head}
               </th>
@@ -46,6 +50,20 @@ export function Usuarios() {
                 >
                   {PERMISSOES.map((opcao) => <option key={opcao.value} value={opcao.value}>{opcao.label}</option>)}
                 </select>
+              </td>
+              <td className="px-4 py-3">
+                {user.role === 'DIRETOR' ? (
+                  <select
+                    value={user.escolaId || ''}
+                    onChange={(event) => alterarEscola(user.email, event.target.value)}
+                    className="h-10 w-full max-w-56 cursor-pointer rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-500"
+                  >
+                    <option value="">Sem vinculo</option>
+                    {escolas.map((escola) => <option key={escola.id} value={escola.id}>{escola.nome}</option>)}
+                  </select>
+                ) : (
+                  <span className="text-slate-400">—</span>
+                )}
               </td>
               <td className="px-4 py-3"><Badge>{user.status}</Badge></td>
               <td className="px-4 py-3 text-slate-600">{user.ultimoAcesso}</td>

@@ -138,9 +138,9 @@ export function getCategoriaDescricao(categoria) {
 export const statusValues = ['Aberta', 'Em analise', 'Em andamento', 'Aguardando orcamento', 'Aguardando visita tecnica', 'Resolvida']
 export const criticidadeValues = ['Baixa', 'Media', 'Alta', 'Critica']
 export const usuarios = [
-  { nome: 'Ana Paula Ribeiro', email: 'ana.ribeiro@seduc.gov.br', role: 'SEDUC', status: 'Ativo', ultimoAcesso: 'Hoje, 09:18' },
-  { nome: 'Carlos Henrique', email: 'carlos.henrique@seduc.gov.br', role: 'SEDUC', status: 'Ativo', ultimoAcesso: 'Ontem, 17:42' },
-  { nome: 'Marina Souza', email: 'marina.souza@escola.gov.br', role: 'DIRETOR', status: 'Ativo', ultimoAcesso: '02/07/2026' },
-  { nome: 'Rafael Lima', email: 'rafael.lima@escola.gov.br', role: 'DIRETOR', status: 'Inativo', ultimoAcesso: '18/06/2026' },
-  { nome: 'Julia Ferreira', email: 'julia.ferreira@escola.gov.br', role: 'EXTERNO', status: 'Ativo', ultimoAcesso: '01/07/2026' },
+  { nome: 'Ana Paula Ribeiro', email: 'ana.ribeiro@seduc.gov.br', role: 'SEDUC', escolaId: null, status: 'Ativo', ultimoAcesso: 'Hoje, 09:18' },
+  { nome: 'Carlos Henrique', email: 'carlos.henrique@seduc.gov.br', role: 'SEDUC', escolaId: null, status: 'Ativo', ultimoAcesso: 'Ontem, 17:42' },
+  { nome: 'Marina Souza', email: 'marina.souza@escola.gov.br', role: 'DIRETOR', escolaId: 'esc-001', status: 'Ativo', ultimoAcesso: '02/07/2026' },
+  { nome: 'Rafael Lima', email: 'rafael.lima@escola.gov.br', role: 'DIRETOR', escolaId: 'esc-002', status: 'Inativo', ultimoAcesso: '18/06/2026' },
+  { nome: 'Julia Ferreira', email: 'julia.ferreira@escola.gov.br', role: 'EXTERNO', escolaId: null, status: 'Ativo', ultimoAcesso: '01/07/2026' },
 ]
