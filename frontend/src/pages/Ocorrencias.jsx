@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react'
-import { bairros, categorias, criticidadeValues, escolas, ocorrenciasAprovadas, statusValues } from '../data/mockData.js'
+import { useMemo, useRef, useState } from 'react'
+import { bairros, categorias, criticidadeValues, escolas, locaisInternos, ocorrenciasAprovadas, statusValues } from '../data/mockData.js'
 import { diasEmAberto, sortOcorrencias } from '../utils/metrics.js'
 import { Badge, Card, FilterSelect, Modal } from '../components/ui.jsx'
 import { Pagination } from '../components/Pagination.jsx'
+import { Icon } from '../components/Icons.jsx'
 
-const CAMPOS_VAZIOS = { escolaId: '', titulo: '', tipo: '', criticidade: '', localizacaoInterna: '', descricao: '', dataEnvio: new Date().toISOString().slice(0, 10) }
+const CAMPOS_VAZIOS = { escolaId: '', titulo: '', tipo: '', criticidade: '', localizacaoInterna: '', descricao: '' }
 const ITENS_POR_PAGINA = 10
 
 const COR_LINHA_CRITICIDADE = {
@@ -14,15 +15,35 @@ const COR_LINHA_CRITICIDADE = {
   Baixa: 'bg-emerald-500/15 hover:bg-emerald-500/25',
 }
 
-export function Ocorrencias({ onNavigate }) {
+function lerComoDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
+export function Ocorrencias({ onNavigate, user }) {
   const [filters, setFilters] = useState({ bairro: '', status: '', criticidade: '', tipo: '' })
   const setFilter = (key, value) => { setFilters((prev) => ({ ...prev, [key]: value })); setPagina(1) }
   const [ocorrencias, setOcorrencias] = useState(ocorrenciasAprovadas)
   const [modalAberto, setModalAberto] = useState(false)
   const [novaOcorrencia, setNovaOcorrencia] = useState(CAMPOS_VAZIOS)
   const setCampo = (key, value) => setNovaOcorrencia((prev) => ({ ...prev, [key]: value }))
+  const [novasFotos, setNovasFotos] = useState([])
+  const fotoInputRef = useRef(null)
   const [busca, setBusca] = useState('')
   const [pagina, setPagina] = useState(1)
+
+  const previewsFotos = useMemo(() => novasFotos.map((file) => URL.createObjectURL(file)), [novasFotos])
+  const handleFotoInputClick = () => fotoInputRef.current?.click()
+  const handleFotoChange = (e) => {
+    const files = Array.from(e.target.files || [])
+    setNovasFotos((prev) => [...prev, ...files])
+    e.target.value = ''
+  }
+  const removerFoto = (index) => setNovasFotos((prev) => prev.filter((_, i) => i !== index))
 
   const lista = useMemo(() => sortOcorrencias(ocorrencias).filter((item) => {
     if (filters.bairro && item.bairro !== filters.bairro) return false
@@ -36,11 +57,19 @@ export function Ocorrencias({ onNavigate }) {
   const totalPaginas = Math.max(1, Math.ceil(lista.length / ITENS_POR_PAGINA))
   const listaPaginada = lista.slice((pagina - 1) * ITENS_POR_PAGINA, pagina * ITENS_POR_PAGINA)
 
-  const formularioValido = novaOcorrencia.escolaId && novaOcorrencia.titulo && novaOcorrencia.tipo && novaOcorrencia.criticidade && novaOcorrencia.localizacaoInterna
+  const formularioValido = novaOcorrencia.escolaId && novaOcorrencia.titulo && novaOcorrencia.tipo && novaOcorrencia.criticidade && novaOcorrencia.localizacaoInterna && novaOcorrencia.descricao && novasFotos.length > 0
 
-  const cadastrarOcorrencia = () => {
+  const cancelarNovaOcorrencia = () => {
+    setNovaOcorrencia(CAMPOS_VAZIOS)
+    setNovasFotos([])
+    setModalAberto(false)
+  }
+
+  const cadastrarOcorrencia = async () => {
     if (!formularioValido) return
     const escola = escolas.find((item) => item.id === novaOcorrencia.escolaId)
+    const fotos = await Promise.all(novasFotos.map(lerComoDataUrl))
+    const dataEnvio = new Date().toISOString().slice(0, 10)
     const ocorrencia = {
       id: `occ-${Date.now()}`,
       protocolo: `2026-${String(ocorrencias.length + 1).padStart(4, '0')}`,
@@ -54,17 +83,21 @@ export function Ocorrencias({ onNavigate }) {
       criticidade: novaOcorrencia.criticidade,
       status: 'Aberta',
       localizacaoInterna: novaOcorrencia.localizacaoInterna,
-      dataEnvio: novaOcorrencia.dataEnvio,
+      dataEnvio,
       dataAprovacao: '',
+      ultimaAtualizacao: dataEnvio,
       dataResolucao: '',
       aprovadaPelaEscola: true,
+      criadoPorEmail: user?.email || '',
+      criadoPorNome: user?.nome || '',
       chatPendente: false,
-      fotos: [],
-      interacoes: [{ origem: 'sistema', autor: 'Sistema', data: novaOcorrencia.dataEnvio, mensagem: 'Ocorrencia aberta pela escola.' }],
+      fotos,
+      interacoes: [{ origem: 'sistema', autor: 'Sistema', data: dataEnvio, mensagem: 'Ocorrencia aberta pela escola.' }],
     }
     ocorrenciasAprovadas.push(ocorrencia)
     setOcorrencias((prev) => [...prev, ocorrencia])
     setNovaOcorrencia(CAMPOS_VAZIOS)
+    setNovasFotos([])
     setModalAberto(false)
   }
 
@@ -138,7 +171,7 @@ export function Ocorrencias({ onNavigate }) {
                 onClick={() => onNavigate(`/ocorrencias/${item.id}`)}
                 className={`cursor-pointer divide-x divide-slate-200 border-x border-slate-200 ${COR_LINHA_CRITICIDADE[item.criticidade] || 'hover:bg-blue-50/40'}`}
               >
-                <td className="px-4 py-3 font-bold text-blue-700">{item.protocolo}</td>
+                <td className="px-4 py-3 font-bold text-slate-800">{item.protocolo}</td>
                 <td className="px-4 py-3 font-bold text-slate-800">{item.escola}</td>
                 <td className="px-4 py-3 text-slate-600">{item.bairro}</td>
                 <td className="px-4 py-3 text-slate-600">{item.tipo}</td>
@@ -155,48 +188,70 @@ export function Ocorrencias({ onNavigate }) {
       <Modal open={modalAberto} onClose={() => setModalAberto(false)} title="Nova ocorrencia">
         <div className="space-y-3">
           <label className="block">
-            <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Escola</span>
+            <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Escola <span className="text-red-500">*</span></span>
             <select value={novaOcorrencia.escolaId} onChange={(e) => setCampo('escolaId', e.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-500">
               <option value="">Selecione...</option>
               {escolas.map((escola) => <option key={escola.id} value={escola.id}>{escola.nome} - {escola.bairro}</option>)}
             </select>
           </label>
           <label className="block">
-            <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Titulo</span>
+            <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Titulo <span className="text-red-500">*</span></span>
             <input value={novaOcorrencia.titulo} onChange={(e) => setCampo('titulo', e.target.value)} className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm text-slate-700 outline-none focus:border-blue-500" />
           </label>
           <div className="grid grid-cols-2 gap-3">
             <label className="block">
-              <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Tipo</span>
+              <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Tipo <span className="text-red-500">*</span></span>
               <select value={novaOcorrencia.tipo} onChange={(e) => setCampo('tipo', e.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-500">
                 <option value="">Selecione...</option>
                 {categorias.map((item) => <option key={item} value={item}>{item}</option>)}
               </select>
             </label>
             <label className="block">
-              <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Criticidade</span>
+              <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Criticidade <span className="text-red-500">*</span></span>
               <select value={novaOcorrencia.criticidade} onChange={(e) => setCampo('criticidade', e.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-500">
                 <option value="">Selecione...</option>
                 {criticidadeValues.map((item) => <option key={item} value={item}>{item}</option>)}
               </select>
             </label>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block">
-              <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Localizacao interna</span>
-              <input value={novaOcorrencia.localizacaoInterna} onChange={(e) => setCampo('localizacaoInterna', e.target.value)} className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm text-slate-700 outline-none focus:border-blue-500" />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Data de envio</span>
-              <input type="date" value={novaOcorrencia.dataEnvio} onChange={(e) => setCampo('dataEnvio', e.target.value)} className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm text-slate-700 outline-none focus:border-blue-500" />
-            </label>
-          </div>
           <label className="block">
-            <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Descricao</span>
-            <textarea value={novaOcorrencia.descricao} onChange={(e) => setCampo('descricao', e.target.value)} className="min-h-20 w-full rounded-md border border-slate-200 p-3 text-sm text-slate-700 outline-none focus:border-blue-500" />
+            <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Localizacao interna <span className="text-red-500">*</span></span>
+            <select value={novaOcorrencia.localizacaoInterna} onChange={(e) => setCampo('localizacaoInterna', e.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-500">
+              <option value="">Selecione...</option>
+              {locaisInternos.map((item) => <option key={item} value={item}>{item}</option>)}
+            </select>
           </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Descrição <span className="text-red-500">*</span></span>
+            <textarea value={novaOcorrencia.descricao} onChange={(e) => setCampo('descrição', e.target.value)} className="min-h-20 w-full rounded-md border border-slate-200 p-3 text-sm text-slate-700 outline-none focus:border-blue-500" />
+          </label>
+          <div>
+            <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Fotos <span className="text-red-500">*</span></span>
+            <input ref={fotoInputRef} type="file" accept="image/*" multiple onChange={handleFotoChange} className="hidden" />
+            <button type="button" onClick={handleFotoInputClick} className="flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
+              <Icon name="image" className="h-4 w-4" />
+              Adicionar fotos
+            </button>
+            {novasFotos.length > 0 && (
+              <div className="mt-2 grid grid-cols-3 gap-2">
+                {novasFotos.map((file, index) => (
+                  <div key={`${file.name}-${index}`} className="group relative aspect-square overflow-hidden rounded-md border border-slate-200">
+                    <img src={previewsFotos[index]} alt={file.name} className="h-full w-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removerFoto(index)}
+                      aria-label={`Remover ${file.name}`}
+                      className="absolute right-1 top-1 rounded-full bg-black/60 px-1.5 text-xs font-bold text-white hover:bg-black/80"
+                    >
+                      &times;
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <div className="flex justify-end gap-2 pt-2">
-            <button onClick={() => setModalAberto(false)} className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">Cancelar</button>
+            <button onClick={cancelarNovaOcorrencia} className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">Cancelar</button>
             <button onClick={cadastrarOcorrencia} disabled={!formularioValido} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50">Cadastrar</button>
           </div>
         </div>
