@@ -1,30 +1,43 @@
 import { useEffect, useMemo, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import 'leaflet.heat'
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
-import markerIcon from 'leaflet/dist/images/marker-icon.png'
-import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 import { MapContainer, Marker, TileLayer, Tooltip, useMap } from 'react-leaflet'
 import { escolas, statusValues } from '../data/mockData.js'
 import { Badge, Card, FilterSelect } from '../components/ui.jsx'
 import { fetchEscolaOcorrencias, fetchHeatmapOcorrencias, getEscolaOcorrenciasFallback, getHeatmapFallback } from '../services/mapa.js'
 
 const mapCenter = [-23.6203, -45.4131]
+const drawerFocusOffset = { x: -180, y: 0 }
 const criticidadeOptions = ['Baixa', 'Atencao', 'Critica']
 const schoolOptions = escolas.map((escola) => ({ value: escola.id, label: escola.nome }))
-const heatLegend = [
-  { label: 'Baixa', color: '#60a5fa' },
-  { label: 'Atencao', color: '#f59e0b' },
-  { label: 'Critica', color: '#dc2626' },
-]
-
-delete L.Icon.Default.prototype._getIconUrl
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: markerIcon2x,
-  iconUrl: markerIcon,
-  shadowUrl: markerShadow,
-})
+const mapStyleStorageKey = 'seduc-map-style'
+const mapStyles = {
+  cartoLight: {
+    label: 'Claro',
+    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+  },
+  cartoVoyager: {
+    label: 'Ruas',
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+  },
+  cartoDark: {
+    label: 'Escuro',
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+  },
+  osmPadrao: {
+    label: 'OSM padrao',
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; OpenStreetMap contributors',
+  },
+  stadiaSmooth: {
+    label: 'Suave',
+    url: 'https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; Stadia Maps &copy; OpenMapTiles &copy; OpenStreetMap contributors',
+  },
+}
 
 function normalizeText(value) {
   return String(value || '')
@@ -38,6 +51,96 @@ function hasValidCoordinates(item) {
   const latitude = Number(item?.latitude)
   const longitude = Number(item?.longitude)
   return Number.isFinite(latitude) && Number.isFinite(longitude)
+}
+
+function isOcorrenciaPendente(status) {
+  const normalized = String(status || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toUpperCase()
+
+  return ['ABERTA', 'PENDENTE', 'EM_ANDAMENTO', 'EM ANALISE', 'EM_ANALISE'].includes(normalized)
+}
+
+function calcularScorePendenciaEscola(item) {
+  if (Array.isArray(item?.ocorrencias)) {
+    return item.ocorrencias
+      .filter((ocorrencia) => isOcorrenciaPendente(ocorrencia.status))
+      .reduce((total, ocorrencia) => {
+        const criticidade = normalizeText(ocorrencia.criticidade)
+        if (criticidade === 'critica') return total + 3
+        if (criticidade === 'baixa') return total + 1
+        return total + 2
+      }, 0)
+  }
+
+  if (Number.isFinite(Number(item?.scorePendencia))) {
+    return Number(item.scorePendencia)
+  }
+
+  if (Number.isFinite(Number(item?.intensidadePendente))) {
+    return Number(item.intensidadePendente)
+  }
+
+  const criticas = Number(item?.criticas || 0)
+  const atencao = Number(item?.atencao || 0)
+  const baixas = Number(item?.baixas || 0)
+
+  return criticas * 3 + atencao * 2 + baixas
+}
+
+function interpolateColor(start, end, progress) {
+  const clamp = Math.max(0, Math.min(1, progress))
+  const from = start.match(/\w\w/g).map((value) => Number.parseInt(value, 16))
+  const to = end.match(/\w\w/g).map((value) => Number.parseInt(value, 16))
+  const mixed = from.map((value, index) => Math.round(value + (to[index] - value) * clamp))
+  return `#${mixed.map((value) => value.toString(16).padStart(2, '0')).join('')}`
+}
+
+function getSchoolIconColor(score, minimum, maximum) {
+  if (maximum === minimum) {
+    return score > 0 ? '#f59e0b' : '#16a34a'
+  }
+
+  const normalized = (score - minimum) / (maximum - minimum)
+
+  if (normalized <= 0.5) {
+    return interpolateColor('#16a34a', '#f59e0b', normalized / 0.5)
+  }
+
+  return interpolateColor('#f59e0b', '#dc2626', (normalized - 0.5) / 0.5)
+}
+
+function createSchoolDivIcon({ color, isSelected, isDimmed }) {
+  const opacity = isDimmed ? 0.4 : 1
+  const scale = isSelected ? 1.12 : 1
+  const shadow = isSelected ? '0 10px 22px rgba(15,23,42,.28)' : '0 6px 14px rgba(15,23,42,.16)'
+  const ring = isSelected ? '#0f172a' : 'rgba(15,23,42,.18)'
+  const svg = `
+    <div style="opacity:${opacity};transform:scale(${scale});transform-origin:bottom center;transition:transform .18s ease,opacity .18s ease;filter:drop-shadow(${shadow});">
+      <svg width="34" height="42" viewBox="0 0 34 42" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M17 2C9.82 2 4 7.82 4 15c0 10.5 13 25 13 25s13-14.5 13-25C30 7.82 24.18 2 17 2Z" fill="${color}" />
+        <path d="M17 39c-.4 0-.77-.17-1.03-.47C14.71 37.05 3 23.72 3 15 3 7.27 9.27 1 17 1s14 6.27 14 14c0 8.72-11.71 22.05-12.97 23.53-.26.3-.63.47-1.03.47Z" fill="none" stroke="${ring}" stroke-width="2" stroke-linejoin="round" />
+        <rect x="10" y="10" width="14" height="14" rx="2.4" fill="white" />
+        <rect x="12.4" y="12.4" width="3" height="3" rx=".6" fill="${color}" />
+        <rect x="18.6" y="12.4" width="3" height="3" rx=".6" fill="${color}" />
+        <rect x="12.4" y="17.1" width="3" height="3" rx=".6" fill="${color}" />
+        <rect x="18.6" y="17.1" width="3" height="3" rx=".6" fill="${color}" />
+        <rect x="15.65" y="19.4" width="2.7" height="4.6" rx=".8" fill="${color}" />
+        <circle cx="17" cy="15" r="11.5" fill="none" stroke="white" stroke-opacity=".35" stroke-width="1.2" />
+      </svg>
+    </div>
+  `
+
+  return L.divIcon({
+    html: svg,
+    className: 'school-marker-icon',
+    iconSize: [34, 42],
+    iconAnchor: [17, 40],
+    popupAnchor: [0, -34],
+    tooltipAnchor: [0, -32],
+  })
 }
 
 export function Mapa({ onNavigate }) {
@@ -59,6 +162,16 @@ export function Mapa({ onNavigate }) {
   const [erroDetalhe, setErroDetalhe] = useState('')
   const [searchEscola, setSearchEscola] = useState('')
   const [mapFocusTarget, setMapFocusTarget] = useState(null)
+  const [mapStyleKey, setMapStyleKey] = useState(() => {
+    if (typeof window === 'undefined') return 'cartoLight'
+
+    try {
+      const storedStyle = window.localStorage.getItem(mapStyleStorageKey)
+      return storedStyle && mapStyles[storedStyle] ? storedStyle : 'cartoLight'
+    } catch {
+      return 'cartoLight'
+    }
+  })
 
   useEffect(() => {
     const controller = new AbortController()
@@ -102,6 +215,23 @@ export function Mapa({ onNavigate }) {
   }, [drawerAberto])
 
   useEffect(() => {
+    try {
+      window.localStorage.setItem(mapStyleStorageKey, mapStyleKey)
+    } catch {
+      return
+    }
+  }, [mapStyleKey])
+
+  useEffect(() => {
+    if (!escolaSelecionada) return
+
+    const exists = heatmapData.some((item) => item.escolaId === escolaSelecionada)
+    if (!exists) {
+      closeDrawer()
+    }
+  }, [escolaSelecionada, heatmapData])
+
+  useEffect(() => {
     if (!drawerAberto || !escolaSelecionada) return undefined
 
     const controller = new AbortController()
@@ -134,11 +264,11 @@ export function Mapa({ onNavigate }) {
     return () => controller.abort()
   }, [drawerAberto, escolaSelecionada])
 
-  const heatPoints = useMemo(
+  const mapBoundsPoints = useMemo(
     () => heatmapData
-      .map((item) => [Number(item.latitude), Number(item.longitude), Number(item.intensidade)])
-      .filter(([latitude, longitude, intensidade]) => (
-        Number.isFinite(latitude) && Number.isFinite(longitude) && Number.isFinite(intensidade)
+      .map((item) => [Number(item.latitude), Number(item.longitude)])
+      .filter(([latitude, longitude]) => (
+        Number.isFinite(latitude) && Number.isFinite(longitude)
       )),
     [heatmapData],
   )
@@ -198,17 +328,102 @@ export function Mapa({ onNavigate }) {
     return null
   }, [erroMapa, erroDetalhe])
 
-  const totalOcorrencias = heatmapData.reduce((total, item) => total + item.totalOcorrencias, 0)
-  const totalCriticas = heatmapData.reduce((total, item) => total + item.criticas, 0)
-  const intensidadeTotal = heatmapData.reduce((total, item) => total + item.intensidade, 0)
+  const riskScoresById = useMemo(() => (
+    Object.fromEntries(
+      heatmapData.map((item) => [item.escolaId, calcularScorePendenciaEscola(item)]),
+    )
+  ), [heatmapData])
+
+  const summaryMetrics = useMemo(() => (
+    heatmapData.reduce((accumulator, item) => ({
+      totalOcorrencias: accumulator.totalOcorrencias + Number(item.totalOcorrencias || 0),
+      criticas: accumulator.criticas + Number(item.criticas || 0),
+      atencao: accumulator.atencao + Number(item.atencao || 0),
+      baixas: accumulator.baixas + Number(item.baixas || 0),
+      intensidade: accumulator.intensidade + Number(item.intensidade || 0),
+    }), {
+      totalOcorrencias: 0,
+      criticas: 0,
+      atencao: 0,
+      baixas: 0,
+      intensidade: 0,
+    })
+  ), [heatmapData])
+
+  const globalOccurrenceRange = useMemo(() => {
+    if (heatmapData.length === 0) {
+      return { minimum: 0, maximum: 0 }
+    }
+
+    const values = heatmapData.map((item) => Number(riskScoresById[item.escolaId] || 0))
+    return {
+      minimum: Math.min(...values),
+      maximum: Math.max(...values),
+    }
+  }, [heatmapData, riskScoresById])
+
+  const markerIconsById = useMemo(() => (
+    Object.fromEntries(
+      heatmapData.map((item) => [
+        item.escolaId,
+        createSchoolDivIcon({
+          color: getSchoolIconColor(
+            Number(riskScoresById[item.escolaId] || 0),
+            globalOccurrenceRange.minimum,
+            globalOccurrenceRange.maximum,
+          ),
+          isSelected: escolaSelecionada === item.escolaId,
+          isDimmed: Boolean(escolaSelecionada) && escolaSelecionada !== item.escolaId,
+        }),
+      ]),
+    )
+  ), [escolaSelecionada, globalOccurrenceRange.maximum, globalOccurrenceRange.minimum, heatmapData, riskScoresById])
+
+  const metricContext = useMemo(() => {
+    const escola = detalheEscola || escolaSelecionadaResumo
+
+    if (!escolaSelecionada || !escola) {
+      return {
+        title: 'Geral',
+        metrics: summaryMetrics,
+      }
+    }
+
+    return {
+      title: escola.escolaNome || escola.nome || 'Escola selecionada',
+      metrics: {
+        totalOcorrencias: Number(escola.totalOcorrencias || 0),
+        criticas: Number(escola.criticas || 0),
+        atencao: Number(escola.atencao || 0),
+        baixas: Number(escola.baixas || 0),
+        intensidade: Number(escola.intensidade || 0),
+      },
+    }
+  }, [detalheEscola, escolaSelecionada, escolaSelecionadaResumo, summaryMetrics])
+
+  const selectedMapStyle = mapStyles[mapStyleKey] || mapStyles.cartoLight
 
   function setFilter(key, value) {
     setFilters((current) => ({ ...current, [key]: value }))
   }
 
   function openDrawer(escolaId) {
+    const escola = heatmapData.find((item) => item.escolaId === escolaId)
+    setDetalheEscola(null)
+    setOcorrenciasEscola([])
+    setErroDetalhe('')
     setEscolaSelecionada(escolaId)
     setDrawerAberto(true)
+
+    if (escola && hasValidCoordinates(escola)) {
+      setMapFocusTarget({
+        latitude: Number(escola.latitude),
+        longitude: Number(escola.longitude),
+        zoom: 15,
+        offsetX: drawerFocusOffset.x,
+        offsetY: drawerFocusOffset.y,
+      })
+    }
   }
 
   function closeDrawer() {
@@ -217,11 +432,12 @@ export function Mapa({ onNavigate }) {
     setDetalheEscola(null)
     setOcorrenciasEscola([])
     setErroDetalhe('')
+    setMapFocusTarget(null)
   }
 
   function openSchoolRegistry() {
     if (!escolaSelecionada) return
-    onNavigate?.(`/escolas?escolaId=${encodeURIComponent(escolaSelecionada)}`)
+    onNavigate?.(`/escolas/${encodeURIComponent(escolaSelecionada)}`)
   }
 
   function focusSchool(escola) {
@@ -232,6 +448,8 @@ export function Mapa({ onNavigate }) {
       latitude: Number(escola.latitude),
       longitude: Number(escola.longitude),
       zoom: 16,
+      offsetX: drawerFocusOffset.x,
+      offsetY: drawerFocusOffset.y,
     })
     openDrawer(escola.escolaId)
   }
@@ -302,40 +520,41 @@ export function Mapa({ onNavigate }) {
       </Card>
 
       <Card className="overflow-hidden p-0">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 px-5 py-4">
-          <div className="min-w-0 flex-1 space-y-3">
-            <h2 className="text-xl font-800 text-slate-950">Mapa de calor de ocorrencias por escola</h2>
-            <div className="flex flex-wrap gap-2">
-              <MetricCompact label="Escolas" value={heatmapData.length} />
-              <MetricCompact label="Ocorrencias" value={totalOcorrencias} />
-              <MetricCompact label="Criticas" value={totalCriticas} />
-              <MetricCompact label="Intensidade" value={intensidadeTotal} />
-            </div>
-          </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-3 text-xs font-bold text-slate-600">
-            {heatLegend.map((item) => (
-              <span key={item.label} className="flex items-center gap-1.5">
-                <i className="h-2.5 w-4 rounded-full" style={{ background: item.color }} />
-                {item.label}
-              </span>
-            ))}
-          </div>
+        <div className="border-b border-slate-200 px-5 py-4">
+          <h2 className="text-xl font-800 text-slate-950">Mapa de calor de ocorrencias por escola</h2>
         </div>
 
         <div className="relative h-[calc(100vh-16rem)] min-h-[560px]">
-          <MapContainer center={mapCenter} zoom={13} scrollWheelZoom className="h-full w-full">
+          <div className="absolute left-4 top-4 z-[650] w-[240px] rounded-xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur">
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+              {metricContext.title}
+            </p>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <MetricCompact label="Ocorrencias" value={metricContext.metrics.totalOcorrencias} />
+              <MetricCompact label="Criticas" value={metricContext.metrics.criticas} />
+              <MetricCompact label="Atencao" value={metricContext.metrics.atencao} />
+              <MetricCompact label="Baixas" value={metricContext.metrics.baixas} />
+              <div className="col-span-2">
+                <MetricCompact label="Intensidade" value={metricContext.metrics.intensidade} />
+              </div>
+            </div>
+          </div>
+
+          <MapContainer center={mapCenter} zoom={13} scrollWheelZoom zoomControl={false} className="h-full w-full">
             <TileLayer
-              attribution='&copy; OpenStreetMap contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              key={mapStyleKey}
+              attribution={selectedMapStyle.attribution}
+              url={selectedMapStyle.url}
             />
-            <SyncMapView points={heatPoints} />
+            <SyncMapView points={mapBoundsPoints} />
             <MapResizeController drawerAberto={drawerAberto} />
+            <ZoomControlPosition />
             <MapFocusController target={mapFocusTarget} />
-            <HeatmapLayer points={heatPoints} />
 
             {heatmapData.map((item) => (
               <Marker
                 key={item.escolaId}
+                icon={markerIconsById[item.escolaId]}
                 position={[item.latitude, item.longitude]}
                 eventHandlers={{ click: () => openDrawer(item.escolaId) }}
               >
@@ -348,6 +567,33 @@ export function Mapa({ onNavigate }) {
               </Marker>
             ))}
           </MapContainer>
+
+          <div className="pointer-events-none absolute bottom-4 left-20 z-[650] rounded-lg border border-slate-200 bg-white/95 px-3 py-2 shadow-md backdrop-blur">
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-slate-600">Solicitacoes pendentes</p>
+            <div className="h-3 w-36 rounded-full bg-gradient-to-r from-green-500 via-amber-400 to-red-600" />
+            <div className="mt-1 flex justify-between text-[10px] font-semibold text-slate-500">
+              <span>{globalOccurrenceRange.minimum}</span>
+              <span>{globalOccurrenceRange.maximum}</span>
+            </div>
+          </div>
+
+          <div className={`absolute bottom-4 z-[650] rounded-lg border border-slate-200 bg-white/95 px-3 py-2 shadow-md backdrop-blur ${drawerAberto ? 'right-[410px]' : 'right-4'}`}>
+            <label className="block text-[10px] font-bold uppercase tracking-wide text-slate-500" htmlFor="map-style-select">
+              Estilo do mapa
+            </label>
+            <select
+              id="map-style-select"
+              value={mapStyleKey}
+              onChange={(event) => setMapStyleKey(event.target.value)}
+              className="mt-1 h-8 rounded-md border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 outline-none focus:border-blue-500"
+            >
+              {Object.entries(mapStyles).map(([styleKey, style]) => (
+                <option key={styleKey} value={styleKey}>
+                  {style.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[450] h-28 bg-gradient-to-t from-slate-950/12 to-transparent" />
 
@@ -375,9 +621,9 @@ export function Mapa({ onNavigate }) {
 
 function MetricCompact({ label, value }) {
   return (
-    <div className="min-w-[108px] rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+    <div className="rounded-lg bg-slate-50 px-3 py-2">
       <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-500">{label}</span>
-      <strong className="mt-1 block text-base font-800 text-slate-950">{value}</strong>
+      <strong className="mt-1 block text-lg font-800 text-slate-950">{value}</strong>
     </div>
   )
 }
@@ -395,84 +641,73 @@ function EscolaDrawer({ detalhe, drawerAberto, loadingDetalhe, ocorrencias, onCl
   if (!drawerAberto) return null
 
   return (
-    <>
-      <button
-        type="button"
-        aria-label="Fechar detalhe da escola"
-        className="absolute inset-0 z-[650] bg-slate-950/20 backdrop-blur-[1px]"
-        onClick={onClose}
-      />
-
-      <aside className="absolute inset-y-0 right-0 z-[700] w-full max-w-[92vw] sm:max-w-[420px]">
-        <div className="flex h-full flex-col border-l border-slate-200 bg-white shadow-2xl">
-          <div className="flex flex-col gap-3 border-b border-slate-200 px-5 py-4">
-            <div className="flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={onOpenSchoolRegistry}
-                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700"
-              >
-                Ver dados da escola
-              </button>
-              <button type="button" onClick={onClose} className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
-                Fechar
-              </button>
-            </div>
-
-            <h3 className="break-words text-base font-semibold leading-6 text-slate-500">
-              {detalhe?.escolaNome || detalhe?.nome || 'Detalhe da escola'}
-            </h3>
-          </div>
-
-          <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5">
-            {loadingDetalhe ? (
-              <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600">
-                Carregando dados da escola...
-              </div>
-            ) : null}
-
-            {detalhe ? (
-              <>
-                <div>
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <h4 className="text-sm font-800 uppercase tracking-wide text-slate-500">Ocorrencias previas</h4>
-                    <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">
-                      {ocorrencias.length}
-                    </span>
-                  </div>
-
-                  <div className="space-y-3">
-                    {ocorrencias.length > 0 ? ocorrencias.map((ocorrencia) => (
-                      <article key={ocorrencia.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                        <div className="flex items-start justify-between gap-3">
-                          <h5 className="font-bold text-slate-900">{ocorrencia.titulo}</h5>
-                          <Badge>{ocorrencia.criticidade}</Badge>
-                        </div>
-                        <div className="mt-2 flex flex-wrap items-center gap-2">
-                          <Badge>{ocorrencia.status}</Badge>
-                          <span className="text-xs font-semibold text-slate-500">{ocorrencia.data || 'Sem data'}</span>
-                        </div>
-                        <p className="mt-3 text-sm leading-6 text-slate-600">
-                          {ocorrencia.descricao || 'Sem descricao resumida para esta ocorrencia.'}
-                        </p>
-                      </article>
-                    )) : (
-                      <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-semibold text-slate-500">
-                        Nenhuma ocorrencia encontrada para esta escola.
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </>
-            ) : !loadingDetalhe ? (
-              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-semibold text-slate-500">
-                Nao foi possivel localizar os dados desta escola.
-              </div>
-            ) : null}
+    <aside className="absolute bottom-4 right-4 top-4 z-[700] w-[390px] max-w-[calc(100%-2rem)] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
+      <div className="flex h-full flex-col">
+        <div className="border-b border-slate-200 p-4">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onOpenSchoolRegistry}
+              className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-4 py-2 text-left text-sm font-bold text-slate-700 hover:bg-slate-50"
+            >
+              <span className="block truncate">
+                {detalhe?.escolaNome || detalhe?.nome || 'Detalhe da escola'}
+              </span>
+            </button>
+            <button type="button" onClick={onClose} className="shrink-0 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
+              Fechar
+            </button>
           </div>
         </div>
-      </aside>
-    </>
+
+        <div className="flex-1 space-y-5 overflow-y-auto p-4">
+          {loadingDetalhe ? (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600">
+              Carregando dados da escola...
+            </div>
+          ) : null}
+
+          {detalhe ? (
+            <>
+              <div>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h4 className="text-sm font-800 uppercase tracking-wide text-slate-500">Solicitacoes pendentes</h4>
+                  <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">
+                    {ocorrencias.length}
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  {ocorrencias.length > 0 ? ocorrencias.map((ocorrencia) => (
+                    <article key={ocorrencia.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                      <div className="flex items-start justify-between gap-3">
+                        <h5 className="font-bold text-slate-900">{ocorrencia.titulo}</h5>
+                        <Badge>{ocorrencia.criticidade}</Badge>
+                      </div>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <Badge>{ocorrencia.status}</Badge>
+                        <span className="text-xs font-semibold text-slate-500">{ocorrencia.data || 'Sem data'}</span>
+                      </div>
+                      <p className="mt-3 text-sm leading-6 text-slate-600">
+                        {ocorrencia.descricao || 'Sem descricao resumida para esta ocorrencia.'}
+                      </p>
+                    </article>
+                  )) : (
+                    <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-semibold text-slate-500">
+                      Nenhuma ocorrencia encontrada para esta escola.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          ) : !loadingDetalhe ? (
+            <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-semibold text-slate-500">
+              Nao foi possivel localizar os dados desta escola.
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </aside>
   )
 }
 
@@ -482,9 +717,40 @@ function MapFocusController({ target }) {
   useEffect(() => {
     if (!target) return
 
-    map.setView([target.latitude, target.longitude], target.zoom || 16)
-    map.invalidateSize()
+    let cancelled = false
+    const handleMoveEnd = () => {
+      if (cancelled || !target.offsetX) return
+      map.panBy([target.offsetX, target.offsetY || 0], {
+        animate: true,
+        duration: 0.45,
+      })
+    }
+
+    map.once('moveend', handleMoveEnd)
+    map.flyTo([target.latitude, target.longitude], target.zoom || 15, {
+      duration: 0.8,
+    })
+
+    return () => {
+      cancelled = true
+      map.off('moveend', handleMoveEnd)
+    }
   }, [map, target])
+
+  return null
+}
+
+function ZoomControlPosition() {
+  const map = useMap()
+
+  useEffect(() => {
+    const zoomControl = L.control.zoom({ position: 'bottomleft' })
+    zoomControl.addTo(map)
+
+    return () => {
+      zoomControl.remove()
+    }
+  }, [map])
 
   return null
 }
@@ -517,32 +783,6 @@ function MapResizeController({ drawerAberto }) {
 
     return () => window.clearTimeout(timeout)
   }, [drawerAberto, map])
-
-  return null
-}
-
-function HeatmapLayer({ points }) {
-  const map = useMap()
-
-  useEffect(() => {
-    const layer = L.heatLayer(points, {
-      radius: 28,
-      blur: 22,
-      minOpacity: 0.35,
-      maxZoom: 16,
-      gradient: {
-        0.25: '#60a5fa',
-        0.5: '#f59e0b',
-        1: '#dc2626',
-      },
-    })
-
-    layer.addTo(map)
-
-    return () => {
-      map.removeLayer(layer)
-    }
-  }, [map, points])
 
   return null
 }
