@@ -39,6 +39,8 @@ const base = [
   ['occ-025', 'esc-005', 'Ocorrencia publica pendente', 'Outros', 'Alta', 'Aberta', 'Portaria', '2026-05-13', false],
 ]
 
+const nomesSolicitantes = ['Fernanda Souza', 'Ricardo Almeida', 'Juliana Costa', 'Marcos Pereira', 'Patricia Lima', 'Anderson Santos']
+
 function addDays(dateStr, days) {
   const date = new Date(`${dateStr}T00:00:00`)
   date.setDate(date.getDate() + days)
@@ -50,15 +52,15 @@ export const ocorrencias = base.map(([id, escolaId, titulo, tipo, criticidade, s
   const dataResolucao = status === 'Resolvida' ? addDays(dataEnvio, 8) : ''
 
   const interacoes = [
-    { origem: 'sistema', autor: 'Sistema', data: dataEnvio, mensagem: 'Ocorrencia aberta pela escola.' },
-    { origem: 'seduc', autor: 'Ernesto Cavalcanti', data: addDays(dataEnvio, 1), mensagem: 'Protocolo homologado, estamos comecando as tratativas.' },
+    { origem: 'sistema', autor: 'Sistema', data: dataEnvio, hora: '08:12', status: 'Aberta', mensagem: 'Ocorrencia aberta pela escola.' },
+    { origem: 'seduc', autor: 'Ernesto Cavalcanti', data: addDays(dataEnvio, 1), hora: '09:45', status: 'Em analise', mensagem: 'Protocolo homologado, estamos comecando as tratativas.' },
   ]
   if (status !== 'Aberta') {
-    interacoes.push({ origem: 'escola', autor: 'Direcao da escola', data: addDays(dataEnvio, 2), mensagem: 'Os tecnicos vieram aqui hoje para avaliar o problema.' })
-    interacoes.push({ origem: 'sistema', autor: 'Sistema', data: addDays(dataEnvio, 3), mensagem: `Status atualizado para "${status}".` })
+    interacoes.push({ origem: 'escola', autor: 'Direcao da escola', data: addDays(dataEnvio, 2), hora: '14:20', status: 'Em andamento', mensagem: 'Os tecnicos vieram aqui hoje para avaliar o problema.' })
+    interacoes.push({ origem: 'sistema', autor: 'Sistema', data: addDays(dataEnvio, 3), hora: '10:05', status, mensagem: `Status atualizado para "${status}".` })
   }
   if (status === 'Resolvida') {
-    interacoes.push({ origem: 'seduc', autor: 'Ernesto Cavalcanti', data: dataResolucao, mensagem: 'Servico concluido. Ocorrencia finalizada.' })
+    interacoes.push({ origem: 'seduc', autor: 'Ernesto Cavalcanti', data: dataResolucao, hora: '16:30', status: 'Resolvida', mensagem: 'Servico concluido. Ocorrencia finalizada.' })
   }
 
   return {
@@ -80,6 +82,7 @@ export const ocorrencias = base.map(([id, escolaId, titulo, tipo, criticidade, s
     dataResolucao,
     aprovadaPelaEscola,
     criadoPorEmail: index % 4 === 0 ? 'externo@escola.gov.br' : `externo.${escolaId}@escola.gov.br`,
+    criadoPorNome: nomesSolicitantes[index % nomesSolicitantes.length],
     chatPendente: index % 3 === 0,
     fotos: ['Foto da area', 'Detalhe do problema', 'Contexto da sala'],
     interacoes,
@@ -137,6 +140,7 @@ export function getCategoriaDescricao(categoria) {
 }
 export const statusValues = ['Aberta', 'Em analise', 'Em andamento', 'Aguardando orcamento', 'Aguardando visita tecnica', 'Resolvida']
 export const criticidadeValues = ['Baixa', 'Media', 'Alta', 'Critica']
+export const locaisInternos = ['Biblioteca', 'Laboratorio', 'Patio', 'Patio coberto', 'Area externa', 'Entrada', 'Entrada lateral', 'Corredor', 'Refeitorio', 'Cozinha', 'Secretaria', 'Diretoria', 'Portaria', 'Almoxarifado', 'Cobertura', 'Banheiro infantil', 'Sala dos professores', 'Sala multifuncional', 'Sala 1', 'Sala 2', 'Sala 3', 'Sala 4', 'Sala 5', 'Bloco A', 'Bloco B']
 export const usuarios = [
   { nome: 'Ana Paula Ribeiro', email: 'ana.ribeiro@seduc.gov.br', role: 'SEDUC', escolaId: null, status: 'Ativo', ultimoAcesso: 'Hoje, 09:18' },
   { nome: 'Carlos Henrique', email: 'carlos.henrique@seduc.gov.br', role: 'SEDUC', escolaId: null, status: 'Ativo', ultimoAcesso: 'Ontem, 17:42' },
