@@ -1,0 +1,26 @@
+.confirm-message {
+  margin: 0 0 20px;
+  color: var(--color-text);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.btn-danger {
+  background: var(--color-danger);
+  color: #ffffff;
+}
+
+.btn-danger:hover {
+  background: #7d281e;
+}
+
+.btn-danger:disabled {
+  background: var(--color-border-strong);
+  cursor: not-allowed;
+}

@@ -1,0 +1,35 @@
+:root {
+  --color-primary-dark: #0a2540;
+  --color-primary: #123a63;
+  --color-primary-mid: #1c4d80;
+  --color-primary-light: #2f68a3;
+  --color-accent: #3f7cb8;
+  --color-bg: #eef1f5;
+  --color-surface: #ffffff;
+  --color-border: #d4dae2;
+  --color-border-strong: #b7c1cd;
+  --color-text: #1e2733;
+  --color-text-muted: #5c6b7a;
+  --color-danger: #9c3327;
+  --color-danger-bg: #f8e9e7;
+  --color-success: #1f6b45;
+  --color-success-bg: #e8f2ec;
+  --shadow-card: 0 1px 2px rgba(10, 37, 64, 0.08);
+  --radius: 4px;
+  --font-base: "Segoe UI", Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-base);
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+button, input, select {
+  font-family: inherit;
+}

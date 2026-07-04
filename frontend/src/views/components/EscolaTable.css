@@ -1,0 +1,79 @@
+.escola-table-wrapper {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow-x: auto;
+  box-shadow: var(--shadow-card);
+}
+
+.escola-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.escola-table thead th {
+  text-align: left;
+  padding: 12px 16px;
+  background: var(--color-primary-dark);
+  color: #dfe8f2;
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.escola-table tbody td {
+  padding: 12px 16px;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.escola-table tbody tr:hover {
+  background: #f4f8fb;
+}
+
+.escola-table-name {
+  font-weight: 600;
+  color: var(--color-primary-dark);
+}
+
+.escola-table-actions-col {
+  text-align: right;
+}
+
+.escola-table-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
+}
+
+.link-btn-danger {
+  color: var(--color-danger);
+}
+
+.escola-table-empty {
+  background: var(--color-surface);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius);
+  padding: 40px;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.92rem;
+}
