@@ -8,14 +8,15 @@ export function MetricCard({ label, value, tone = 'blue' }) {
     green: 'bg-emerald-50 text-emerald-700',
     yellow: 'bg-amber-50 text-amber-700',
     red: 'bg-red-50 text-red-700',
+    critical: 'bg-red-100 text-red-700',
     slate: 'bg-slate-50 text-slate-700',
   }
   return (
-    <Card>
+    <Card className={tone === 'critical' ? 'bg-red-100 border-red-200' : ''}>
       <p className="text-sm font-semibold text-slate-500">{label}</p>
       <div className="mt-3 flex items-end justify-between">
         <strong className="text-3xl font-800 text-slate-950">{value}</strong>
-        <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${tones[tone]}`}>MVP</span>
+        
       </div>
     </Card>
   )
@@ -58,7 +59,7 @@ export function Modal({ open, onClose, title, children }) {
 export function FilterSelect({ label, value, onChange, options }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-bold  tracking-wide text-slate-500">{label}</span>
+      <span className="mb-1 block text-xs font-bold  text-slate-500">{label}</span>
       <select value={value} onChange={(e) => onChange(e.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-500">
         <option value="">Todos</option>
         {options.map((option) => <option key={option} value={option}>{option}</option>)}
