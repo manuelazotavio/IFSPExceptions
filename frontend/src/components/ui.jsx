@@ -15,7 +15,7 @@ export function MetricCard({ label, value, tone = 'blue' }) {
       <p className="text-sm font-semibold text-slate-500">{label}</p>
       <div className="mt-3 flex items-end justify-between">
         <strong className="text-3xl font-800 text-slate-950">{value}</strong>
-        <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${tones[tone]}`}>MVP</span>
+        
       </div>
     </Card>
   )

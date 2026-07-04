@@ -1,18 +1,18 @@
 import { Sidebar } from './Sidebar.jsx'
 
 const titles = {
-  '/dashboard': 'Dashboard geral',
+  '/dashboard': 'Dashboard Geral',
   '/mapa': 'Mapa das escolas',
-  '/ocorrencias': 'Lista de ocorrencias',
+  '/ocorrencias': 'Lista de ocorrências',
   '/escolas': 'Escolas cadastradas',
   '/indicadores': 'Indicadores gerais',
-  '/usuarios': 'Gerenciamento de usuarios',
+  '/usuarios': 'Gerenciamento de usuários',
   '/categorias': 'Categorias globais',
-  '/configuracoes': 'Configuracoes',
+  '/configuracoes': 'Configurações',
 }
 
 export function Layout({ route, onNavigate, children }) {
-  const title = titles[route] || (route.startsWith('/ocorrencias/') ? 'Detalhe da ocorrencia' : 'Dashboard geral')
+  const title = titles[route] || (route.startsWith('/ocorrencias/') ? 'Detalhe da ocorrência' : 'Dashboard Geral')
   return (
     <div className="min-h-screen bg-white">
       <Sidebar route={route} onNavigate={onNavigate} />

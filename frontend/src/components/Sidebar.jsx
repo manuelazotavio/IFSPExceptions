@@ -3,12 +3,12 @@ import { Icon } from './Icons.jsx'
 const items = [
   ['dashboard', 'Dashboard geral', '/dashboard', 'dashboard'],
   ['mapa', 'Mapa das escolas', '/mapa', 'map'],
-  ['ocorrencias', 'Lista de ocorrencias', '/ocorrencias', 'alert'],
+  ['ocorrencias', 'Lista de ocorrências', '/ocorrencias', 'alert'],
   ['escolas', 'Escolas cadastradas', '/escolas', 'school'],
   ['indicadores', 'Indicadores gerais', '/indicadores', 'chart'],
-  ['usuarios', 'Gerenciamento de usuarios', '/usuarios', 'users'],
+  ['usuarios', 'Gerenciamento de usuários', '/usuarios', 'users'],
   ['categorias', 'Categorias globais', '/categorias', 'tag'],
-  ['configuracoes', 'Configuracoes', '/configuracoes', 'settings'],
+  ['configuracoes', 'Configurações', '/configuracoes', 'settings'],
 ]
 
 export function Sidebar({ route, onNavigate }) {
@@ -24,7 +24,7 @@ export function Sidebar({ route, onNavigate }) {
         </div>
       </div>
 
-      <nav className="space-y-1" aria-label="Navegacao principal">
+      <nav className="space-y-1" aria-label="Navegação principal">
         {items.map(([id, label, path, icon]) => {
           const active = route === path || (path === '/ocorrencias' && route.startsWith('/ocorrencias/'))
           return (
