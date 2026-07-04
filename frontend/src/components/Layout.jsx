@@ -12,7 +12,7 @@ const titles = {
 }
 
 export function Layout({ route, onNavigate, children }) {
-  const title = titles[route] || (route.startsWith('/ocorrencias/') ? 'Detalhe da ocorrencia' : 'Dashboard geral')
+  const title = titles[route] || (route.startsWith('/ocorrencias/') ? 'Detalhe da ocorrencia' : route.startsWith('/escolas/') ? 'Detalhe da escola' : 'Dashboard geral')
   return (
     <div className="min-h-screen bg-white">
       <Sidebar route={route} onNavigate={onNavigate} />
