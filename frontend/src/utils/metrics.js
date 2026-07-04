@@ -10,6 +10,12 @@ export function sortOcorrencias(lista) {
   })
 }
 
+export function diasEmAberto(dataEnvio) {
+  const dias = Math.floor((new Date() - new Date(`${dataEnvio}T00:00:00`)) / (1000 * 60 * 60 * 24))
+  if (dias <= 0) return 'Hoje'
+  return dias === 1 ? '1 dia' : `${dias} dias`
+}
+
 export function groupCount(items, key) {
   return items.reduce((acc, item) => ({ ...acc, [item[key]]: (acc[item[key]] || 0) + 1 }), {})
 }

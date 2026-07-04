@@ -8,6 +8,7 @@ import { Login } from './pages/Login.jsx'
 import { Mapa } from './pages/Mapa.jsx'
 import { Ocorrencias } from './pages/Ocorrencias.jsx'
 import { OcorrenciaDetalhe } from './pages/OcorrenciaDetalhe.jsx'
+import { EscolaDetalhe } from './pages/EscolaDetalhe.jsx'
 import { Categorias, Configuracoes, Escolas, Indicadores, Usuarios } from './pages/AdminPages.jsx'
 import { dashboardMetrics, groupCount } from './utils/metrics.js'
 
@@ -16,11 +17,20 @@ function normalizeRoute() {
   return hash || '/dashboard'
 }
 
+function parseRoute(route) {
+  const [pathname, search = ''] = route.split('?')
+  return {
+    pathname,
+    searchParams: new URLSearchParams(search),
+  }
+}
+
 export default function App() {
   const [route, setRoute] = useState(normalizeRoute)
   const [user, setUser] = useState(getStoredUser)
   const isExterno = user?.role === 'EXTERNO'
   const isDiretor = user?.role === 'DIRETOR'
+  const { pathname, searchParams } = parseRoute(route)
 
   useEffect(() => {
     const onHashChange = () => setRoute(normalizeRoute())
@@ -235,23 +245,13 @@ export default function App() {
 
   function renderPage() {
     if (route.startsWith('/ocorrencias/')) {
-      return <OcorrenciaDetalhe id={route.split('/').at(-1)} onNavigate={navigate} user={user} />
-    }
-
-    if (isExterno) {
-      return <Ocorrencias onNavigate={navigate} user={user} />
-    }
-
-    if (isDiretor) {
-      return route === '/ocorrencias'
-        ? <Ocorrencias onNavigate={navigate} user={user} />
-        : <Dashboard onNavigate={navigate} user={user} />
+      return <OcorrenciaDetalhe id={route.split('/').at(-1)} onNavigate={navigate} />
     }
 
     const pages = {
       '/dashboard': <Dashboard onNavigate={navigate} user={user} />,
       '/mapa': <Mapa onNavigate={navigate} />,
-      '/ocorrencias': <Ocorrencias onNavigate={navigate} user={user} />,
+      '/ocorrencias': <Ocorrencias onNavigate={navigate} />,
       '/escolas': <Escolas />,
       '/indicadores': <Indicadores />,
       '/usuarios': <Usuarios />,
@@ -259,7 +259,7 @@ export default function App() {
       '/configuracoes': <Configuracoes />,
     }
 
-    return pages[route] || pages['/dashboard']
+    return pages[pathname] || pages['/dashboard']
   }
 
   if (!user) {
@@ -268,7 +268,7 @@ export default function App() {
   }
 
   return (
-    <Layout route={route} onNavigate={navigate} onExport={exportDashboard} user={user} onLogout={handleLogout}>
+    <Layout route={route} onNavigate={navigate}>
       {renderPage()}
     </Layout>
   )

@@ -1,7 +1,18 @@
 import { useMemo, useState } from 'react'
-import { bairros, categorias, criticidadeValues, ocorrenciasAprovadas, statusValues } from '../data/mockData.js'
-import { sortOcorrencias } from '../utils/metrics.js'
-import { Badge, Card, FilterSelect } from '../components/ui.jsx'
+import { bairros, categorias, criticidadeValues, escolas, ocorrenciasAprovadas, statusValues } from '../data/mockData.js'
+import { diasEmAberto, sortOcorrencias } from '../utils/metrics.js'
+import { Badge, Card, FilterSelect, Modal } from '../components/ui.jsx'
+import { Pagination } from '../components/Pagination.jsx'
+
+const CAMPOS_VAZIOS = { escolaId: '', titulo: '', tipo: '', criticidade: '', localizacaoInterna: '', descricao: '', dataEnvio: new Date().toISOString().slice(0, 10) }
+const ITENS_POR_PAGINA = 10
+
+const COR_LINHA_CRITICIDADE = {
+  Critica: 'bg-red-500/15 hover:bg-red-500/25',
+  Alta: 'bg-orange-500/15 hover:bg-orange-500/25',
+  Media: 'bg-amber-400/15 hover:bg-amber-400/25',
+  Baixa: 'bg-emerald-500/15 hover:bg-emerald-500/25',
+}
 
 export function Ocorrencias({ onNavigate, user }) {
   const isExterno = user?.role === 'EXTERNO'
@@ -19,28 +30,25 @@ export function Ocorrencias({ onNavigate, user }) {
     if (filters.status && item.status !== filters.status) return false
     if (filters.criticidade && item.criticidade !== filters.criticidade) return false
     if (filters.tipo && item.tipo !== filters.tipo) return false
-    if (filters.tratativa === 'Pendente' && !item.tratativaPendente) return false
-    if (filters.tratativa === 'Sem pendencia' && item.tratativaPendente) return false
+    if (busca && !`${item.escola} ${item.titulo}`.toLowerCase().includes(busca.toLowerCase())) return false
     return true
-  }), [base, filters, isExterno, isDiretor])
+  }), [filters])
 
   return (
     <div className="space-y-5">
-      {!isExterno && (
-        <Card>
-          <div className={`grid gap-3 ${isDiretor ? 'md:grid-cols-4' : 'md:grid-cols-5'}`}>
-            {!isDiretor && <FilterSelect label="Bairro" value={filters.bairro} onChange={(v) => setFilter('bairro', v)} options={bairros} />}
-            <FilterSelect label="Status" value={filters.status} onChange={(v) => setFilter('status', v)} options={statusValues} />
-            <FilterSelect label="Criticidade" value={filters.criticidade} onChange={(v) => setFilter('criticidade', v)} options={criticidadeValues} />
-            <FilterSelect label="Tipo" value={filters.tipo} onChange={(v) => setFilter('tipo', v)} options={categorias} />
-            <FilterSelect label="Tratativa" value={filters.tratativa} onChange={(v) => setFilter('tratativa', v)} options={['Pendente', 'Sem pendencia']} />
-          </div>
-        </Card>
-      )}
+      <Card>
+        <div className="grid gap-3 md:grid-cols-5">
+          <FilterSelect label="Bairro" value={filters.bairro} onChange={(v) => setFilter('bairro', v)} options={bairros} />
+          <FilterSelect label="Status" value={filters.status} onChange={(v) => setFilter('status', v)} options={statusValues} />
+          <FilterSelect label="Criticidade" value={filters.criticidade} onChange={(v) => setFilter('criticidade', v)} options={criticidadeValues} />
+          <FilterSelect label="Tipo" value={filters.tipo} onChange={(v) => setFilter('tipo', v)} options={categorias} />
+          <FilterSelect label="Tratativa" value={filters.tratativa} onChange={(v) => setFilter('tratativa', v)} options={['Pendente', 'Sem pendencia']} />
+        </div>
+      </Card>
       <Card className="p-0">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1100px] border-collapse text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-800  text-slate-500">
+            <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-800 uppercase tracking-wide text-slate-500">
               <tr>
                 {['Escola', 'Bairro', 'Titulo', 'Tipo', 'Criticidade', 'Status', 'Localizacao', 'Envio', 'Aprovacao', 'Pendencias'].map((head) => <th key={head} className="px-4 py-3">{head}</th>)}
               </tr>
