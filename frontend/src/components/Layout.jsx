@@ -4,11 +4,11 @@ import { Sidebar } from './Sidebar.jsx'
 const titles = {
   '/dashboard': 'Dashboard Geral',
   '/mapa': 'Mapa de calor de ocorrencias por escola',
-  '/ocorrencias': 'Lista de ocorrências',
+  '/ocorrencias': 'Lista de ocorrencias',
   '/escolas': 'Escolas cadastradas',
-  '/usuarios': 'Gerenciamento de usuários',
+  '/usuarios': 'Gerenciamento de usuarios',
   '/categorias': 'Categorias globais',
-  '/configuracoes': 'Configurações',
+  '/configuracoes': 'Configuracoes',
 }
 
 const roleLabels = {
@@ -21,8 +21,11 @@ export function Layout({ route, onNavigate, onExport, user, onLogout, children }
   const [exportOpen, setExportOpen] = useState(false)
   const isExterno = user?.role === 'EXTERNO'
   const title = isExterno
-    ? (route.startsWith('/ocorrencias/') ? 'Detalhe da ocorrência' : 'Minhas ocorrências')
-    : titles[route] || (route.startsWith('/ocorrencias/') ? 'Detalhe da ocorrência' : 'Dashboard geral')
+    ? (route.startsWith('/ocorrencias/') ? 'Detalhe da ocorrencia' : 'Minhas ocorrencias')
+    : titles[route]
+      || (route.startsWith('/ocorrencias/') ? 'Detalhe da ocorrencia' : '')
+      || (route.startsWith('/escolas/') ? 'Detalhe da escola' : '')
+      || 'Dashboard geral'
 
   function handleExport(format) {
     onExport(format)
@@ -67,7 +70,7 @@ export function Layout({ route, onNavigate, onExport, user, onLogout, children }
               )}
               <div className="flex items-center gap-2 rounded-md bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700">
                 <span className="truncate">{user?.nome}</span>
-                <span className="text-slate-400">·</span>
+                <span className="text-slate-400">|</span>
                 <span className="text-slate-500">{roleLabels[user?.role] || user?.role}</span>
               </div>
               <button

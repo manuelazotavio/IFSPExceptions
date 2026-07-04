@@ -36,7 +36,9 @@ export function Sidebar({ route, onNavigate, user }) {
 
       <nav className="space-y-1" aria-label="Navegação principal">
         {visibleItems.map(([id, label, path, icon]) => {
-          const active = route === path || (path === '/ocorrencias' && route.startsWith('/ocorrencias/'))
+          const active = route === path
+            || (path === '/ocorrencias' && route.startsWith('/ocorrencias/'))
+            || (path === '/escolas' && route.startsWith('/escolas/'))
           return (
             <button
               key={id}

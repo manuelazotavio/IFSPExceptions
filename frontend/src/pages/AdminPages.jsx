@@ -1,11 +1,24 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { bairros, categorias, escolas, ocorrenciasAprovadas, usuarios } from '../data/mockData.js'
 import { dashboardMetrics, getSchoolStats, groupCount } from '../utils/metrics.js'
 import { Badge, BarList, Card, FilterSelect, MetricCard } from '../components/ui.jsx'
 
-export function Escolas({ onNavigate }) {
-  const [filters, setFilters] = useState({ busca: '', bairro: '', status: '' })
+export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
+  const escolaFiltrada = escolaIdFiltro ? escolas.find((item) => item.id === escolaIdFiltro) : null
+  const [filters, setFilters] = useState({
+    busca: escolaFiltrada?.nome || '',
+    bairro: escolaFiltrada?.bairro || '',
+    status: escolaFiltrada?.status || '',
+  })
   const setFilter = (key, value) => setFilters((prev) => ({ ...prev, [key]: value }))
+
+  useEffect(() => {
+    setFilters({
+      busca: escolaFiltrada?.nome || '',
+      bairro: escolaFiltrada?.bairro || '',
+      status: escolaFiltrada?.status || '',
+    })
+  }, [escolaFiltrada])
 
   const statusOptions = useMemo(() => [...new Set(escolas.map((escola) => escola.status))], [])
   const escolasFiltradas = useMemo(() => {
@@ -26,6 +39,24 @@ export function Escolas({ onNavigate }) {
 
   return (
     <div className="space-y-5">
+      {escolaFiltrada ? (
+        <Card className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-blue-600">Filtro aplicado pelo mapa</p>
+            <p className="text-sm font-semibold text-slate-700">
+              Exibindo a escola selecionada no mapa de calor.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => onNavigate('/escolas')}
+            className="rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            Limpar filtro
+          </button>
+        </Card>
+      ) : null}
+
       <Card>
         <div className="grid gap-3 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
           <label className="block">

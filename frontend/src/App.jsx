@@ -244,8 +244,12 @@ export default function App() {
   }
 
   function renderPage() {
-    if (route.startsWith('/ocorrencias/')) {
-      return <OcorrenciaDetalhe id={route.split('/').at(-1)} onNavigate={navigate} user={user} />
+    if (pathname.startsWith('/ocorrencias/')) {
+      return <OcorrenciaDetalhe id={pathname.split('/').at(-1)} onNavigate={navigate} user={user} />
+    }
+
+    if (pathname.startsWith('/escolas/')) {
+      return <EscolaDetalhe id={pathname.split('/').at(-1)} onNavigate={navigate} />
     }
 
     if (isExterno) {
@@ -262,7 +266,7 @@ export default function App() {
       '/dashboard': <Dashboard onNavigate={navigate} user={user} />,
       '/mapa': <Mapa onNavigate={navigate} />,
       '/ocorrencias': <Ocorrencias onNavigate={navigate} user={user} />,
-      '/escolas': <Escolas />,
+      '/escolas': <Escolas onNavigate={navigate} escolaIdFiltro={searchParams.get('escolaId') || ''} />,
       '/indicadores': <Indicadores />,
       '/usuarios': <Usuarios />,
       '/categorias': <Categorias />,
@@ -278,7 +282,7 @@ export default function App() {
   }
 
   return (
-    <Layout route={route} onNavigate={navigate} onExport={exportDashboard} user={user} onLogout={handleLogout}>
+    <Layout route={pathname} onNavigate={navigate} onExport={exportDashboard} user={user} onLogout={handleLogout}>
       {renderPage()}
     </Layout>
   )
