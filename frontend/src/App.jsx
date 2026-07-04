@@ -9,7 +9,8 @@ import { Mapa } from './pages/Mapa.jsx'
 import { Ocorrencias } from './pages/Ocorrencias.jsx'
 import { OcorrenciaDetalhe } from './pages/OcorrenciaDetalhe.jsx'
 import { EscolaDetalhe } from './pages/EscolaDetalhe.jsx'
-import { Categorias, Configuracoes, Escolas, Indicadores, Usuarios } from './pages/AdminPages.jsx'
+import { Escolas } from './pages/Escolas.jsx'
+import { Categorias, Configuracoes, Indicadores, Usuarios } from './pages/AdminPages.jsx'
 import { dashboardMetrics, groupCount } from './utils/metrics.js'
 
 function normalizeRoute() {

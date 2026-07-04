@@ -48,7 +48,7 @@ export function Modal({ open, onClose, title, children }) {
       <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-lg bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-800 text-slate-950">{title}</h3>
-          <button onClick={onClose} aria-label="Fechar" className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700">&times;</button>
+          <button onClick={onClose} aria-label="Fechar" className="cursor-pointer rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700">&times;</button>
         </div>
         {children}
       </div>

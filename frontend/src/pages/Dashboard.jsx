@@ -17,6 +17,84 @@ function ThickBarList({ data }) {
   )
 }
 
+const urgencyColumns = [
+  { key: 'Baixa', label: 'Baixa', color: 'bg-emerald-500', hover: 'hover:bg-emerald-600' },
+  { key: 'Media', label: 'Média', color: 'bg-amber-400', hover: 'hover:bg-amber-500' },
+  { key: 'Alta', label: 'Alta', color: 'bg-orange-500', hover: 'hover:bg-orange-600' },
+  { key: 'Critica', label: 'Crítica', color: 'bg-red-600', hover: 'hover:bg-red-700' },
+]
+
+function NeighborhoodColumnChart({ data }) {
+  const max = Math.max(...data.flatMap((item) => urgencyColumns.map((column) => item[column.key] || 0)), 1)
+  const chartMax = Math.max(Math.ceil(max / 2) * 2, 2)
+  const ticks = Array.from({ length: 5 }, (_, index) => Math.round((chartMax / 4) * (4 - index)))
+
+  return (
+    <div className="px-1 pb-1 pt-2">
+      <div className="grid grid-cols-[34px_1fr] gap-3">
+        <div className="flex h-64 flex-col justify-between pb-12 text-right text-xs font-semibold text-slate-400">
+          {ticks.map((tick) => (
+            <span key={tick}>{tick}</span>
+          ))}
+        </div>
+
+        <div className="relative h-64 border-b border-l border-slate-200">
+          <div className="absolute inset-x-0 top-0 flex h-52 flex-col justify-between">
+            {ticks.map((tick) => (
+              <div key={tick} className="border-t border-slate-100" />
+            ))}
+          </div>
+
+          <div className="relative flex h-full items-end gap-5 px-4">
+            {data.map((item) => {
+              return (
+                <div key={item.label} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2">
+                  <div className="flex h-48 w-full items-end justify-center gap-1.5">
+                    {urgencyColumns.map((column) => {
+                      const value = item[column.key] || 0
+                      const height = value ? Math.max((value / chartMax) * 100, 8) : 0
+
+                      return (
+                        <div key={column.key} className="relative flex h-full w-3 items-end justify-center sm:w-3.5">
+                          {value > 0 && (
+                            <strong
+                              className="absolute text-[10px] font-800 leading-none text-slate-600"
+                              style={{ bottom: `calc(${height}% + 4px)` }}
+                            >
+                              {value}
+                            </strong>
+                          )}
+                    <div
+                      className={`w-full rounded-t-sm shadow-sm transition ${column.color} ${column.hover}`}
+                      style={{ height: `${height}%` }}
+                      title={`${item.label} - ${column.label}: ${value} ocorrências`}
+                    />
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <span className="line-clamp-2 min-h-9 text-center text-[11px] font-semibold leading-tight text-slate-500">
+                    {item.label}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-xs font-semibold text-slate-500">
+        {urgencyColumns.map((column) => (
+          <span key={column.key} className="flex items-center gap-2">
+            <span className={`h-2.5 w-2.5 rounded-sm ${column.color}`} />
+            {column.label}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 const labelMap = {
   Centro: 'Centro',
   'Martim de Sa': 'Martim de Sá',
@@ -67,7 +145,14 @@ export function Dashboard({ onNavigate, user }) {
 
   const [chartEscolaId, setChartEscolaId] = useState('')
   const metrics = dashboardMetrics(escopo, isDiretor ? 1 : escolas.length)
-  const porBairro = Object.entries(groupCount(escopo, 'bairro')).map(([label, value]) => ({ label: formatLabel(label), value }))
+  const porBairro = Object.values(escopo.reduce((acc, item) => {
+    const bairro = item.bairro
+    if (!acc[bairro]) {
+      acc[bairro] = { label: formatLabel(bairro), Baixa: 0, Media: 0, Alta: 0, Critica: 0 }
+    }
+    acc[bairro][item.criticidade] += 1
+    return acc
+  }, {}))
   const porTipo = Object.entries(groupCount(escopo, 'tipo')).map(([label, value]) => ({ label: formatLabel(label), value }))
   const ocorrenciasDoChart = isDiretor
     ? escopo
@@ -130,7 +215,7 @@ export function Dashboard({ onNavigate, user }) {
       {!isDiretor && (
         <Card>
           <h2 className="mb-4 text-lg font-800 text-slate-950">Ocorrências por bairro</h2>
-          <ThickBarList data={porBairro} />
+          <NeighborhoodColumnChart data={porBairro} />
         </Card>
       )}
 

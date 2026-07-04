@@ -21,3 +21,7 @@ export function registro(payload) {
 export function listarEscolas() {
   return request('/escolas')
 }
+
+export function obterEscola(id, options = {}) {
+  return request(`/escolas/${id}`, options)
+}
