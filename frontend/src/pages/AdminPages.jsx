@@ -2,8 +2,66 @@ import { bairros, categorias, escolas, ocorrenciasAprovadas, usuarios } from '..
 import { dashboardMetrics, getSchoolStats, groupCount } from '../utils/metrics.js'
 import { Badge, BarList, Card, MetricCard } from '../components/ui.jsx'
 
-export function Escolas() {
-  return <Card className="p-0"><div className="overflow-x-auto"><table className="w-full min-w-[900px] text-sm"><thead className="bg-slate-50 text-left text-xs font-800 uppercase text-slate-500"><tr>{['Nome', 'Bairro', 'Endereco', 'Status', 'Ocorrencias', 'Criticas', 'Cadastro'].map((h) => <th key={h} className="px-4 py-3">{h}</th>)}</tr></thead><tbody>{escolas.map((escola) => { const stats = getSchoolStats(escola.id); return <tr key={escola.id} className="border-t border-slate-100"><td className="px-4 py-3 font-bold">{escola.nome}</td><td className="px-4 py-3">{escola.bairro}</td><td className="px-4 py-3">{escola.endereco}</td><td className="px-4 py-3"><Badge>{escola.status}</Badge></td><td className="px-4 py-3">{stats.total}</td><td className="px-4 py-3">{stats.criticas}</td><td className="px-4 py-3">{escola.dataCadastro}</td></tr> })}</tbody></table></div></Card>
+export function Escolas({ escolaIdFiltro = '', onNavigate }) {
+  const escolasFiltradas = escolaIdFiltro
+    ? escolas.filter((escola) => escola.id === escolaIdFiltro)
+    : escolas
+
+  return (
+    <div className="space-y-4">
+      {escolaIdFiltro ? (
+        <Card className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-blue-600">Filtro aplicado</p>
+            <p className="text-sm font-semibold text-slate-700">
+              Exibindo os dados cadastrais da escola selecionada no mapa.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => onNavigate?.('/escolas')}
+            className="rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            Limpar filtro
+          </button>
+        </Card>
+      ) : null}
+
+      <Card className="p-0">
+        <div className="overflow-x-auto">
+          {escolasFiltradas.length > 0 ? (
+            <table className="w-full min-w-[900px] text-sm">
+              <thead className="bg-slate-50 text-left text-xs font-800 uppercase text-slate-500">
+                <tr>
+                  {['Nome', 'Bairro', 'Endereco', 'Status', 'Ocorrencias', 'Criticas', 'Cadastro'].map((h) => <th key={h} className="px-4 py-3">{h}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {escolasFiltradas.map((escola) => {
+                  const stats = getSchoolStats(escola.id)
+                  return (
+                    <tr key={escola.id} className="border-t border-slate-100">
+                      <td className="px-4 py-3 font-bold">{escola.nome}</td>
+                      <td className="px-4 py-3">{escola.bairro}</td>
+                      <td className="px-4 py-3">{escola.endereco}</td>
+                      <td className="px-4 py-3"><Badge>{escola.status}</Badge></td>
+                      <td className="px-4 py-3">{stats.total}</td>
+                      <td className="px-4 py-3">{stats.criticas}</td>
+                      <td className="px-4 py-3">{escola.dataCadastro}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          ) : (
+            <div className="p-5 text-sm font-semibold text-slate-500">
+              Nenhuma escola encontrada para o filtro informado.
+            </div>
+          )}
+        </div>
+      </Card>
+    </div>
+  )
 }
 
 export function Indicadores() {

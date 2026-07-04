@@ -2,7 +2,7 @@ import { Sidebar } from './Sidebar.jsx'
 
 const titles = {
   '/dashboard': 'Dashboard geral',
-  '/mapa': 'Mapa das escolas',
+  '/mapa': 'Mapa de calor de ocorrencias por escola',
   '/ocorrencias': 'Lista de ocorrencias',
   '/escolas': 'Escolas cadastradas',
   '/indicadores': 'Indicadores gerais',
