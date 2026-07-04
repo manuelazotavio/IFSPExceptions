@@ -63,6 +63,7 @@ export const ocorrencias = base.map(([id, escolaId, titulo, tipo, criticidade, s
 
   return {
     id,
+    protocolo: `2026-${String(index + 1).padStart(4, '0')}`,
     escolaId,
     escola: escola.nome,
     bairro: escola.bairro,

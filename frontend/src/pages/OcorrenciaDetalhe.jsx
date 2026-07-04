@@ -69,6 +69,7 @@ export function OcorrenciaDetalhe({ id, onNavigate }) {
         <div className="space-y-5 xl:overflow-y-auto xl:pr-1">
 
           <Card>
+            <p className="mb-1 text-xs font-bold uppercase tracking-wide text-blue-600">Protocolo {ocorrencia.protocolo}</p>
             <p className="mb-3 text-base font-800 text-slate-800">{ocorrencia.escola} - {ocorrencia.bairro}</p>
             <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
               <div className="flex-1">
