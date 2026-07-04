@@ -29,7 +29,7 @@ export function Ocorrencias({ onNavigate }) {
     if (filters.status && item.status !== filters.status) return false
     if (filters.criticidade && item.criticidade !== filters.criticidade) return false
     if (filters.tipo && item.tipo !== filters.tipo) return false
-    if (busca && !`${item.escola} ${item.titulo}`.toLowerCase().includes(busca.toLowerCase())) return false
+    if (busca && !`${item.protocolo} ${item.escola} ${item.titulo}`.toLowerCase().includes(busca.toLowerCase())) return false
     return true
   }), [filters, ocorrencias, busca])
 
@@ -43,6 +43,7 @@ export function Ocorrencias({ onNavigate }) {
     const escola = escolas.find((item) => item.id === novaOcorrencia.escolaId)
     const ocorrencia = {
       id: `occ-${Date.now()}`,
+      protocolo: `2026-${String(ocorrencias.length + 1).padStart(4, '0')}`,
       escolaId: escola.id,
       escola: escola.nome,
       bairro: escola.bairro,
@@ -61,7 +62,6 @@ export function Ocorrencias({ onNavigate }) {
       fotos: [],
       interacoes: [{ origem: 'sistema', autor: 'Sistema', data: novaOcorrencia.dataEnvio, mensagem: 'Ocorrencia aberta pela escola.' }],
     }
-    // Front-only: sem backend ainda, guardamos no array compartilhado para a tela de detalhe enxergar o item.
     ocorrenciasAprovadas.push(ocorrencia)
     setOcorrencias((prev) => [...prev, ocorrencia])
     setNovaOcorrencia(CAMPOS_VAZIOS)
@@ -69,8 +69,8 @@ export function Ocorrencias({ onNavigate }) {
   }
 
   const exportarCsv = () => {
-    const cabecalho = ['Escola', 'Bairro', 'Tipo', 'Criticidade', 'Status', 'Localizacao', 'Envio']
-    const linhas = lista.map((item) => [item.escola, item.bairro, item.tipo, item.criticidade, item.status, item.localizacaoInterna, item.dataEnvio])
+    const cabecalho = ['Protocolo', 'Escola', 'Bairro', 'Tipo', 'Criticidade', 'Status', 'Localizacao', 'Envio']
+    const linhas = lista.map((item) => [item.protocolo, item.escola, item.bairro, item.tipo, item.criticidade, item.status, item.localizacaoInterna, item.dataEnvio])
     const csv = [cabecalho, ...linhas].map((linha) => linha.map((valor) => `"${String(valor).replace(/"/g, '""')}"`).join(',')).join('\n')
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }))
     const link = document.createElement('a')
@@ -124,7 +124,7 @@ export function Ocorrencias({ onNavigate }) {
         <table className="w-full min-w-[1100px] border-collapse rounded-2 text-sm">
           <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-extrabold tracking-wide">
             <tr className="divide-x divide-slate-200">
-              {['Escola', 'Bairro', 'Tipo', 'Criticidade', 'Status', 'Localizacao', 'Dias em aberto'].map((head) => (
+              {['Protocolo', 'Escola', 'Bairro', 'Tipo', 'Criticidade', 'Status', 'Localizacao', 'Dias em aberto'].map((head) => (
                 <th key={head} className="px-4 py-3">
                   {head}
                 </th>
@@ -138,6 +138,7 @@ export function Ocorrencias({ onNavigate }) {
                 onClick={() => onNavigate(`/ocorrencias/${item.id}`)}
                 className={`cursor-pointer divide-x divide-slate-200 border-x border-slate-200 ${COR_LINHA_CRITICIDADE[item.criticidade] || 'hover:bg-blue-50/40'}`}
               >
+                <td className="px-4 py-3 font-bold text-blue-700">{item.protocolo}</td>
                 <td className="px-4 py-3 font-bold text-slate-800">{item.escola}</td>
                 <td className="px-4 py-3 text-slate-600">{item.bairro}</td>
                 <td className="px-4 py-3 text-slate-600">{item.tipo}</td>

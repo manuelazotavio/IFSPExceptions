@@ -5,7 +5,7 @@ const items = [
   ['mapa', 'Mapa de calor', '/mapa', 'map'],
   ['ocorrencias', 'Lista de ocorrências', '/ocorrencias', 'alert'],
   ['escolas', 'Escolas cadastradas', '/escolas', 'school'],
-  ['usuarios', 'Gerenciamento de usuários', '/usuarios', 'users'],
+  ['usuarios', 'Usuários', '/usuarios', 'users'],
   ['categorias', 'Categorias globais', '/categorias', 'tag'],
   ['configuracoes', 'Configurações', '/configuracoes', 'settings'],
 ]
@@ -29,8 +29,7 @@ export function Sidebar({ route, onNavigate, user }) {
           <Icon name="school" className="h-5 w-5" />
         </div>
         <div>
-          <strong className="block text-sm font-800 text-slate-950">EduGestao</strong>
-          <span className="text-xs font-medium text-slate-500">Rede Municipal</span>
+          <strong className="block text-sm font-800 text-slate-950">Escola em Dia</strong>
         </div>
       </div>
 

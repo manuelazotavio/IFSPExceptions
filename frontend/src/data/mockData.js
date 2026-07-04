@@ -63,6 +63,7 @@ export const ocorrencias = base.map(([id, escolaId, titulo, tipo, criticidade, s
 
   return {
     id,
+    protocolo: `2026-${String(index + 1).padStart(4, '0')}`,
     escolaId,
     escola: escola.nome,
     bairro: escola.bairro,
@@ -137,8 +138,9 @@ export function getCategoriaDescricao(categoria) {
 export const statusValues = ['Aberta', 'Em analise', 'Em andamento', 'Aguardando orcamento', 'Aguardando visita tecnica', 'Resolvida']
 export const criticidadeValues = ['Baixa', 'Media', 'Alta', 'Critica']
 export const usuarios = [
-  { nome: 'Ana Paula Ribeiro', email: 'ana.ribeiro@seduc.gov.br', perfil: 'Administrador SEDUC', status: 'Ativo', ultimoAcesso: 'Hoje, 09:18' },
-  { nome: 'Carlos Henrique', email: 'carlos.henrique@seduc.gov.br', perfil: 'Administrador SEDUC', status: 'Ativo', ultimoAcesso: 'Ontem, 17:42' },
-  { nome: 'Marina Souza', email: 'marina.souza@seduc.gov.br', perfil: 'Administrador SEDUC', status: 'Ativo', ultimoAcesso: '02/07/2026' },
-  { nome: 'Rafael Lima', email: 'rafael.lima@seduc.gov.br', perfil: 'Administrador SEDUC', status: 'Inativo', ultimoAcesso: '18/06/2026' },
+  { nome: 'Ana Paula Ribeiro', email: 'ana.ribeiro@seduc.gov.br', role: 'SEDUC', status: 'Ativo', ultimoAcesso: 'Hoje, 09:18' },
+  { nome: 'Carlos Henrique', email: 'carlos.henrique@seduc.gov.br', role: 'SEDUC', status: 'Ativo', ultimoAcesso: 'Ontem, 17:42' },
+  { nome: 'Marina Souza', email: 'marina.souza@escola.gov.br', role: 'DIRETOR', status: 'Ativo', ultimoAcesso: '02/07/2026' },
+  { nome: 'Rafael Lima', email: 'rafael.lima@escola.gov.br', role: 'DIRETOR', status: 'Inativo', ultimoAcesso: '18/06/2026' },
+  { nome: 'Julia Ferreira', email: 'julia.ferreira@escola.gov.br', role: 'EXTERNO', status: 'Ativo', ultimoAcesso: '01/07/2026' },
 ]

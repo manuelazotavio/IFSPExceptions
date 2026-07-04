@@ -30,8 +30,7 @@ export function Login({ onLogin, onNavigate }) {
             <Icon name="school" className="h-5 w-5" />
           </div>
           <div>
-            <strong className="block text-sm font-800 text-slate-950">EduGestao</strong>
-            <span className="text-xs font-medium text-slate-500">Rede Municipal</span>
+            <strong className="block text-sm font-800 text-slate-950">Escola em Dia</strong>
           </div>
         </div>
 
