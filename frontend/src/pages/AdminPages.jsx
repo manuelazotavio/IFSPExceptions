@@ -123,8 +123,53 @@ export function Indicadores() {
   return <div className="space-y-5"><div className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">{Object.entries(metrics).map(([label, value]) => <MetricCard key={label} label={label} value={value} />)}</div><div className="grid gap-5 xl:grid-cols-2"><Card><h2 className="mb-4 text-lg font-800">Por bairro</h2><BarList data={Object.entries(groupCount(ocorrenciasAprovadas, 'bairro')).map(([label, value]) => ({ label, value }))} /></Card><Card><h2 className="mb-4 text-lg font-800">Por criticidade</h2><BarList data={Object.entries(groupCount(ocorrenciasAprovadas, 'criticidade')).map(([label, value]) => ({ label, value }))} /></Card></div></div>
 }
 
+const PERMISSOES = [
+  { value: 'SEDUC', label: 'SEDUC' },
+  { value: 'DIRETOR', label: 'Diretor(a)' },
+  { value: 'EXTERNO', label: 'Externo' },
+]
+
 export function Usuarios() {
-  return <Card className="p-0"><table className="w-full text-sm"><thead className="bg-slate-50 text-left text-xs font-800 uppercase text-slate-500"><tr>{['Nome', 'Email', 'Perfil', 'Status', 'Ultimo acesso'].map((h) => <th key={h} className="px-4 py-3">{h}</th>)}</tr></thead><tbody>{usuarios.map((user) => <tr key={user.email} className="border-t border-slate-100"><td className="px-4 py-3 font-bold">{user.nome}</td><td className="px-4 py-3">{user.email}</td><td className="px-4 py-3">{user.perfil}</td><td className="px-4 py-3"><Badge>{user.status}</Badge></td><td className="px-4 py-3">{user.ultimoAcesso}</td></tr>)}</tbody></table></Card>
+  const [lista, setLista] = useState(usuarios)
+
+  function alterarPermissao(email, role) {
+    setLista((prev) => prev.map((user) => (user.email === email ? { ...user, role } : user)))
+  }
+
+  return (
+    <div className="overflow-x-auto w-full overflow-x-auto border border-slate-200 rounded-xl shadow-sm">
+      <table className="w-full min-w-[800px] border-collapse rounded-2 text-sm">
+        <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-extrabold tracking-wide">
+          <tr className="divide-x divide-slate-200">
+            {['Nome', 'Email', 'Permissão', 'Status', 'Último acesso'].map((head) => (
+              <th key={head} className="px-4 py-3">
+                {head}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-200">
+          {lista.map((user) => (
+            <tr key={user.email} className="divide-x divide-slate-200 border-x border-slate-200">
+              <td className="px-4 py-3 font-bold text-slate-800">{user.nome}</td>
+              <td className="px-4 py-3 text-slate-600">{user.email}</td>
+              <td className="px-4 py-3">
+                <select
+                  value={user.role}
+                  onChange={(event) => alterarPermissao(user.email, event.target.value)}
+                  className="h-10 cursor-pointer rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-500"
+                >
+                  {PERMISSOES.map((opcao) => <option key={opcao.value} value={opcao.value}>{opcao.label}</option>)}
+                </select>
+              </td>
+              <td className="px-4 py-3"><Badge>{user.status}</Badge></td>
+              <td className="px-4 py-3 text-slate-600">{user.ultimoAcesso}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
 }
 
 export function Categorias() {
