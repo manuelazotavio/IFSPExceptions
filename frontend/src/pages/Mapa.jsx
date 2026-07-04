@@ -96,7 +96,7 @@ function SchoolSidePanel({ escola, onNavigate }) {
         ))}
       </div>
       <div className="mt-5 grid gap-2">
-        <button onClick={() => onNavigate('/escolas')} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-bold text-white">Acessar detalhes da escola</button>
+        <button onClick={() => onNavigate(`/escolas/${escola.id}`)} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-bold text-white">Acessar detalhes da escola</button>
         <button onClick={() => onNavigate('/ocorrencias')} className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">Ver ocorrencias da escola</button>
       </div>
     </Card>

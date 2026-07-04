@@ -4,6 +4,7 @@ import { Dashboard } from './pages/Dashboard.jsx'
 import { Mapa } from './pages/Mapa.jsx'
 import { Ocorrencias } from './pages/Ocorrencias.jsx'
 import { OcorrenciaDetalhe } from './pages/OcorrenciaDetalhe.jsx'
+import { EscolaDetalhe } from './pages/EscolaDetalhe.jsx'
 import { Categorias, Configuracoes, Escolas, Indicadores, Usuarios } from './pages/AdminPages.jsx'
 
 function normalizeRoute() {
@@ -30,11 +31,15 @@ export default function App() {
       return <OcorrenciaDetalhe id={route.split('/').at(-1)} onNavigate={navigate} />
     }
 
+    if (route.startsWith('/escolas/')) {
+      return <EscolaDetalhe id={route.split('/').at(-1)} onNavigate={navigate} />
+    }
+
     const pages = {
       '/dashboard': <Dashboard onNavigate={navigate} />,
       '/mapa': <Mapa onNavigate={navigate} />,
       '/ocorrencias': <Ocorrencias onNavigate={navigate} />,
-      '/escolas': <Escolas />,
+      '/escolas': <Escolas onNavigate={navigate} />,
       '/indicadores': <Indicadores />,
       '/usuarios': <Usuarios />,
       '/categorias': <Categorias />,
