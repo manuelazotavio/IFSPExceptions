@@ -22,12 +22,37 @@ export function OcorrenciaDetalhe({ id, onNavigate }) {
         <button onClick={() => onNavigate('/mapa')} className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold">Voltar para mapa</button>
         <button onClick={() => setStatus('Resolvida')} className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-bold text-white">Marcar como resolvida</button>
       </div>
-      <div className="grid gap-5 xl:grid-cols-[1.2fr_.8fr]">
-        <Card>
-          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 className="text-2xl font-800 text-slate-950">{ocorrencia.titulo}</h2>
-              <p className="mt-1 text-slate-500">{ocorrencia.escola} - {ocorrencia.bairro}</p>
+      <div className="grid gap-5 xl:grid-cols-[7fr_3fr] xl:flex-1 xl:items-stretch xl:overflow-hidden">
+        <div className="space-y-5 xl:overflow-y-auto xl:pr-1">
+
+          <Card>
+            <p className="mb-3 text-base font-800 text-slate-800">{ocorrencia.escola} - {ocorrencia.bairro}</p>
+            <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+              <div className="flex-1">
+                <input
+                  value={form.titulo}
+                  onChange={(e) => updateForm('titulo', e.target.value)}
+                  className="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-extrabold text-slate-950 outline-none transition-colors hover:border-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                />
+              
+              </div>
+
+              <div className="flex gap-2">
+                <select
+                  value={criticidade}
+                  onChange={(e) => setCriticidade(e.target.value)}
+                  className="h-9 rounded-md border border-slate-300 bg-white px-3 text-sm font-bold text-slate-700 outline-none transition-colors hover:border-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                >
+                  {criticidadeValues.map((item) => <option key={item}>{item}</option>)}
+                </select>
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  className="h-9 rounded-md border border-slate-300 bg-white px-3 text-sm font-bold text-slate-700 outline-none transition-colors hover:border-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                >
+                  {statusValues.map((item) => <option key={item}>{item}</option>)}
+                </select>
+              </div>
             </div>
             <div className="flex gap-2"><Badge>{criticidade}</Badge><Badge>{status}</Badge></div>
           </div>
