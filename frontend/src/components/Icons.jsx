@@ -8,6 +8,7 @@ export function Icon({ name, className = 'h-4 w-4' }) {
     users: 'M16 20v-2a4 4 0 0 0-8 0v2M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm6 8v-2a3 3 0 0 0-2-2.8',
     tag: 'M20 13 11 22l-9-9V4h9l9 9Zm-13-5h.01',
     settings: 'M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Zm0-13v3m0 13v3M4.2 4.2l2.1 2.1m11.4 11.4 2.1 2.1M1 12h3m16 0h3',
+    plus: 'M12 5v14M5 12h14',
   }
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -86,7 +86,54 @@ export const ocorrencias = base.map(([id, escolaId, titulo, tipo, criticidade, s
 })
 
 export const ocorrenciasAprovadas = ocorrencias.filter((item) => item.aprovadaPelaEscola)
-export const categorias = ['Eletrica', 'Hidraulica', 'Estrutural', 'Seguranca', 'Acessibilidade', 'Equipamento', 'Mobiliario', 'Limpeza', 'Tecnologia', 'Outros']
+const CATEGORIAS_STORAGE_KEY = 'ifsp-categorias-globais'
+const CATEGORIAS_DESCRICOES_STORAGE_KEY = 'ifsp-categorias-descricoes'
+const DESCRICAO_CATEGORIA_PADRAO = 'Categoria global disponivel para ocorrencias aprovadas no fluxo da SEDUC.'
+
+function loadCategorias() {
+  const baseCategorias = ['Eletrica', 'Hidraulica', 'Estrutural', 'Seguranca', 'Acessibilidade', 'Equipamento', 'Mobiliario', 'Limpeza', 'Tecnologia', 'Outros']
+  if (typeof window === 'undefined') return baseCategorias
+
+  try {
+    const salvas = JSON.parse(window.localStorage.getItem(CATEGORIAS_STORAGE_KEY) || '[]')
+    if (!Array.isArray(salvas)) return baseCategorias
+    return [...new Set([...baseCategorias, ...salvas.filter(Boolean)])]
+  } catch {
+    return baseCategorias
+  }
+}
+
+export const categorias = loadCategorias()
+export const categoriasDescricoes = loadCategoriasDescricoes()
+
+function loadCategoriasDescricoes() {
+  if (typeof window === 'undefined') return {}
+
+  try {
+    const salvas = JSON.parse(window.localStorage.getItem(CATEGORIAS_DESCRICOES_STORAGE_KEY) || '{}')
+    if (!salvas || Array.isArray(salvas) || typeof salvas !== 'object') return {}
+    return salvas
+  } catch {
+    return {}
+  }
+}
+
+export function salvarCategoriasGlobais(lista, descricoes = categoriasDescricoes) {
+  categorias.splice(0, categorias.length, ...lista)
+  Object.keys(categoriasDescricoes).forEach((key) => delete categoriasDescricoes[key])
+  Object.entries(descricoes).forEach(([key, value]) => {
+    if (value) categoriasDescricoes[key] = value
+  })
+
+  if (typeof window !== 'undefined') {
+    window.localStorage.setItem(CATEGORIAS_STORAGE_KEY, JSON.stringify(lista))
+    window.localStorage.setItem(CATEGORIAS_DESCRICOES_STORAGE_KEY, JSON.stringify(categoriasDescricoes))
+  }
+}
+
+export function getCategoriaDescricao(categoria) {
+  return categoriasDescricoes[categoria] || DESCRICAO_CATEGORIA_PADRAO
+}
 export const statusValues = ['Aberta', 'Em analise', 'Em andamento', 'Aguardando orcamento', 'Aguardando visita tecnica', 'Resolvida']
 export const criticidadeValues = ['Baixa', 'Media', 'Alta', 'Critica']
 export const usuarios = [
