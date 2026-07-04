@@ -30,21 +30,24 @@ export function Ocorrencias({ onNavigate, user }) {
     if (filters.status && item.status !== filters.status) return false
     if (filters.criticidade && item.criticidade !== filters.criticidade) return false
     if (filters.tipo && item.tipo !== filters.tipo) return false
-    if (busca && !`${item.escola} ${item.titulo}`.toLowerCase().includes(busca.toLowerCase())) return false
+    if (filters.tratativa === 'Pendente' && !item.tratativaPendente) return false
+    if (filters.tratativa === 'Sem pendencia' && item.tratativaPendente) return false
     return true
-  }), [filters])
+  }), [base, filters, isExterno, isDiretor])
 
   return (
     <div className="space-y-5">
-      <Card>
-        <div className="grid gap-3 md:grid-cols-5">
-          <FilterSelect label="Bairro" value={filters.bairro} onChange={(v) => setFilter('bairro', v)} options={bairros} />
-          <FilterSelect label="Status" value={filters.status} onChange={(v) => setFilter('status', v)} options={statusValues} />
-          <FilterSelect label="Criticidade" value={filters.criticidade} onChange={(v) => setFilter('criticidade', v)} options={criticidadeValues} />
-          <FilterSelect label="Tipo" value={filters.tipo} onChange={(v) => setFilter('tipo', v)} options={categorias} />
-          <FilterSelect label="Tratativa" value={filters.tratativa} onChange={(v) => setFilter('tratativa', v)} options={['Pendente', 'Sem pendencia']} />
-        </div>
-      </Card>
+      {!isExterno && (
+        <Card>
+          <div className={`grid gap-3 ${isDiretor ? 'md:grid-cols-4' : 'md:grid-cols-5'}`}>
+            {!isDiretor && <FilterSelect label="Bairro" value={filters.bairro} onChange={(v) => setFilter('bairro', v)} options={bairros} />}
+            <FilterSelect label="Status" value={filters.status} onChange={(v) => setFilter('status', v)} options={statusValues} />
+            <FilterSelect label="Criticidade" value={filters.criticidade} onChange={(v) => setFilter('criticidade', v)} options={criticidadeValues} />
+            <FilterSelect label="Tipo" value={filters.tipo} onChange={(v) => setFilter('tipo', v)} options={categorias} />
+            <FilterSelect label="Tratativa" value={filters.tratativa} onChange={(v) => setFilter('tratativa', v)} options={['Pendente', 'Sem pendencia']} />
+          </div>
+        </Card>
+      )}
       <Card className="p-0">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1100px] border-collapse text-sm">

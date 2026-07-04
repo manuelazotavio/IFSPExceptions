@@ -17,8 +17,18 @@ const roleLabels = {
   EXTERNO: 'Externo',
 }
 
-export function Layout({ route, onNavigate, children }) {
-  const title = titles[route] || (route.startsWith('/ocorrencias/') ? 'Detalhe da ocorrencia' : 'Dashboard geral')
+export function Layout({ route, onNavigate, onExport, user, onLogout, children }) {
+  const [exportOpen, setExportOpen] = useState(false)
+  const isExterno = user?.role === 'EXTERNO'
+  const title = isExterno
+    ? (route.startsWith('/ocorrencias/') ? 'Detalhe da ocorrência' : 'Minhas ocorrências')
+    : titles[route] || (route.startsWith('/ocorrencias/') ? 'Detalhe da ocorrência' : 'Dashboard geral')
+
+  function handleExport(format) {
+    onExport(format)
+    setExportOpen(false)
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <Sidebar route={route} onNavigate={onNavigate} user={user} />
@@ -30,8 +40,43 @@ export function Layout({ route, onNavigate, children }) {
               <h1 className="text-2xl font-800 text-slate-950">{title}</h1>
             </div>
             <div className="flex items-center gap-3">
-              <button className="rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Exportar</button>
-              <div className="rounded-md bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700">Admin SEDUC</div>
+              {!isExterno && (
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setExportOpen((current) => !current)}
+                    className="cursor-pointer rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    Exportar
+                  </button>
+                  {exportOpen && (
+                    <div className="absolute right-0 z-30 mt-2 w-40 rounded-md border border-slate-200 bg-white p-1 shadow-lg">
+                      {['csv', 'pdf', 'xlsx'].map((format) => (
+                        <button
+                          key={format}
+                          type="button"
+                          onClick={() => handleExport(format)}
+                          className="block w-full cursor-pointer rounded px-3 py-2 text-left text-sm font-semibold uppercase text-slate-700 hover:bg-blue-50 hover:text-blue-700"
+                        >
+                          {format}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              <div className="flex items-center gap-2 rounded-md bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700">
+                <span className="truncate">{user?.nome}</span>
+                <span className="text-slate-400">·</span>
+                <span className="text-slate-500">{roleLabels[user?.role] || user?.role}</span>
+              </div>
+              <button
+                type="button"
+                onClick={onLogout}
+                className="cursor-pointer rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Sair
+              </button>
             </div>
           </div>
         </header>

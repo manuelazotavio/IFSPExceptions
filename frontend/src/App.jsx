@@ -245,13 +245,23 @@ export default function App() {
 
   function renderPage() {
     if (route.startsWith('/ocorrencias/')) {
-      return <OcorrenciaDetalhe id={route.split('/').at(-1)} onNavigate={navigate} />
+      return <OcorrenciaDetalhe id={route.split('/').at(-1)} onNavigate={navigate} user={user} />
+    }
+
+    if (isExterno) {
+      return <Ocorrencias onNavigate={navigate} user={user} />
+    }
+
+    if (isDiretor) {
+      return pathname === '/ocorrencias'
+        ? <Ocorrencias onNavigate={navigate} user={user} />
+        : <Dashboard onNavigate={navigate} user={user} />
     }
 
     const pages = {
       '/dashboard': <Dashboard onNavigate={navigate} user={user} />,
       '/mapa': <Mapa onNavigate={navigate} />,
-      '/ocorrencias': <Ocorrencias onNavigate={navigate} />,
+      '/ocorrencias': <Ocorrencias onNavigate={navigate} user={user} />,
       '/escolas': <Escolas />,
       '/indicadores': <Indicadores />,
       '/usuarios': <Usuarios />,
@@ -268,7 +278,7 @@ export default function App() {
   }
 
   return (
-    <Layout route={route} onNavigate={navigate}>
+    <Layout route={route} onNavigate={navigate} onExport={exportDashboard} user={user} onLogout={handleLogout}>
       {renderPage()}
     </Layout>
   )
