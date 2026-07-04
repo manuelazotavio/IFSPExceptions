@@ -8,7 +8,7 @@ const titles = {
   '/mapa': 'Mapa de calor de ocorrencias por escola',
   '/ocorrencias': 'Lista de ocorrencias',
   '/escolas': 'Escolas cadastradas',
-  '/usuarios': 'Gerenciamento de usuarios',
+  '/usuarios': 'Usuários',
   '/categorias': 'Categorias globais',
   '/configuracoes': 'Configuracoes',
 }
@@ -39,14 +39,13 @@ export function Layout({ route, onNavigate, onExport, user, onLogout, children }
     <div className="min-h-screen bg-white">
       <Sidebar route={route} onNavigate={onNavigate} user={user} />
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 px-5 py-4 backdrop-blur lg:px-8">
+        <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 px-5 py-4 backdrop-blur lg:px-8">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wide text-blue-600">SEDUC Caraguatatuba</p>
               <h1 className="text-2xl font-800 text-slate-950">{title}</h1>
             </div>
             <div className="flex items-center gap-3">
-              {!isExterno && (
+              {!isExterno && route === '/dashboard' && (
                 <div className="relative">
                   <button
                     type="button"
