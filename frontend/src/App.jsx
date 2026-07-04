@@ -12,8 +12,17 @@ function normalizeRoute() {
   return hash || '/dashboard'
 }
 
+function parseRoute(route) {
+  const [pathname, search = ''] = route.split('?')
+  return {
+    pathname,
+    searchParams: new URLSearchParams(search),
+  }
+}
+
 export default function App() {
   const [route, setRoute] = useState(normalizeRoute)
+  const { pathname, searchParams } = parseRoute(route)
 
   useEffect(() => {
     const onHashChange = () => setRoute(normalizeRoute())
@@ -27,8 +36,8 @@ export default function App() {
   }
 
   function renderPage() {
-    if (route.startsWith('/ocorrencias/')) {
-      return <OcorrenciaDetalhe id={route.split('/').at(-1)} onNavigate={navigate} />
+    if (pathname.startsWith('/ocorrencias/')) {
+      return <OcorrenciaDetalhe id={pathname.split('/').at(-1)} onNavigate={navigate} />
     }
 
     if (route.startsWith('/escolas/')) {
@@ -46,11 +55,11 @@ export default function App() {
       '/configuracoes': <Configuracoes />,
     }
 
-    return pages[route] || pages['/dashboard']
+    return pages[pathname] || pages['/dashboard']
   }
 
   return (
-    <Layout route={route} onNavigate={navigate}>
+    <Layout route={pathname} onNavigate={navigate}>
       {renderPage()}
     </Layout>
   )
