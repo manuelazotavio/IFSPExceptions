@@ -3,7 +3,7 @@ import { EscolaModel } from '../models/EscolaModel.js'
 import { UserModel } from '../models/UserModel.js'
 import { AppError } from '../utils/AppError.js'
 
-const REGISTRO_ROLES = ['DIRETOR', 'PROFESSOR', 'ALUNO']
+const REGISTRO_ROLES = ['DIRETOR', 'EXTERNO']
 
 function sanitizeUser(user) {
   const { senha, ...rest } = user

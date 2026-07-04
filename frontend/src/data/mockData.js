@@ -58,6 +58,7 @@ export const ocorrencias = base.map(([id, escolaId, titulo, tipo, criticidade, s
     ultimaAtualizacao: `2026-05-${String(15 + (index % 8)).padStart(2, '0')}`,
     dataResolucao: status === 'Resolvida' ? '2026-05-18' : '',
     aprovadaPelaEscola,
+    criadoPorEmail: index % 4 === 0 ? 'externo@escola.gov.br' : `externo.${escolaId}@escola.gov.br`,
     chatPendente: index % 3 === 0,
     tratativaPendente: index % 4 === 0,
     fotos: ['Foto da area', 'Detalhe do problema', 'Contexto da sala'],

@@ -40,8 +40,7 @@ async function main() {
   const usuarios = [
     { email: 'seduc@escola.gov.br', nome: 'Administrador SEDUC', role: 'SEDUC', escolaId: null },
     { email: 'diretor@escola.gov.br', nome: 'Diretora Alberto Souza', role: 'DIRETOR', escolaId: 'esc-001' },
-    { email: 'professor@escola.gov.br', nome: 'Professor Alberto Souza', role: 'PROFESSOR', escolaId: 'esc-001' },
-    { email: 'aluno@escola.gov.br', nome: 'Aluno Alberto Souza', role: 'ALUNO', escolaId: 'esc-001' },
+    { email: 'externo@escola.gov.br', nome: 'Usuario Externo', role: 'EXTERNO', escolaId: 'esc-001' },
   ]
 
   for (const usuario of usuarios) {

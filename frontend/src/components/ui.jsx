@@ -44,7 +44,7 @@ export function Badge({ children, type = 'status' }) {
 export function FilterSelect({ label, value, onChange, options }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">{label}</span>
+      <span className="mb-1 block text-xs font-bold  text-slate-500">{label}</span>
       <select value={value} onChange={(e) => onChange(e.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-500">
         <option value="">Todos</option>
         {options.map((option) => <option key={option} value={option}>{option}</option>)}

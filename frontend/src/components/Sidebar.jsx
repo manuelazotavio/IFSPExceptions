@@ -10,7 +10,18 @@ const items = [
   ['configuracoes', 'Configurações', '/configuracoes', 'settings'],
 ]
 
-export function Sidebar({ route, onNavigate }) {
+export function Sidebar({ route, onNavigate, user }) {
+  const isExterno = user?.role === 'EXTERNO'
+  const isDiretor = user?.role === 'DIRETOR'
+  const visibleItems = isExterno
+    ? [['ocorrencias', 'Minhas ocorrências', '/ocorrencias', 'alert']]
+    : isDiretor
+      ? [
+          ['dashboard', 'Dashboard da escola', '/dashboard', 'dashboard'],
+          ['ocorrencias', 'Ocorrências da escola', '/ocorrencias', 'alert'],
+        ]
+      : items
+
   return (
     <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 border-r border-slate-200 bg-white px-5 py-6 lg:block">
       <div className="mb-7 flex items-center gap-3 px-2">
@@ -24,7 +35,7 @@ export function Sidebar({ route, onNavigate }) {
       </div>
 
       <nav className="space-y-1" aria-label="Navegação principal">
-        {items.map(([id, label, path, icon]) => {
+        {visibleItems.map(([id, label, path, icon]) => {
           const active = route === path || (path === '/ocorrencias' && route.startsWith('/ocorrencias/'))
           return (
             <button

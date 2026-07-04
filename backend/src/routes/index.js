@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import { authRoutes } from './authRoutes.js'
 import { escolaRoutes } from './escolaRoutes.js'
 import { userRoutes } from './userRoutes.js'
 
@@ -8,5 +9,6 @@ routes.get('/health', (_request, response) => {
   response.json({ status: 'ok' })
 })
 
+routes.use('/auth', authRoutes)
 routes.use('/escolas', escolaRoutes)
 routes.use('/usuarios', userRoutes)

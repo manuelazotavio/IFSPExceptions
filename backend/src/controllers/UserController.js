@@ -1,7 +1,7 @@
 import { UserModel } from '../models/UserModel.js'
 import { AppError } from '../utils/AppError.js'
 
-const ROLES = ['SEDUC', 'DIRETOR', 'PROFESSOR', 'ALUNO']
+const ROLES = ['SEDUC', 'DIRETOR', 'EXTERNO']
 
 function validateUserPayload(payload, { isUpdate = false } = {}) {
   const errors = {}

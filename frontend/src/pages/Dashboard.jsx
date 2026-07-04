@@ -60,16 +60,22 @@ function formatLabel(label) {
     .replaceAll('agua', 'água')
 }
 
-export function Dashboard({ onNavigate }) {
+export function Dashboard({ onNavigate, user }) {
+  const isDiretor = user?.role === 'DIRETOR'
+  const minhaEscola = isDiretor ? escolas.find((escola) => escola.id === user.escolaId) : null
+  const escopo = isDiretor ? ocorrenciasAprovadas.filter((item) => item.escolaId === user.escolaId) : ocorrenciasAprovadas
+
   const [chartEscolaId, setChartEscolaId] = useState('')
-  const metrics = dashboardMetrics()
-  const porBairro = Object.entries(groupCount(ocorrenciasAprovadas, 'bairro')).map(([label, value]) => ({ label: formatLabel(label), value }))
-  const porTipo = Object.entries(groupCount(ocorrenciasAprovadas, 'tipo')).map(([label, value]) => ({ label: formatLabel(label), value }))
-  const ocorrenciasDoChart = chartEscolaId
-    ? ocorrenciasAprovadas.filter((item) => item.escolaId === chartEscolaId)
-    : ocorrenciasAprovadas
+  const metrics = dashboardMetrics(escopo, isDiretor ? 1 : escolas.length)
+  const porBairro = Object.entries(groupCount(escopo, 'bairro')).map(([label, value]) => ({ label: formatLabel(label), value }))
+  const porTipo = Object.entries(groupCount(escopo, 'tipo')).map(([label, value]) => ({ label: formatLabel(label), value }))
+  const ocorrenciasDoChart = isDiretor
+    ? escopo
+    : chartEscolaId
+      ? escopo.filter((item) => item.escolaId === chartEscolaId)
+      : escopo
   const porCriticidade = Object.entries(groupCount(ocorrenciasDoChart, 'criticidade')).map(([label, value]) => ({ label: formatLabel(label), value }))
-  const chartEscola = escolas.find((escola) => escola.id === chartEscolaId)
+  const chartEscola = isDiretor ? minhaEscola : escolas.find((escola) => escola.id === chartEscolaId)
   const escolasRank = escolas.map((escola) => ({
     ...escola,
     total: ocorrenciasAprovadas.filter((item) => item.escolaId === escola.id).length,
@@ -78,8 +84,8 @@ export function Dashboard({ onNavigate }) {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
-        <StatCard label="Escolas" value={metrics.escolas} tone="slate" />
+      <div className={`grid gap-4 md:grid-cols-3 ${isDiretor ? 'xl:grid-cols-5' : 'xl:grid-cols-6'}`}>
+        {!isDiretor && <StatCard label="Escolas" value={metrics.escolas} tone="slate" />}
         <StatCard label="Aprovadas" value={metrics.aprovadas} tone="blue" />
         <StatCard label="Abertas" value={metrics.abertas} tone="red" />
         <StatCard label="Em andamento" value={metrics.andamento} tone="amber" />
@@ -87,7 +93,7 @@ export function Dashboard({ onNavigate }) {
         <StatCard label="Críticas" value={metrics.criticas} tone="critical" />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[420px_1fr]">
+      <div className={`grid gap-4 ${isDiretor ? '' : 'xl:grid-cols-[420px_1fr]'}`}>
         <Card>
           <div className="mb-5 flex flex-col gap-3">
             <div>
@@ -98,31 +104,35 @@ export function Dashboard({ onNavigate }) {
                   : 'Distribuição geral das ocorrências aprovadas pela escola.'}
               </p>
             </div>
-            <SchoolChartSelect value={chartEscolaId} onChange={setChartEscolaId} escolas={escolas} />
+            {!isDiretor && <SchoolChartSelect value={chartEscolaId} onChange={setChartEscolaId} escolas={escolas} />}
           </div>
           <PieChart data={porCriticidade} />
         </Card>
 
-        <Card>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-800 text-slate-950">Escolas com mais ocorrências</h2>
-            <button onClick={() => onNavigate('/ocorrencias')} className="cursor-pointer text-sm font-bold text-blue-700">Ver lista</button>
-          </div>
-          <div className="space-y-3">
-            {escolasRank.slice(0, 5).map((escola) => (
-              <div key={escola.id} className="flex items-center justify-between rounded-md border border-slate-100 px-3 py-2">
-                <div><p className="font-bold text-slate-800">{formatLabel(escola.nome)}</p><p className="text-sm text-slate-500">{formatLabel(escola.bairro)}</p></div>
-                <div className="text-right"><p className="font-800 text-slate-950">{escola.total}</p><p className="text-xs text-red-600">{escola.criticas} críticas</p></div>
-              </div>
-            ))}
-          </div>
-        </Card>
+        {!isDiretor && (
+          <Card>
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-800 text-slate-950">Escolas com mais ocorrências</h2>
+              <button onClick={() => onNavigate('/ocorrencias')} className="cursor-pointer text-sm font-bold text-blue-700">Ver lista</button>
+            </div>
+            <div className="space-y-3">
+              {escolasRank.slice(0, 5).map((escola) => (
+                <div key={escola.id} className="flex items-center justify-between rounded-md border border-slate-100 px-3 py-2">
+                  <div><p className="font-bold text-slate-800">{formatLabel(escola.nome)}</p><p className="text-sm text-slate-500">{formatLabel(escola.bairro)}</p></div>
+                  <div className="text-right"><p className="font-800 text-slate-950">{escola.total}</p><p className="text-xs text-red-600">{escola.criticas} críticas</p></div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
       </div>
 
-      <Card>
-        <h2 className="mb-4 text-lg font-800 text-slate-950">Ocorrências por bairro</h2>
-        <ThickBarList data={porBairro} />
-      </Card>
+      {!isDiretor && (
+        <Card>
+          <h2 className="mb-4 text-lg font-800 text-slate-950">Ocorrências por bairro</h2>
+          <ThickBarList data={porBairro} />
+        </Card>
+      )}
 
       <div className="grid gap-4 xl:grid-cols-2">
         <Card>
@@ -132,7 +142,7 @@ export function Dashboard({ onNavigate }) {
         <Card>
           <h2 className="mb-4 text-lg font-800 text-slate-950">Prioridades mais antigas</h2>
           <div className="space-y-3">
-            {sortOcorrencias(ocorrenciasAprovadas).slice(0, 5).map((item) => (
+            {sortOcorrencias(escopo).slice(0, 5).map((item) => (
               <button key={item.id} onClick={() => onNavigate(`/ocorrencias/${item.id}`)} className="block w-full cursor-pointer rounded-md border border-slate-100 px-3 py-2 text-left hover:bg-slate-50">
                 <p className="font-bold text-slate-800">{formatLabel(item.titulo)}</p>
                 <p className="text-sm text-slate-500">{formatLabel(item.escola)} - {item.dataEnvio}</p>
@@ -181,7 +191,7 @@ function SchoolChartSelect({ value, onChange, escolas }) {
 
   return (
     <div className="relative">
-      <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Escola</span>
+      <span className="mb-1 block text-xs font-bold  text-slate-500">Escola</span>
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
@@ -301,7 +311,7 @@ function PieChart({ data }) {
         </svg>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
           <strong className="text-3xl font-800 text-slate-950">{activeItem ? activeItem.value : total}</strong>
-          <span className="max-w-28 text-xs font-bold uppercase tracking-wide text-slate-500">
+          <span className="max-w-28 text-xs font-bold  text-slate-500">
             {activeItem ? `${activeLabel} · ${activePercent}%` : 'total'}
           </span>
         </div>

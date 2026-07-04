@@ -33,13 +33,13 @@ export function getSchoolSeverity(escolaId) {
   return 'green'
 }
 
-export function dashboardMetrics() {
+export function dashboardMetrics(lista = ocorrenciasAprovadas, totalEscolas = escolas.length) {
   return {
-    escolas: escolas.length,
-    aprovadas: ocorrenciasAprovadas.length,
-    abertas: ocorrenciasAprovadas.filter((item) => item.status === 'Aberta').length,
-    andamento: ocorrenciasAprovadas.filter((item) => item.status === 'Em andamento').length,
-    resolvidas: ocorrenciasAprovadas.filter((item) => item.status === 'Resolvida').length,
-    criticas: ocorrenciasAprovadas.filter((item) => item.criticidade === 'Critica' && item.status !== 'Resolvida').length,
+    escolas: totalEscolas,
+    aprovadas: lista.length,
+    abertas: lista.filter((item) => item.status === 'Aberta').length,
+    andamento: lista.filter((item) => item.status === 'Em andamento').length,
+    resolvidas: lista.filter((item) => item.status === 'Resolvida').length,
+    criticas: lista.filter((item) => item.criticidade === 'Critica' && item.status !== 'Resolvida').length,
   }
 }

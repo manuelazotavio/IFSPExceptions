@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Layout } from './components/Layout.jsx'
+import { clearStoredUser, getStoredUser, setStoredUser } from './auth/session.js'
 import { escolas, ocorrenciasAprovadas } from './data/mockData.js'
+import { Cadastro } from './pages/Cadastro.jsx'
 import { Dashboard } from './pages/Dashboard.jsx'
+import { Login } from './pages/Login.jsx'
 import { Mapa } from './pages/Mapa.jsx'
 import { Ocorrencias } from './pages/Ocorrencias.jsx'
 import { OcorrenciaDetalhe } from './pages/OcorrenciaDetalhe.jsx'
@@ -15,6 +18,9 @@ function normalizeRoute() {
 
 export default function App() {
   const [route, setRoute] = useState(normalizeRoute)
+  const [user, setUser] = useState(getStoredUser)
+  const isExterno = user?.role === 'EXTERNO'
+  const isDiretor = user?.role === 'DIRETOR'
 
   useEffect(() => {
     const onHashChange = () => setRoute(normalizeRoute())
@@ -22,14 +28,37 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHashChange)
   }, [])
 
+  useEffect(() => {
+    const rotaDeOcorrencia = route === '/ocorrencias' || route.startsWith('/ocorrencias/')
+    if (isExterno && !rotaDeOcorrencia) {
+      navigate('/ocorrencias')
+    } else if (isDiretor && route !== '/dashboard' && !rotaDeOcorrencia) {
+      navigate('/dashboard')
+    }
+  }, [isExterno, isDiretor, route])
+
   function navigate(path) {
     window.location.hash = path
     setRoute(path)
   }
 
+  function handleLogin(loggedUser) {
+    setStoredUser(loggedUser)
+    setUser(loggedUser)
+    navigate(loggedUser.role === 'EXTERNO' ? '/ocorrencias' : '/dashboard')
+  }
+
+  function handleLogout() {
+    clearStoredUser()
+    setUser(null)
+    navigate('/login')
+  }
+
   function buildDashboardExportRows() {
-    const metrics = dashboardMetrics()
+    const escopo = isDiretor ? ocorrenciasAprovadas.filter((item) => item.escolaId === user.escolaId) : ocorrenciasAprovadas
+    const metrics = dashboardMetrics(escopo, isDiretor ? 1 : escolas.length)
     const escolasRank = escolas
+      .filter((escola) => !isDiretor || escola.id === user.escolaId)
       .map((escola) => ({
         escola: escola.nome,
         bairro: escola.bairro,
@@ -46,9 +75,9 @@ export default function App() {
       ['Métricas', 'Ocorrências em andamento', metrics.andamento],
       ['Métricas', 'Ocorrências resolvidas', metrics.resolvidas],
       ['Métricas', 'Ocorrências críticas', metrics.criticas],
-      ...Object.entries(groupCount(ocorrenciasAprovadas, 'bairro')).map(([bairro, total]) => ['Ocorrências por bairro', bairro, total]),
-      ...Object.entries(groupCount(ocorrenciasAprovadas, 'tipo')).map(([tipo, total]) => ['Ocorrências por tipo', tipo, total]),
-      ...Object.entries(groupCount(ocorrenciasAprovadas, 'criticidade')).map(([criticidade, total]) => ['Ocorrências por criticidade', criticidade, total]),
+      ...Object.entries(groupCount(escopo, 'bairro')).map(([bairro, total]) => ['Ocorrências por bairro', bairro, total]),
+      ...Object.entries(groupCount(escopo, 'tipo')).map(([tipo, total]) => ['Ocorrências por tipo', tipo, total]),
+      ...Object.entries(groupCount(escopo, 'criticidade')).map(([criticidade, total]) => ['Ocorrências por criticidade', criticidade, total]),
       ...escolasRank.map((item) => ['Ranking de escolas', `${item.escola} (${item.bairro})`, `${item.total} ocorrências / ${item.criticas} críticas`]),
     ]
   }
@@ -206,13 +235,23 @@ export default function App() {
 
   function renderPage() {
     if (route.startsWith('/ocorrencias/')) {
-      return <OcorrenciaDetalhe id={route.split('/').at(-1)} onNavigate={navigate} />
+      return <OcorrenciaDetalhe id={route.split('/').at(-1)} onNavigate={navigate} user={user} />
+    }
+
+    if (isExterno) {
+      return <Ocorrencias onNavigate={navigate} user={user} />
+    }
+
+    if (isDiretor) {
+      return route === '/ocorrencias'
+        ? <Ocorrencias onNavigate={navigate} user={user} />
+        : <Dashboard onNavigate={navigate} user={user} />
     }
 
     const pages = {
-      '/dashboard': <Dashboard onNavigate={navigate} />,
+      '/dashboard': <Dashboard onNavigate={navigate} user={user} />,
       '/mapa': <Mapa onNavigate={navigate} />,
-      '/ocorrencias': <Ocorrencias onNavigate={navigate} />,
+      '/ocorrencias': <Ocorrencias onNavigate={navigate} user={user} />,
       '/escolas': <Escolas />,
       '/indicadores': <Indicadores />,
       '/usuarios': <Usuarios />,
@@ -223,8 +262,13 @@ export default function App() {
     return pages[route] || pages['/dashboard']
   }
 
+  if (!user) {
+    if (route === '/cadastro') return <Cadastro onNavigate={navigate} />
+    return <Login onLogin={handleLogin} onNavigate={navigate} />
+  }
+
   return (
-    <Layout route={route} onNavigate={navigate} onExport={exportDashboard}>
+    <Layout route={route} onNavigate={navigate} onExport={exportDashboard} user={user} onLogout={handleLogout}>
       {renderPage()}
     </Layout>
   )

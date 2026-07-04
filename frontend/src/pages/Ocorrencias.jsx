@@ -3,34 +3,44 @@ import { bairros, categorias, criticidadeValues, ocorrenciasAprovadas, statusVal
 import { sortOcorrencias } from '../utils/metrics.js'
 import { Badge, Card, FilterSelect } from '../components/ui.jsx'
 
-export function Ocorrencias({ onNavigate }) {
+export function Ocorrencias({ onNavigate, user }) {
+  const isExterno = user?.role === 'EXTERNO'
+  const isDiretor = user?.role === 'DIRETOR'
   const [filters, setFilters] = useState({ bairro: '', status: '', criticidade: '', tipo: '', tratativa: '' })
   const setFilter = (key, value) => setFilters((prev) => ({ ...prev, [key]: value }))
-  const lista = useMemo(() => sortOcorrencias(ocorrenciasAprovadas).filter((item) => {
-    if (filters.bairro && item.bairro !== filters.bairro) return false
+  const base = isExterno
+    ? ocorrenciasAprovadas.filter((item) => item.criadoPorEmail === user.email)
+    : isDiretor
+      ? ocorrenciasAprovadas.filter((item) => item.escolaId === user.escolaId)
+      : ocorrenciasAprovadas
+  const lista = useMemo(() => sortOcorrencias(base).filter((item) => {
+    if (isExterno) return true
+    if (!isDiretor && filters.bairro && item.bairro !== filters.bairro) return false
     if (filters.status && item.status !== filters.status) return false
     if (filters.criticidade && item.criticidade !== filters.criticidade) return false
     if (filters.tipo && item.tipo !== filters.tipo) return false
     if (filters.tratativa === 'Pendente' && !item.tratativaPendente) return false
     if (filters.tratativa === 'Sem pendencia' && item.tratativaPendente) return false
     return true
-  }), [filters])
+  }), [base, filters, isExterno, isDiretor])
 
   return (
     <div className="space-y-5">
-      <Card>
-        <div className="grid gap-3 md:grid-cols-5">
-          <FilterSelect label="Bairro" value={filters.bairro} onChange={(v) => setFilter('bairro', v)} options={bairros} />
-          <FilterSelect label="Status" value={filters.status} onChange={(v) => setFilter('status', v)} options={statusValues} />
-          <FilterSelect label="Criticidade" value={filters.criticidade} onChange={(v) => setFilter('criticidade', v)} options={criticidadeValues} />
-          <FilterSelect label="Tipo" value={filters.tipo} onChange={(v) => setFilter('tipo', v)} options={categorias} />
-          <FilterSelect label="Tratativa" value={filters.tratativa} onChange={(v) => setFilter('tratativa', v)} options={['Pendente', 'Sem pendencia']} />
-        </div>
-      </Card>
+      {!isExterno && (
+        <Card>
+          <div className={`grid gap-3 ${isDiretor ? 'md:grid-cols-4' : 'md:grid-cols-5'}`}>
+            {!isDiretor && <FilterSelect label="Bairro" value={filters.bairro} onChange={(v) => setFilter('bairro', v)} options={bairros} />}
+            <FilterSelect label="Status" value={filters.status} onChange={(v) => setFilter('status', v)} options={statusValues} />
+            <FilterSelect label="Criticidade" value={filters.criticidade} onChange={(v) => setFilter('criticidade', v)} options={criticidadeValues} />
+            <FilterSelect label="Tipo" value={filters.tipo} onChange={(v) => setFilter('tipo', v)} options={categorias} />
+            <FilterSelect label="Tratativa" value={filters.tratativa} onChange={(v) => setFilter('tratativa', v)} options={['Pendente', 'Sem pendencia']} />
+          </div>
+        </Card>
+      )}
       <Card className="p-0">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1100px] border-collapse text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-800 uppercase tracking-wide text-slate-500">
+            <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-800  text-slate-500">
               <tr>
                 {['Escola', 'Bairro', 'Titulo', 'Tipo', 'Criticidade', 'Status', 'Localizacao', 'Envio', 'Aprovacao', 'Pendencias'].map((head) => <th key={head} className="px-4 py-3">{head}</th>)}
               </tr>

@@ -86,7 +86,7 @@ function SchoolSidePanel({ escola, onNavigate }) {
         <MetricMini label="Abertas" value={stats.abertas} />
         <MetricMini label="Criticas" value={stats.criticas} />
       </div>
-      <h3 className="mt-6 mb-3 text-sm font-800 uppercase tracking-wide text-slate-500">Principais problemas</h3>
+      <h3 className="mt-6 mb-3 text-sm font-800  text-slate-500">Principais problemas</h3>
       <div className="space-y-3">
         {ocorrencias.map((item) => (
           <button key={item.id} onClick={() => onNavigate(`/ocorrencias/${item.id}`)} className="w-full rounded-md border border-slate-100 p-3 text-left hover:bg-slate-50">
