@@ -5,7 +5,7 @@ const items = [
   ['mapa', 'Mapa de calor', '/mapa', 'map'],
   ['ocorrencias', 'Lista de ocorrências', '/ocorrencias', 'alert'],
   ['escolas', 'Escolas cadastradas', '/escolas', 'school'],
-  ['usuarios', 'Gerenciamento de usuários', '/usuarios', 'users'],
+  ['usuarios', 'Usuários', '/usuarios', 'users'],
   ['categorias', 'Categorias globais', '/categorias', 'tag'],
   ['configuracoes', 'Configurações', '/configuracoes', 'settings'],
 ]

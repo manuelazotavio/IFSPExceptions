@@ -8,7 +8,7 @@ const titles = {
   '/mapa': 'Mapa de calor de ocorrencias por escola',
   '/ocorrencias': 'Lista de ocorrencias',
   '/escolas': 'Escolas cadastradas',
-  '/usuarios': 'Gerenciamento de usuarios',
+  '/usuarios': 'Usuários',
   '/categorias': 'Categorias globais',
   '/configuracoes': 'Configuracoes',
 }
