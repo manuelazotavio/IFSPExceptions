@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { NotificationBell } from './NotificationBell.jsx'
 import { Sidebar } from './Sidebar.jsx'
+import { buildNotificacoes } from '../utils/metrics.js'
 
 const titles = {
   '/dashboard': 'Dashboard Geral',
@@ -20,6 +22,7 @@ const roleLabels = {
 export function Layout({ route, onNavigate, onExport, user, onLogout, children }) {
   const [exportOpen, setExportOpen] = useState(false)
   const isExterno = user?.role === 'EXTERNO'
+  const notificacoes = buildNotificacoes(user)
   const title = isExterno
     ? (route.startsWith('/ocorrencias/') ? 'Detalhe da ocorrencia' : 'Minhas ocorrencias')
     : titles[route]
@@ -68,6 +71,7 @@ export function Layout({ route, onNavigate, onExport, user, onLogout, children }
                   )}
                 </div>
               )}
+              <NotificationBell notificacoes={notificacoes} onNavigate={onNavigate} />
               <div className="flex items-center gap-2 rounded-md bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700">
                 <span className="truncate">{user?.nome}</span>
                 <span className="text-slate-400">|</span>

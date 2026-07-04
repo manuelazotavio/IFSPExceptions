@@ -49,3 +49,41 @@ export function dashboardMetrics(lista = ocorrenciasAprovadas, totalEscolas = es
     criticas: lista.filter((item) => item.criticidade === 'Critica' && item.status !== 'Resolvida').length,
   }
 }
+
+export function buildNotificacoes(user) {
+  const isExterno = user?.role === 'EXTERNO'
+  const isDiretor = user?.role === 'DIRETOR'
+
+  const escopo = isExterno
+    ? ocorrenciasAprovadas.filter((item) => item.criadoPorEmail === user.email)
+    : isDiretor
+      ? ocorrenciasAprovadas.filter((item) => item.escolaId === user.escolaId)
+      : ocorrenciasAprovadas
+
+  const urgentes = escopo
+    .filter((item) => item.criticidade === 'Critica' && item.status !== 'Resolvida')
+    .map((item) => ({
+      id: `urgente-${item.id}`,
+      ocorrenciaId: item.id,
+      tipo: 'urgente',
+      protocolo: item.protocolo,
+      descricao: `${item.titulo} - ${item.escola}`,
+      data: item.dataEnvio,
+    }))
+
+  const movimentacoes = escopo
+    .filter((item) => item.chatPendente)
+    .map((item) => {
+      const ultima = item.interacoes[item.interacoes.length - 1]
+      return {
+        id: `mov-${item.id}`,
+        ocorrenciaId: item.id,
+        tipo: 'movimentacao',
+        protocolo: item.protocolo,
+        descricao: ultima?.mensagem || item.titulo,
+        data: ultima?.data || item.ultimaAtualizacao,
+      }
+    })
+
+  return [...urgentes, ...movimentacoes].sort((a, b) => new Date(b.data) - new Date(a.data))
+}
