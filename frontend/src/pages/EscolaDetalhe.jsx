@@ -32,14 +32,8 @@ export function EscolaDetalhe({ id, onNavigate }) {
     () => sortOcorrencias(ocorrencias.filter((item) => item.escolaId === escola.id)),
     [escola.id],
   )
-  const roomEntries = useMemo(
-    () => salas.map((sala) => ({
-      sala,
-      categoria: getRoomCategoryLabel(getRoomCategory(sala)),
-      totalOcorrencias: ocorrenciasEscola.filter((item) => item.localizacaoInterna === sala).length,
-    })),
-    [ocorrenciasEscola, salas],
-  )
+  const roomSummary = useMemo(() => buildRoomSummary(salas), [salas])
+  const roomTypeSummary = useMemo(() => buildRoomTypeSummary(salas), [salas])
   const [photoIndex, setPhotoIndex] = useState(0)
   const [selectedSala, setSelectedSala] = useState(allSalasKey)
   const ocorrenciasSala = useMemo(
@@ -55,13 +49,30 @@ export function EscolaDetalhe({ id, onNavigate }) {
     setLocationModalOpen(false)
   }, [salas])
 
-  function exportPdfReport() {
+  function exportRoomReport() {
+    const report = buildSchoolRoomReport({
+      escola,
+      salas,
+      roomSummary,
+      ocorrenciasEscola,
+    })
+
+    const blob = new Blob([report], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `relatorio-${escola.id}.txt`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
+  }
+
+  function exportRoomPdfReport() {
     const reportHtml = buildSchoolPdfReport({
       escola,
-      roomEntries,
-      selectedSala,
+      roomTypeSummary,
       ocorrenciasEscola,
-      ocorrenciasSala,
     })
     const printWindow = window.open('', '_blank', 'width=960,height=720')
     if (!printWindow) return
@@ -111,49 +122,71 @@ export function EscolaDetalhe({ id, onNavigate }) {
         <Card>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
+              <h3 className="text-lg font-800 text-slate-950">Tabela de comodos cadastrados</h3>
+              <p className="mt-1 text-sm text-slate-500">Resumo por tipo de ambiente cadastrado na unidade</p>
+            </div>
+            <button onClick={exportRoomPdfReport} className="rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
+              Exportar PDF
+            </button>
+          </div>
+          <div className="mt-5 overflow-x-auto">
+            <table className="w-full min-w-[420px] text-sm">
+              <thead className="bg-slate-50 text-left text-xs font-800 uppercase text-slate-500">
+                <tr>
+                  <th className="px-4 py-3">Tipo</th>
+                  <th className="px-4 py-3 text-right">Quantidade</th>
+                </tr>
+              </thead>
+              <tbody>
+                {roomTypeSummary.map((item) => (
+                  <tr key={item.label} className="border-t border-slate-100">
+                    <td className="px-4 py-3 font-bold text-slate-800">{item.label}</td>
+                    <td className="px-4 py-3 text-right font-semibold text-slate-700">{item.count}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
               <h3 className="text-lg font-800 text-slate-950">Comodos cadastrados</h3>
-              <p className="mt-1 text-sm text-slate-500">Tabela de ambientes cadastrados separada da tabela de ocorrencias</p>
+              <p className="mt-1 text-sm text-slate-500">Resumo dos ambientes cadastrados e acesso rapido para as ocorrencias</p>
             </div>
             <div className="flex items-center gap-2">
               <Badge>{salas.length} ambientes</Badge>
-              <button onClick={exportPdfReport} className="rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
-                Exportar PDF
+              <button onClick={exportRoomReport} className="rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
+                Exportar relatorio
               </button>
             </div>
           </div>
+          
           <div className="mt-5 grid gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
-            <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50 text-left text-xs font-800 uppercase text-slate-500">
-                  <tr>
-                    <th className="px-4 py-3">Comodo</th>
-                    <th className="px-4 py-3">Tipo</th>
-                    <th className="px-4 py-3 text-right">Ocorrencias</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <RoomTableRow
-                    sala={allSalasKey}
-                    categoria="Unidade completa"
-                    total={ocorrenciasEscola.length}
-                    active={selectedSala === allSalasKey}
-                    onClick={() => setSelectedSala(allSalasKey)}
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <div className="space-y-2">
+                <RoomListButton
+                  sala={allSalasKey}
+                  total={ocorrenciasEscola.length}
+                  active={selectedSala === allSalasKey}
+                  subtitle="Visualizar a escola inteira"
+                  onClick={() => setSelectedSala(allSalasKey)}
+                />
+                {salas.map((sala) => (
+                  <RoomListButton
+                    key={sala}
+                    sala={sala}
+                    total={ocorrenciasEscola.filter((item) => item.localizacaoInterna === sala).length}
+                    active={selectedSala === sala}
+                    subtitle="Abrir ocorrencias do ambiente"
+                    onClick={() => setSelectedSala(sala)}
                   />
-                  {roomEntries.map((room) => (
-                    <RoomTableRow
-                      key={room.sala}
-                      sala={room.sala}
-                      categoria={room.categoria}
-                      total={room.totalOcorrencias}
-                      active={selectedSala === room.sala}
-                      onClick={() => setSelectedSala(room.sala)}
-                    />
-                  ))}
-                </tbody>
-              </table>
+                ))}
+              </div>
             </div>
-            <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-4">
+            <div className="rounded-lg border border-slate-200 bg-white p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
                 <div>
                   <h3 className="text-lg font-800 text-slate-950">
                     {selectedSala === allSalasKey ? 'Todas as ocorrencias da unidade' : 'Demandas do local selecionado'}
@@ -166,23 +199,8 @@ export function EscolaDetalhe({ id, onNavigate }) {
                 </div>
                 <Badge>{ocorrenciasSala.length} registros</Badge>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[760px] text-sm">
-                  <thead className="bg-slate-50 text-left text-xs font-800 uppercase text-slate-500">
-                    <tr>
-                      <th className="px-4 py-3">Titulo</th>
-                      <th className="px-4 py-3">Comodo</th>
-                      <th className="px-4 py-3">Criticidade</th>
-                      <th className="px-4 py-3">Status</th>
-                      <th className="px-4 py-3">Envio</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {ocorrenciasSala.map((item) => <OcorrenciaRow key={item.id} item={item} onNavigate={onNavigate} />)}
-                  </tbody>
-                </table>
-              </div>
-              <div className="px-4 py-4">
+              <div className="mt-5 space-y-3">
+                {ocorrenciasSala.map((item) => <OcorrenciaItem key={item.id} item={item} onNavigate={onNavigate} />)}
                 {!ocorrenciasSala.length && (
                   <div className="rounded-md border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-500">
                     {selectedSala === allSalasKey ? 'Sem ocorrencias cadastradas para esta escola.' : 'Nao ha ocorrencias registradas para esta sala.'}
@@ -259,15 +277,95 @@ function getRoomCategoryLabel(category) {
   return labels[category] || 'Comodos'
 }
 
-function buildSchoolPdfReport({ escola, roomEntries, selectedSala, ocorrenciasEscola, ocorrenciasSala }) {
+function getRoomTypeLabel(sala) {
+  const value = sala.toLowerCase()
+  if (value.includes('sala') || value.includes('maternal') || value.includes('pre ')) return 'Salas'
+  if (value.includes('biblioteca')) return 'Biblioteca'
+  if (value.includes('laboratorio')) return 'Laboratorio'
+  if (value.includes('secretaria')) return 'Secretaria'
+  if (value.includes('diretoria')) return 'Diretoria'
+  if (value.includes('cozinha')) return 'Cozinha'
+  if (value.includes('refeitorio')) return 'Refeitorio'
+  if (value.includes('banheiro')) return 'Banheiro'
+  if (value.includes('quadra')) return 'Quadra'
+  if (value.includes('patio')) return 'Patio'
+  if (value.includes('brinquedoteca')) return 'Brinquedoteca'
+  if (value.includes('area externa')) return 'Area externa'
+  return sala
+}
+
+function pluralizeRoomType(label, count) {
+  if (count === 1) return label.replace(/s$/, '')
+  return label.toLowerCase()
+}
+
+function buildRoomSummary(salas) {
+  const groups = salas.reduce((acc, sala) => {
+    const category = getRoomCategory(sala)
+    const label = getRoomCategoryLabel(category)
+    if (!acc[category]) acc[category] = { label, rooms: [] }
+    acc[category].rooms.push(sala)
+    return acc
+  }, {})
+
+  return Object.values(groups)
+    .map((group) => ({
+      ...group,
+      count: group.rooms.length,
+      description: `${group.rooms.length} ${pluralizeRoomType(group.label, group.rooms.length)} cadastrados: ${group.rooms.join(', ')}.`,
+    }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+}
+
+function buildRoomTypeSummary(salas) {
+  const summary = salas.reduce((acc, sala) => {
+    const label = getRoomTypeLabel(sala)
+    acc[label] = (acc[label] || 0) + 1
+    return acc
+  }, {})
+
+  return Object.entries(summary)
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+}
+
+function buildSchoolRoomReport({ escola, salas, roomSummary, ocorrenciasEscola }) {
   const now = new Date().toLocaleString('pt-BR')
-  const roomRows = [
-    `<tr><td>Todos</td><td>Unidade completa</td><td>${ocorrenciasEscola.length}</td></tr>`,
-    ...roomEntries.map((room) => `<tr><td>${escapeHtml(room.sala)}</td><td>${escapeHtml(room.categoria)}</td><td>${room.totalOcorrencias}</td></tr>`),
-  ].join('')
-  const occurrenceRows = ocorrenciasSala.length
-    ? ocorrenciasSala.map((item) => `<tr><td>${escapeHtml(item.titulo)}</td><td>${escapeHtml(item.localizacaoInterna)}</td><td>${escapeHtml(item.criticidade)}</td><td>${escapeHtml(item.status)}</td><td>${escapeHtml(item.dataEnvio)}</td></tr>`).join('')
-    : `<tr><td colspan="5">Nenhuma ocorrencia encontrada para o filtro atual.</td></tr>`
+  const roomLines = roomSummary.map((group) => `- ${group.description}`).join('\n')
+  const occurrenceLines = ocorrenciasEscola.map((item) => (
+    `- ${item.titulo} | ${item.localizacaoInterna} | ${item.criticidade} | ${item.status} | envio ${item.dataEnvio}`
+  )).join('\n')
+
+  return [
+    `RELATORIO DA ESCOLA: ${escola.nome}`,
+    `Gerado em: ${now}`,
+    '',
+    `Bairro: ${escola.bairro}`,
+    `Endereco: ${escola.endereco}`,
+    `Status: ${escola.status}`,
+    `Cadastro: ${escola.dataCadastro}`,
+    '',
+    `Total de comodos cadastrados: ${salas.length}`,
+    `Total de ocorrencias: ${ocorrenciasEscola.length}`,
+    `Ocorrencias abertas: ${ocorrenciasEscola.filter((item) => item.status !== 'Resolvida').length}`,
+    '',
+    'Resumo de comodos:',
+    roomLines || '- Nenhum comodo cadastrado.',
+    '',
+    'Ocorrencias da unidade:',
+    occurrenceLines || '- Nenhuma ocorrencia cadastrada.',
+    '',
+  ].join('\n')
+}
+
+function buildSchoolPdfReport({ escola, roomTypeSummary, ocorrenciasEscola }) {
+  const now = new Date().toLocaleString('pt-BR')
+  const roomRows = roomTypeSummary
+    .map((item) => `<tr><td>${escapeHtml(item.label)}</td><td>${item.count}</td></tr>`)
+    .join('')
+  const occurrenceRows = ocorrenciasEscola.length
+    ? ocorrenciasEscola.map((item) => `<tr><td>${escapeHtml(item.titulo)}</td><td>${escapeHtml(item.localizacaoInterna)}</td><td>${escapeHtml(item.criticidade)}</td><td>${escapeHtml(item.status)}</td><td>${escapeHtml(item.dataEnvio)}</td></tr>`).join('')
+    : `<tr><td colspan="5">Nenhuma ocorrencia cadastrada.</td></tr>`
 
   return `<!doctype html>
 <html lang="pt-BR">
@@ -298,17 +396,17 @@ function buildSchoolPdfReport({ escola, roomEntries, selectedSala, ocorrenciasEs
   </div>
 
   <div class="section">
-    <h2>Comodos cadastrados</h2>
+    <h2>Tabela de comodos cadastrados</h2>
     <table>
       <thead>
-        <tr><th>Comodo</th><th>Tipo</th><th>Ocorrencias</th></tr>
+        <tr><th>Tipo</th><th>Quantidade</th></tr>
       </thead>
       <tbody>${roomRows}</tbody>
     </table>
   </div>
 
   <div class="section">
-    <h2>${selectedSala === allSalasKey ? 'Ocorrencias da unidade' : `Ocorrencias de ${escapeHtml(selectedSala)}`}</h2>
+    <h2>Ocorrencias da unidade</h2>
     <table>
       <thead>
         <tr><th>Titulo</th><th>Comodo</th><th>Criticidade</th><th>Status</th><th>Envio</th></tr>
@@ -372,25 +470,44 @@ function SchoolPhotoCarousel({ photos, currentIndex, onChange }) {
   )
 }
 
-function RoomTableRow({ sala, categoria, total, active, onClick }) {
+function RoomListButton({ sala, total, subtitle, active, onClick }) {
   return (
-    <tr onClick={onClick} className={`cursor-pointer border-t border-slate-100 ${active ? 'bg-blue-50/70' : 'hover:bg-slate-50'}`}>
-      <td className="px-4 py-3 font-bold text-slate-800">{sala}</td>
-      <td className="px-4 py-3 text-slate-600">{categoria}</td>
-      <td className="px-4 py-3 text-right font-semibold text-slate-700">{total}</td>
-    </tr>
+    <button
+      onClick={onClick}
+      className={`flex w-full items-center justify-between gap-3 rounded-md border px-4 py-3 text-left transition ${
+        active ? 'border-blue-600 bg-blue-600 text-white shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50'
+      }`}
+    >
+      <div>
+        <p className="font-bold">{sala}</p>
+        <p className={`mt-1 text-xs font-semibold ${active ? 'text-blue-100' : 'text-slate-400'}`}>{subtitle}</p>
+      </div>
+      <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>
+        {total}
+      </span>
+    </button>
   )
 }
 
-function OcorrenciaRow({ item, onNavigate }) {
+function OcorrenciaItem({ item, onNavigate }) {
   return (
-    <tr onClick={() => onNavigate(`/ocorrencias/${item.id}`)} className="cursor-pointer border-t border-slate-100 hover:bg-blue-50/40">
-      <td className="px-4 py-3 font-bold text-slate-800">{item.titulo}</td>
-      <td className="px-4 py-3 text-slate-600">{item.localizacaoInterna}</td>
-      <td className="px-4 py-3"><Badge>{item.criticidade}</Badge></td>
-      <td className="px-4 py-3"><Badge>{item.status}</Badge></td>
-      <td className="px-4 py-3 text-slate-600">{item.dataEnvio}</td>
-    </tr>
+    <button onClick={() => onNavigate(`/ocorrencias/${item.id}`)} className="w-full rounded-md border border-slate-200 bg-white p-4 text-left hover:bg-blue-50/40">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="font-bold text-slate-800">{item.titulo}</p>
+          <p className="mt-1 text-sm text-slate-500">{item.tipo} - {item.localizacaoInterna}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Badge>{item.criticidade}</Badge>
+          <Badge>{item.status}</Badge>
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm text-slate-500">
+        <span>Envio: {item.dataEnvio}</span>
+        <span>Atualizacao: {item.ultimaAtualizacao}</span>
+        {item.dataResolucao && <span>Resolucao: {item.dataResolucao}</span>}
+      </div>
+    </button>
   )
 }
 
