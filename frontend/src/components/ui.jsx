@@ -1,0 +1,67 @@
+export function Card({ children, className = '' }) {
+  return <section className={`rounded-lg border border-slate-200 bg-white p-5 ${className}`}>{children}</section>
+}
+
+export function MetricCard({ label, value, tone = 'blue' }) {
+  const tones = {
+    blue: 'bg-blue-50 text-blue-700',
+    green: 'bg-emerald-50 text-emerald-700',
+    yellow: 'bg-amber-50 text-amber-700',
+    red: 'bg-red-50 text-red-700',
+    slate: 'bg-slate-50 text-slate-700',
+  }
+  return (
+    <Card>
+      <p className="text-sm font-semibold text-slate-500">{label}</p>
+      <div className="mt-3 flex items-end justify-between">
+        <strong className="text-3xl font-800 text-slate-950">{value}</strong>
+        <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${tones[tone]}`}>MVP</span>
+      </div>
+    </Card>
+  )
+}
+
+export function Badge({ children, type = 'status' }) {
+  const text = String(children)
+  const classes = {
+    Critica: 'bg-red-100 text-red-700',
+    Alta: 'bg-orange-100 text-orange-700',
+    Media: 'bg-amber-100 text-amber-700',
+    Baixa: 'bg-emerald-100 text-emerald-700',
+    Aberta: 'bg-red-50 text-red-700',
+    'Em andamento': 'bg-blue-50 text-blue-700',
+    'Em analise': 'bg-indigo-50 text-indigo-700',
+    'Aguardando orcamento': 'bg-amber-50 text-amber-700',
+    'Aguardando visita tecnica': 'bg-purple-50 text-purple-700',
+    Resolvida: 'bg-emerald-50 text-emerald-700',
+    Ativo: 'bg-emerald-50 text-emerald-700',
+    Inativo: 'bg-slate-100 text-slate-600',
+  }
+  return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${classes[text] || 'bg-slate-100 text-slate-700'}`}>{children}</span>
+}
+
+export function FilterSelect({ label, value, onChange, options }) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">{label}</span>
+      <select value={value} onChange={(e) => onChange(e.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-500">
+        <option value="">Todos</option>
+        {options.map((option) => <option key={option} value={option}>{option}</option>)}
+      </select>
+    </label>
+  )
+}
+
+export function BarList({ data }) {
+  const max = Math.max(...data.map((item) => item.value), 1)
+  return (
+    <div className="space-y-3">
+      {data.map((item) => (
+        <div key={item.label}>
+          <div className="mb-1 flex justify-between text-sm font-semibold text-slate-600"><span>{item.label}</span><span>{item.value}</span></div>
+          <div className="h-2 rounded-full bg-slate-100"><div className="h-2 rounded-full bg-blue-600" style={{ width: `${(item.value / max) * 100}%` }} /></div>
+        </div>
+      ))}
+    </div>
+  )
+}
