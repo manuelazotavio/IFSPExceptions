@@ -69,6 +69,7 @@ export function OcorrenciaDetalhe({ id, onNavigate }) {
         <div className="space-y-5 xl:overflow-y-auto xl:pr-1">
 
           <Card>
+            <p className="mb-3 text-base font-800 text-slate-800">{ocorrencia.escola} - {ocorrencia.bairro}</p>
             <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
               <div className="flex-1">
                 <input
@@ -76,7 +77,7 @@ export function OcorrenciaDetalhe({ id, onNavigate }) {
                   onChange={(e) => updateForm('titulo', e.target.value)}
                   className="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-extrabold text-slate-950 outline-none transition-colors hover:border-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 />
-                <p className="text-sm text-slate-500">{ocorrencia.escola} - {ocorrencia.bairro}</p>
+              
               </div>
 
               <div className="flex gap-2">
