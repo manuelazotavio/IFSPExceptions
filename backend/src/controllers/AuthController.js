@@ -34,10 +34,10 @@ export class AuthController {
     const { email, senha } = parseOrThrow(loginSchema, request.body)
 
     const user = await UserModel.findByEmail(email)
-    if (!user) throw new AppError('Email ou senha invalidos', 401)
+    if (!user) throw new AppError('Email ou senha inválidos', 401)
 
     const senhaValida = await bcrypt.compare(senha, user.senha)
-    if (!senhaValida) throw new AppError('Email ou senha invalidos', 401)
+    if (!senhaValida) throw new AppError('Email ou senha inválidos', 401)
     if (!user.ativo) throw new AppError('Usuario inativo', 403)
 
     const usuario = sanitizeUser(user)

@@ -11,7 +11,6 @@ const __dirname = path.dirname(__filename)
 const escolasJsonPath = path.resolve(__dirname, 'seeds/unidades_seduc_caraguatatuba.json')
 const ocorrenciasJsonPath = path.resolve(__dirname, 'seeds/ocorrencias_seduc_caraguatatuba_seed.json')
 
-// Preserve ids already referenced by ocorrencias and usuarios seeds.
 const LEGACY_ESCOLA_IDS = new Map([
   ['emef dr. carlos de almeida rodrigues', 'esc-001'],
   ['emei/emef profa. alaor xavier junqueira', 'esc-008'],

@@ -4,14 +4,13 @@ import 'leaflet/dist/leaflet.css'
 import { MapContainer, Marker, TileLayer, Tooltip, useMap, useMapEvents } from 'react-leaflet'
 import { CaraguatatubaBairrosLayer, bairroStyleDefaults } from '../components/CaraguatatubaBairrosLayer.jsx'
 import { CaraguatatubaBoundary } from '../components/Mapa_com_boundary.jsx'
-import { Badge, Card, FilterSelect, Select } from '../components/ui.jsx'
+import { Card, FilterSelect, Select } from '../components/ui.jsx'
 import { getEscolaOcorrenciasFallback, loadMapOccurrences } from '../services/mapa.js'
 import { getAllSchools, loadSchoolCatalog } from '../utils/schools.js'
 import {
   MAP_CRITICIDADE_OPTIONS,
   MAP_STATUS_OPTIONS,
   includesNormalized,
-  matchesSchoolSearch,
   mergeSchoolsWithOccurrences,
   normalizeOccurrenceCriticidadeKey,
   normalizeOccurrenceStatusKey,
@@ -193,11 +192,11 @@ function truncateMapText(value, maxLength = 30) {
 }
 
 function createSchoolPointIcon({ color, isSelected, isDimmed }) {
-  const size = isSelected ? 9 : 6
-  const borderWidth = isSelected ? 1 : 0.6
+  const size = isSelected ? 20 : 15
+  const borderWidth = isSelected ? 3 : 2.4
   const opacity = isDimmed ? 0.22 : 0.96
-  const glowSize = isSelected ? 8 : 5
-  const outerGlow = isSelected ? 12 : 8
+  const glowSize = isSelected ? 16 : 11
+  const outerGlow = isSelected ? 24 : 17
 
   return L.divIcon({
     className: 'school-point-icon',
@@ -217,10 +216,10 @@ function createSchoolPointIcon({ color, isSelected, isDimmed }) {
         transition:transform .18s ease, opacity .18s ease, box-shadow .18s ease;
       "></div>
     `,
-    iconSize: [14, 14],
-    iconAnchor: [7, 7],
-    popupAnchor: [0, -6],
-    tooltipAnchor: [0, -9],
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
+    popupAnchor: [0, -13],
+    tooltipAnchor: [0, -16],
   })
 }
 
@@ -238,7 +237,6 @@ function createBairroLabelIcon({ name, color, fontSize, maxWidth, isSelected, is
         font-size:${fontSize}px;
         font-weight:${isSelected ? 900 : 800};
         letter-spacing:${isSelected ? '0.08em' : '0.05em'};
-        text-transform:uppercase;
         color:${color};
         opacity:${opacity};
         text-shadow:
@@ -266,46 +264,40 @@ function matchesOccurrenceFilters(occurrence, filters) {
   return true
 }
 
-function sortByLatestDate(left, right) {
-  return new Date(right.data || right.dataEnvio || 0) - new Date(left.data || left.dataEnvio || 0)
+function getCriticidadeRank(criticidade) {
+  const key = normalizeOccurrenceCriticidadeKey(criticidade)
+  if (key === 'critica') return 3
+  if (key === 'atencao') return 2
+  return 1
 }
 
-function formatPercent(value, total) {
-  if (!total || total <= 0) return '0%'
-  return `${Math.round((Number(value || 0) / total) * 100)}%`
+function getOccurrenceOpenDate(occurrence) {
+  const raw = occurrence.dataAbertura || occurrence.dataEnvio || occurrence.data || occurrence.dataAtualizacao
+  const date = new Date(raw)
+  return Number.isNaN(date.getTime()) ? null : date
 }
 
-function buildMetricItems({ metrics, maxIntensity, schoolCount, totalSchools }) {
+function sortOcorrenciasByUrgencia(left, right) {
+  const rankDiff = getCriticidadeRank(right.criticidade) - getCriticidadeRank(left.criticidade)
+  if (rankDiff !== 0) return rankDiff
+
+  const leftDate = getOccurrenceOpenDate(left)
+  const rightDate = getOccurrenceOpenDate(right)
+  if (leftDate && rightDate) return leftDate - rightDate
+  if (leftDate) return -1
+  if (rightDate) return 1
+  return 0
+}
+
+function buildMetricItems({ metrics }) {
   return [
     {
       label: 'Ocorrencias',
       value: Number(metrics.totalOcorrencias || 0),
-      helper: '100% do contexto',
     },
     {
       label: 'Criticas',
       value: Number(metrics.criticas || 0),
-      helper: `${formatPercent(metrics.criticas, metrics.totalOcorrencias)} do total`,
-    },
-    {
-      label: 'Atencao',
-      value: Number(metrics.atencao || 0),
-      helper: `${formatPercent(metrics.atencao, metrics.totalOcorrencias)} do total`,
-    },
-    {
-      label: 'Baixas',
-      value: Number(metrics.baixas || 0),
-      helper: `${formatPercent(metrics.baixas, metrics.totalOcorrencias)} do total`,
-    },
-    {
-      label: 'Intensidade',
-      value: Number(metrics.intensidade || 0),
-      helper: `${formatPercent(metrics.intensidade, maxIntensity || metrics.intensidade || 0)} do pico`,
-    },
-    {
-      label: 'Escolas',
-      value: Number(schoolCount || 0),
-      helper: `${formatPercent(schoolCount, totalSchools)} da rede`,
     },
   ]
 }
@@ -387,7 +379,7 @@ function getBairroSolicitacoes({ bairroKey, bairroStats, occurrences, schoolsByI
       ...occurrence,
       escolaNome: occurrence.escola || schoolsById[occurrence.escolaId]?.escolaNome || schoolsById[occurrence.escolaId]?.nome || 'Escola sem nome',
     }))
-    .sort(sortByLatestDate)
+    .sort(sortOcorrenciasByUrgencia)
 }
 
 function getBairroLabelStyle({ entry, currentZoom, isSelected, hasSchools }) {
@@ -445,9 +437,6 @@ export function Mapa({ onNavigate }) {
   const [erroMapa, setErroMapa] = useState('')
   const [escolaSelecionada, setEscolaSelecionada] = useState('')
   const [modalContext, setModalContext] = useState(null)
-  const [searchEscola, setSearchEscola] = useState('')
-  const [appliedSearch, setAppliedSearch] = useState('')
-  const [isSearchMenuOpen, setIsSearchMenuOpen] = useState(false)
   const [mapFocusTarget, setMapFocusTarget] = useState(null)
   const [caraguatatubaBoundary, setCaraguatatubaBoundary] = useState(null)
   const [bairrosGeoJson, setBairrosGeoJson] = useState(null)
@@ -457,8 +446,8 @@ export function Mapa({ onNavigate }) {
   const [currentZoom, setCurrentZoom] = useState(13)
   const [colorScale, setColorScale] = useState(() => readStoredColorScale())
   const [isColorScaleExpanded, setIsColorScaleExpanded] = useState(false)
+  const [isMapStyleExpanded, setIsMapStyleExpanded] = useState(false)
   const warnedSchoolIdsRef = useRef(new Set())
-  const searchContainerRef = useRef(null)
   const [mapStyleKey, setMapStyleKey] = useState(() => {
     if (typeof window === 'undefined') return 'cartoLight'
 
@@ -592,19 +581,6 @@ export function Mapa({ onNavigate }) {
     }
   }, [modalContext, showBairrosLayer])
 
-  useEffect(() => {
-    if (!isSearchMenuOpen) return undefined
-
-    function handleClickOutside(event) {
-      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
-        setIsSearchMenuOpen(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [isSearchMenuOpen])
-
   const filteredOccurrences = useMemo(
     () => occurrenceCatalog.filter((occurrence) => matchesOccurrenceFilters(occurrence, filters)),
     [filters, occurrenceCatalog],
@@ -628,10 +604,9 @@ export function Mapa({ onNavigate }) {
   const mapSchools = useMemo(
     () => allMapSchools.filter((item) => {
       if (filters.escolaId && item.escolaId !== filters.escolaId) return false
-      if (appliedSearch && !matchesSchoolSearch(item, appliedSearch)) return false
       return true
     }),
-    [allMapSchools, appliedSearch, filters.escolaId],
+    [allMapSchools, filters.escolaId],
   )
 
   const allSchoolById = useMemo(
@@ -698,11 +673,11 @@ export function Mapa({ onNavigate }) {
 
   const ocorrenciasEscola = useMemo(() => {
     if (Array.isArray(detalheEscola?.ocorrencias)) {
-      return detalheEscola.ocorrencias
+      return [...detalheEscola.ocorrencias].sort(sortOcorrenciasByUrgencia)
     }
 
     const fallback = getEscolaOcorrenciasFallback(escolaSelecionada, allMapSchools, filteredOccurrences)
-    return fallback.ocorrencias
+    return [...fallback.ocorrencias].sort(sortOcorrenciasByUrgencia)
   }, [allMapSchools, detalheEscola, escolaSelecionada, filteredOccurrences])
 
   const schoolOptions = useMemo(() => (
@@ -711,18 +686,6 @@ export function Mapa({ onNavigate }) {
       label: `${school.escolaNome}${school.bairro ? ` - ${school.bairro}` : ''}`,
     }))
   ), [mergedSchoolsFull])
-
-  const escolasDisponiveis = useMemo(() => (
-    mergedSchoolsFull
-      .slice()
-      .sort((left, right) => left.escolaNome.localeCompare(right.escolaNome, 'pt-BR'))
-  ), [mergedSchoolsFull])
-
-  const searchSuggestions = useMemo(() => (
-    escolasDisponiveis
-      .filter((item) => (searchEscola ? matchesSchoolSearch(item, searchEscola) : false))
-      .slice(0, 8)
-  ), [escolasDisponiveis, searchEscola])
 
   const avisoGlobal = useMemo(() => {
     if (!erroMapa) return null
@@ -849,6 +812,16 @@ export function Mapa({ onNavigate }) {
     setFilters((current) => ({ ...current, [key]: value }))
   }
 
+  function handleEscolaFilterChange(value) {
+    setFilter('escolaId', value)
+
+    if (value) {
+      openSchoolDrawer(value, { zoom: 16 })
+    } else {
+      closeDrawer()
+    }
+  }
+
   function clearSchoolContext() {
     setEscolaSelecionada('')
   }
@@ -922,40 +895,19 @@ export function Mapa({ onNavigate }) {
     }
   }
 
+  function deselectAll() {
+    if (!modalContext && !selectedBairro && !escolaSelecionada && !filters.escolaId) return
+
+    closeDrawer()
+    setSelectedBairro('')
+    if (filters.escolaId) {
+      setFilter('escolaId', '')
+    }
+  }
+
   function openSchoolRegistry() {
     if (modalContext?.type !== 'escola' || !escolaSelecionada) return
     onNavigate?.(`/escolas/${encodeURIComponent(escolaSelecionada)}`)
-  }
-
-  function focusSchool(escola) {
-    if (!escola) return
-
-    setSearchEscola(escola.escolaNome)
-    setAppliedSearch(escola.escolaNome)
-    setIsSearchMenuOpen(false)
-    openSchoolDrawer(escola.escolaId, { zoom: 16 })
-  }
-
-  function handleSearchEscola() {
-    const query = searchEscola.trim()
-    setAppliedSearch(query)
-    setIsSearchMenuOpen(false)
-
-    if (!query) {
-      setMapFocusTarget(null)
-      return
-    }
-
-    const matches = escolasDisponiveis.filter((item) => matchesSchoolSearch(item, query))
-    if (matches.length === 1) {
-      focusSchool(matches[0])
-    }
-  }
-
-  function clearSearchEscola() {
-    setSearchEscola('')
-    setAppliedSearch('')
-    setIsSearchMenuOpen(false)
   }
 
   return (
@@ -968,81 +920,14 @@ export function Mapa({ onNavigate }) {
       ) : null}
 
       <Card className="relative z-[3000] overflow-visible">
-        <div className="grid gap-3 md:grid-cols-4 xl:grid-cols-7">
-          <label className="block md:col-span-2">
-            <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Buscar escola</span>
-            <div ref={searchContainerRef} className="relative">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={searchEscola}
-                  onChange={(event) => {
-                    setSearchEscola(event.target.value)
-                    setIsSearchMenuOpen(true)
-                  }}
-                  onFocus={() => setIsSearchMenuOpen(Boolean(searchSuggestions.length))}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                      event.preventDefault()
-                      handleSearchEscola()
-                    }
-
-                    if (event.key === 'Escape') {
-                      event.preventDefault()
-                      setIsSearchMenuOpen(false)
-                    }
-                  }}
-                  placeholder="Nome, bairro, endereco ou CEP"
-                  className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500"
-                />
-                {searchEscola ? (
-                  <button
-                    type="button"
-                    onClick={clearSearchEscola}
-                    className="cursor-pointer h-10 shrink-0 rounded-md border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 hover:bg-slate-50"
-                  >
-                    Limpar
-                  </button>
-                ) : null}
-                <button
-                  type="button"
-                  onClick={handleSearchEscola}
-                  className="cursor-pointer h-10 shrink-0 rounded-md bg-primary px-3 text-sm font-bold text-white hover:bg-primary-strong"
-                >
-                  Buscar
-                </button>
-              </div>
-              {isSearchMenuOpen && searchSuggestions.length > 0 ? (
-                <div className="absolute left-0 right-0 z-[5000] mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
-                  {searchSuggestions.map((item) => (
-                    <button
-                      key={item.escolaId}
-                      type="button"
-                      onClick={() => focusSchool(item)}
-                      className="flex w-full cursor-pointer flex-col items-start gap-1 border-b border-slate-100 px-4 py-3 text-left last:border-b-0 hover:bg-slate-50"
-                    >
-                      <span className="text-sm font-bold text-slate-800">{item.escolaNome}</span>
-                      <span className="text-xs font-semibold text-slate-500">
-                        {[item.bairro, item.endereco].filter(Boolean).join(' - ')}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-            {appliedSearch ? (
-              <p className="mt-2 text-[11px] font-semibold text-slate-500">
-                Filtro textual ativo: {appliedSearch}
-              </p>
-            ) : null}
-          </label>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <FilterSelect label="Criticidade" value={filters.criticidade} onChange={(value) => setFilter('criticidade', value)} options={criticidadeOptions} />
           <FilterSelect label="Status" value={filters.status} onChange={(value) => setFilter('status', value)} options={statusOptions} />
           <label className="block">
-            <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Escola</span>
+            <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Escola</span>
             <Select
               value={filters.escolaId}
-              onChange={(value) => setFilter('escolaId', value)}
+              onChange={handleEscolaFilterChange}
               placeholder="Todas"
               options={[{ value: '', label: 'Todas' }, ...schoolOptions]}
             />
@@ -1054,8 +939,8 @@ export function Mapa({ onNavigate }) {
 
       <Card className="relative z-0 overflow-hidden p-0">
 
-        <div className="relative h-[calc(100vh-16rem)] min-h-[560px]">
-          <MetricPanel context={metricContext} />
+        <div className="relative h-[70vh] min-h-105 sm:h-[calc(100vh-16rem)] sm:min-h-140">
+          <MetricPanel context={metricContext} drawerAberto={drawerAberto} />
 
           <MapContainer center={mapCenter} zoom={13} scrollWheelZoom zoomControl={false} className="h-full w-full z-0">
             <TileLayer
@@ -1064,6 +949,7 @@ export function Mapa({ onNavigate }) {
               url={selectedMapStyle.url}
             />
             <MapZoomWatcher onZoomChange={setCurrentZoom} />
+            <MapBackgroundClickHandler onBackgroundClick={deselectAll} />
             {showMunicipioBoundary ? (
               <CaraguatatubaBoundary data={caraguatatubaBoundary} styleConfig={bairroStyleConfig} />
             ) : null}
@@ -1130,56 +1016,69 @@ export function Mapa({ onNavigate }) {
             onToggle={() => setIsColorScaleExpanded((current) => !current)}
           />
 
-          <div className={`absolute bottom-4 z-[650] rounded-lg border border-slate-200 bg-white/95 px-3 py-2 shadow-md backdrop-blur ${drawerAberto ? 'right-[410px]' : 'right-4'}`}>
-            <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-500">
-              Estilo do mapa
-            </span>
-            <Select
-              size="xs"
-              className="mt-1"
-              value={mapStyleKey}
-              onChange={setMapStyleKey}
-              options={Object.entries(mapStyles).map(([styleKey, style]) => ({ value: styleKey, label: style.label }))}
-            />
-            <div className="mt-2 space-y-1.5 text-xs font-semibold text-slate-600">
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={showBairrosLayer}
-                  onChange={(event) => setShowBairrosLayer(event.target.checked)}
-                  className="h-3.5 w-3.5 rounded border border-slate-300 text-primary"
-                />
-                Divisão por bairros
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={showMunicipioBoundary}
-                  onChange={(event) => setShowMunicipioBoundary(event.target.checked)}
-                  className="h-3.5 w-3.5 rounded border border-slate-300 text-primary"
-                />
-                Limite da cidade
-              </label>
+          <div className={`absolute bottom-4 z-[650] max-w-[calc(100%-1rem)] rounded-lg border border-slate-200 bg-white/95 px-3 py-2 shadow-md backdrop-blur ${drawerAberto ? 'hidden right-4 sm:block sm:right-[410px]' : 'right-4'}`}>
+            <div className="flex items-center justify-between gap-2">
+              <span className="block text-[10px] font-bold tracking-wide text-slate-500">
+                Estilo do mapa
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsMapStyleExpanded((current) => !current)}
+                className="rounded-md border border-slate-200 p-1 text-slate-500 hover:bg-slate-50 sm:hidden"
+                aria-label={isMapStyleExpanded ? 'Recolher opcoes do mapa' : 'Expandir opcoes do mapa'}
+              >
+                <ChevronIcon direction={isMapStyleExpanded ? 'up' : 'down'} />
+              </button>
             </div>
-            {selectedBairroStats ? (
-              <div className="mt-2 border-t border-slate-200 pt-2">
-                <p className="truncate text-[10px] font-bold uppercase tracking-wide text-slate-500">
-                  Bairro: {selectedBairroStats.nome}
-                </p>
-                <p className="mt-1 text-[11px] font-semibold text-slate-500">
-                  {selectedBairroStats.totalEscolas > 0
-                    ? `${selectedBairroStats.totalEscolas} escola${selectedBairroStats.totalEscolas > 1 ? 's' : ''} com ${selectedBairroStats.totalSolicitacoes} ocorrencia${selectedBairroStats.totalSolicitacoes === 1 ? '' : 's'}.`
-                    : 'Sem escolas associadas no cadastro atual.'}
-                </p>
-                <button
-                  type="button"
-                  onClick={clearSelectedBairro}
-                  className="mt-2 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-50"
-                >
-                  Limpar bairro
-                </button>
+
+            <div className={`${isMapStyleExpanded ? 'block' : 'hidden'} sm:block`}>
+              <Select
+                size="xs"
+                className="mt-1"
+                value={mapStyleKey}
+                onChange={setMapStyleKey}
+                options={Object.entries(mapStyles).map(([styleKey, style]) => ({ value: styleKey, label: style.label }))}
+              />
+              <div className="mt-2 space-y-1.5 text-xs font-semibold text-slate-600">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={showBairrosLayer}
+                    onChange={(event) => setShowBairrosLayer(event.target.checked)}
+                    className="h-3.5 w-3.5 rounded border border-slate-300 text-primary"
+                  />
+                  Divisão por bairros
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={showMunicipioBoundary}
+                    onChange={(event) => setShowMunicipioBoundary(event.target.checked)}
+                    className="h-3.5 w-3.5 rounded border border-slate-300 text-primary"
+                  />
+                  Limite da cidade
+                </label>
               </div>
-            ) : null}
+              {selectedBairroStats ? (
+                <div className="mt-2 border-t border-slate-200 pt-2">
+                  <p className="truncate text-[10px] font-bold tracking-wide text-slate-500">
+                    Bairro: {selectedBairroStats.nome}
+                  </p>
+                  <p className="mt-1 text-[11px] font-semibold text-slate-500">
+                    {selectedBairroStats.totalEscolas > 0
+                      ? `${selectedBairroStats.totalEscolas} escola${selectedBairroStats.totalEscolas > 1 ? 's' : ''} com ${selectedBairroStats.totalSolicitacoes} ocorrencia${selectedBairroStats.totalSolicitacoes === 1 ? '' : 's'}.`
+                      : 'Sem escolas associadas no cadastro atual.'}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={clearSelectedBairro}
+                    className="mt-2 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-50"
+                  >
+                    Limpar bairro
+                  </button>
+                </div>
+              ) : null}
+            </div>
           </div>
 
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[450] h-28 bg-gradient-to-t from-slate-950/12 to-transparent" />
@@ -1201,6 +1100,7 @@ export function Mapa({ onNavigate }) {
             ocorrenciasEscola={ocorrenciasEscola}
             onClose={closeDrawer}
             onOpenSchoolRegistry={openSchoolRegistry}
+            onOpenOcorrencia={(ocorrenciaId) => onNavigate?.(`/ocorrencias/${encodeURIComponent(ocorrenciaId)}`)}
           />
         </div>
       </Card>
@@ -1208,10 +1108,12 @@ export function Mapa({ onNavigate }) {
   )
 }
 
-function MetricPanel({ context }) {
+function MetricPanel({ context, drawerAberto }) {
   return (
-    <div className="absolute left-4 top-4 z-[650] w-[260px] rounded-xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur">
-      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
+    <div
+      className={`absolute left-2 top-2 z-[650] w-[260px] max-w-[calc(100%-1rem)] rounded-xl border border-slate-200 bg-white/95 p-3 shadow-lg backdrop-blur sm:left-4 sm:top-4 sm:p-4 ${drawerAberto ? 'hidden sm:block' : ''}`}
+    >
+      <p className="text-[10px] font-bold text-slate-500">
         {context.title}
       </p>
       <p className="mt-1 text-xs font-semibold text-slate-500">
@@ -1229,19 +1131,18 @@ function MetricPanel({ context }) {
 function MetricCard({ item }) {
   return (
     <div className="rounded-lg bg-slate-50 px-3 py-2">
-      <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-500">{item.label}</span>
+      <span className="block text-[10px] font-bold tracking-wide text-slate-500">{item.label}</span>
       <strong className="mt-1 block text-base font-800 text-slate-950">{item.value}</strong>
-      <span className="mt-1 block text-[10px] font-semibold text-slate-400">{item.helper}</span>
     </div>
   )
 }
 
 function MapColorScaleControl({ colorScale, isExpanded, legendGradient, legendRange, onChangeScale, onToggle }) {
   return (
-    <div className={`absolute bottom-4 left-20 z-[650] border border-slate-200 bg-white/95 shadow-md backdrop-blur transition-all ${isExpanded ? 'w-[280px] rounded-xl p-3 shadow-lg' : 'w-[210px] rounded-lg px-3 py-2'}`}>
+    <div className={`absolute bottom-4 left-20 z-[650] hidden border border-slate-200 bg-white/95 shadow-md backdrop-blur transition-all sm:block ${isExpanded ? 'w-[280px] rounded-xl p-3 shadow-lg' : 'w-[210px] rounded-lg px-3 py-2'}`}>
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[10px] font-bold uppercase tracking-wide text-slate-600">
-          Solicitacoes pendentes
+        <p className="text-[10px] font-bold tracking-wide text-slate-600">
+          Solicitações pendentes
         </p>
         <button
           type="button"
@@ -1253,18 +1154,20 @@ function MapColorScaleControl({ colorScale, isExpanded, legendGradient, legendRa
         </button>
       </div>
 
-      {isExpanded ? (
-        <div className="mt-3 grid grid-cols-3 gap-2">
-          <ColorScaleField label="Inicio" value={colorScale.start} onChange={(value) => onChangeScale((current) => ({ ...current, start: value }))} />
-          <ColorScaleField label="Meio" value={colorScale.middle} onChange={(value) => onChangeScale((current) => ({ ...current, middle: value }))} />
-          <ColorScaleField label="Fim" value={colorScale.end} onChange={(value) => onChangeScale((current) => ({ ...current, end: value }))} />
-        </div>
-      ) : null}
+      <div className={`${isExpanded ? 'block' : 'hidden'} sm:block`}>
+        {isExpanded ? (
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            <ColorScaleField label="Inicio" value={colorScale.start} onChange={(value) => onChangeScale((current) => ({ ...current, start: value }))} />
+            <ColorScaleField label="Meio" value={colorScale.middle} onChange={(value) => onChangeScale((current) => ({ ...current, middle: value }))} />
+            <ColorScaleField label="Fim" value={colorScale.end} onChange={(value) => onChangeScale((current) => ({ ...current, end: value }))} />
+          </div>
+        ) : null}
 
-      <div className={`${isExpanded ? 'mt-3' : 'mt-2'} h-3 rounded-full`} style={{ backgroundImage: legendGradient }} />
-      <div className="mt-1 flex justify-between text-[10px] font-semibold text-slate-500">
-        <span>{legendRange.minimum}</span>
-        <span>{legendRange.maximum}</span>
+        <div className={`${isExpanded ? 'mt-3' : 'mt-2'} h-3 rounded-full`} style={{ backgroundImage: legendGradient }} />
+        <div className="mt-1 flex justify-between text-[10px] font-semibold text-slate-500">
+          <span>{legendRange.minimum}</span>
+          <span>{legendRange.maximum}</span>
+        </div>
       </div>
     </div>
   )
@@ -1288,7 +1191,7 @@ function ChevronIcon({ direction }) {
 function ColorScaleField({ label, value, onChange }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-[10px] font-bold uppercase text-slate-500">{label}</span>
+      <span className="mb-1 block text-[10px] font-bold text-slate-500">{label}</span>
       <input
         type="color"
         value={value}
@@ -1302,7 +1205,7 @@ function ColorScaleField({ label, value, onChange }) {
 function DateFilter({ label, value, onChange }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">{label}</span>
+      <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">{label}</span>
       <input type="date" value={value} onChange={(event) => onChange(event.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500" />
     </label>
   )
@@ -1351,6 +1254,7 @@ function MapContextDrawer({
   loadingDetalhe,
   ocorrenciasEscola,
   onClose,
+  onOpenOcorrencia,
   onOpenSchoolRegistry,
 }) {
   if (!context) return null
@@ -1377,28 +1281,18 @@ function MapContextDrawer({
             ) : (
               <div className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2">
                 <span className="block truncate text-sm font-bold text-slate-800">{drawerTitle}</span>
-                <span className="mt-1 block text-[11px] font-semibold text-slate-500">Solicitacoes das escolas do bairro</span>
+                <span className="mt-1 block text-[11px] font-semibold text-slate-500">Solicitações das escolas do bairro</span>
               </div>
             )}
             <button type="button" onClick={onClose} className="shrink-0 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
               Fechar
             </button>
-          </div>
+          </div> 
         </div>
 
         <div className="flex-1 space-y-5 overflow-y-auto p-4">
           {isBairroMode ? (
             <>
-              <DrawerMetricsGrid
-                items={[
-                  { label: 'Escolas', value: bairroStats?.totalEscolas || 0 },
-                  { label: 'Ocorrencias', value: bairroStats?.totalSolicitacoes || 0 },
-                  { label: 'Criticas', value: bairroStats?.criticas || 0 },
-                  { label: 'Atencao', value: bairroStats?.atencao || 0 },
-                  { label: 'Baixas', value: bairroStats?.baixas || 0 },
-                ]}
-              />
-
               {Number(bairroStats?.totalEscolas || 0) === 0 ? (
                 <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-semibold text-slate-500">
                   Nenhuma escola cadastrada neste bairro no contexto atual.
@@ -1408,9 +1302,14 @@ function MapContextDrawer({
                   Nenhuma solicitacao encontrada para as escolas deste bairro com os filtros atuais.
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {bairroOcorrencias.map((ocorrencia) => (
-                    <OcorrenciaCard key={ocorrencia.id} ocorrencia={ocorrencia} schoolName={ocorrencia.escolaNome} />
+                    <OcorrenciaCard
+                      key={ocorrencia.id}
+                      ocorrencia={ocorrencia}
+                      schoolName={ocorrencia.escolaNome}
+                      onClick={() => onOpenOcorrencia?.(ocorrencia.id)}
+                    />
                   ))}
                 </div>
               )}
@@ -1426,15 +1325,19 @@ function MapContextDrawer({
               {detalheEscola ? (
                 <div>
                   <div className="mb-3 flex items-center justify-between gap-3">
-                    <h4 className="text-sm font-800 uppercase tracking-wide text-slate-500">Solicitacoes pendentes</h4>
+                    <h4 className="text-sm font-800 tracking-wide text-slate-500">Solicitações pendentes</h4>
                     <span className="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-bold text-primary-strong">
                       {ocorrenciasEscola.length}
                     </span>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {ocorrenciasEscola.length > 0 ? ocorrenciasEscola.map((ocorrencia) => (
-                      <OcorrenciaCard key={ocorrencia.id} ocorrencia={ocorrencia} />
+                      <OcorrenciaCard
+                        key={ocorrencia.id}
+                        ocorrencia={ocorrencia}
+                        onClick={() => onOpenOcorrencia?.(ocorrencia.id)}
+                      />
                     )) : (
                       <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-semibold text-slate-500">
                         Nenhuma ocorrencia encontrada para esta escola.
@@ -1455,40 +1358,78 @@ function MapContextDrawer({
   )
 }
 
-function DrawerMetricsGrid({ items }) {
+const criticidadeTextStyles = {
+  critica: 'text-red-600',
+  atencao: 'text-amber-600',
+  baixa: 'text-emerald-600',
+}
+
+function OcorrenciaCriticidadeTag({ ocorrencia }) {
+  const key = normalizeOccurrenceCriticidadeKey(ocorrencia.criticidade)
+  const label = ocorrencia.criticidadeLabel || ocorrencia.criticidade
+
   return (
-    <div className="grid grid-cols-2 gap-2">
-      {items.map((item) => (
-        <div key={item.label} className="rounded-lg bg-slate-50 px-3 py-2">
-          <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-500">{item.label}</span>
-          <strong className="mt-1 block text-sm font-800 text-slate-950">{item.value}</strong>
-        </div>
-      ))}
-    </div>
+    <span className="shrink-0 text-xs font-semibold text-slate-400">
+      Prioridade: <span className={`font-bold ${criticidadeTextStyles[key]}`}>{label}</span>
+    </span>
   )
 }
 
-function OcorrenciaCard({ ocorrencia, schoolName = '' }) {
+function OcorrenciaStatusTag({ ocorrencia }) {
+  const label = ocorrencia.statusLabel || ocorrencia.status
+
   return (
-    <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
+    <span className="text-[11px] font-semibold text-slate-500">
+      Status: <span className="font-bold text-slate-700">{label}</span>
+    </span>
+  )
+}
+
+function formatOcorrenciaData(value) {
+  if (!value) return 'Sem data'
+
+  const isoMatch = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (isoMatch) {
+    const [, year, month, day] = isoMatch
+    return `${day}/${month}/${year}`
+  }
+
+  const parsedDate = new Date(value)
+  return Number.isNaN(parsedDate.getTime()) ? String(value) : parsedDate.toLocaleDateString('pt-BR')
+}
+
+function OcorrenciaCard({ ocorrencia, schoolName = '', onClick }) {
+  return (
+    <article
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={onClick ? (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onClick()
+        }
+      } : undefined}
+      className={`rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition hover:border-slate-300 hover:shadow-md ${onClick ? 'cursor-pointer' : ''}`}
+    >
+      <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <h5 className="font-bold text-slate-900">{ocorrencia.titulo}</h5>
+          <h5 className="text-sm font-bold leading-snug text-slate-900">{ocorrencia.titulo}</h5>
           {schoolName ? (
-            <p className="mt-1 truncate text-[11px] font-bold uppercase tracking-wide text-slate-500">
+            <p className="mt-0.5 truncate text-[10px] font-bold tracking-wide text-slate-500">
               {schoolName}
             </p>
           ) : null}
         </div>
-        <Badge>{ocorrencia.criticidadeLabel || ocorrencia.criticidade}</Badge>
+        <OcorrenciaCriticidadeTag ocorrencia={ocorrencia} />
       </div>
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        <Badge>{ocorrencia.statusLabel || ocorrencia.status}</Badge>
-        <span className="text-xs font-semibold text-slate-500">{ocorrencia.data || ocorrencia.dataAtualizacao || ocorrencia.dataAbertura || ocorrencia.dataEnvio || 'Sem data'}</span>
+      <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400">
+        <OcorrenciaStatusTag ocorrencia={ocorrencia} />
+        <span className="text-slate-300">•</span>
+        <span className="font-semibold text-slate-500">
+          {formatOcorrenciaData(ocorrencia.data || ocorrencia.dataAtualizacao || ocorrencia.dataAbertura || ocorrencia.dataEnvio)}
+        </span>
       </div>
-      <p className="mt-3 text-sm leading-6 text-slate-600">
-        {ocorrencia.descricao || 'Sem descricao resumida para esta ocorrencia.'}
-      </p>
     </article>
   )
 }
@@ -1556,6 +1497,16 @@ function MapZoomWatcher({ onZoomChange }) {
   useEffect(() => {
     onZoomChange(map.getZoom())
   }, [map, onZoomChange])
+
+  return null
+}
+
+function MapBackgroundClickHandler({ onBackgroundClick }) {
+  useMapEvents({
+    click: () => {
+      onBackgroundClick()
+    },
+  })
 
   return null
 }
