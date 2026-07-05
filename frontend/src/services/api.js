@@ -104,3 +104,19 @@ export function listarAuditoria(filters = {}) {
   const query = params.toString()
   return request(`/auditoria${query ? `?${query}` : ''}`)
 }
+
+export function listarNotificacoes(filters = {}) {
+  const params = new URLSearchParams(filters)
+  const query = params.toString()
+  return request(`/notificacoes${query ? `?${query}` : ''}`)
+}
+
+export function marcarNotificacaoLida(id) {
+  return request(`/notificacoes/${id}/lida`, { method: 'PATCH' })
+}
+
+export function marcarNotificacoesLidas(filters = {}) {
+  const params = new URLSearchParams(filters)
+  const query = params.toString()
+  return request(`/notificacoes/lidas${query ? `?${query}` : ''}`, { method: 'PATCH' })
+}

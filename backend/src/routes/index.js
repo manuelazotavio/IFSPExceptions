@@ -3,6 +3,7 @@ import { auditoriaRoutes } from './auditoriaRoutes.js'
 import { authRoutes } from './authRoutes.js'
 import { escolaRoutes } from './escolaRoutes.js'
 import { mapaRoutes } from './mapaRoutes.js'
+import { notificacaoRoutes } from './notificacaoRoutes.js'
 import { ocorrenciaRoutes } from './ocorrenciaRoutes.js'
 import { userRoutes } from './userRoutes.js'
 
@@ -18,3 +19,4 @@ routes.use('/usuarios', userRoutes)
 routes.use('/ocorrencias', ocorrenciaRoutes)
 routes.use('/mapa', mapaRoutes)
 routes.use('/auditoria', auditoriaRoutes)
+routes.use('/notificacoes', notificacaoRoutes)

@@ -22,9 +22,10 @@ model Escola {
   longitude Float
   criadoEm  DateTime @default(now())
 
-  usuarios    User[]
-  ocorrencias Ocorrencia[]
-  logs        LogAuditoria[]
+  usuarios      User[]
+  ocorrencias   Ocorrencia[]
+  logs          LogAuditoria[]
+  notificacoes  Notificacao[]
 }
 
 model User {
@@ -64,6 +65,7 @@ model Ocorrencia {
   escolaId String
   escola   Escola      @relation(fields: [escolaId], references: [id])
   interacoes Interacao[]
+  notificacoes Notificacao[]
 }
 
 model Interacao {
@@ -91,4 +93,20 @@ model LogAuditoria {
 
   escolaId String?
   escola   Escola? @relation(fields: [escolaId], references: [id], onDelete: SetNull)
+}
+
+model Notificacao {
+  id             String   @id @default(cuid())
+  tipo           String
+  titulo         String
+  descricao      String   @db.Text
+  protocolo      String?
+  lida           Boolean  @default(false)
+  criadoPorEmail String?
+  criadoEm       DateTime @default(now())
+
+  ocorrenciaId String?
+  ocorrencia   Ocorrencia? @relation(fields: [ocorrenciaId], references: [id], onDelete: Cascade)
+  escolaId     String?
+  escola       Escola?     @relation(fields: [escolaId], references: [id], onDelete: Cascade)
 }

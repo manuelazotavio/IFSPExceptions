@@ -1,8 +1,13 @@
 import { z } from 'zod'
 import { OcorrenciaModel } from '../models/OcorrenciaModel.js'
 import { LogAuditoriaModel } from '../models/LogAuditoriaModel.js'
+import { NotificacaoModel } from '../models/NotificacaoModel.js'
 import { AppError } from '../utils/AppError.js'
 import { parseOrThrow } from '../utils/validate.js'
+
+function estaCriticaEmAberto(ocorrencia) {
+  return ocorrencia.criticidade === 'Critica' && ocorrencia.status !== 'Resolvida'
+}
 
 const CRITICIDADES = ['Baixa', 'Media', 'Alta', 'Critica']
 const STATUS_VALUES = ['Aberta', 'Em analise', 'Em andamento', 'Aguardando orcamento', 'Aguardando visita tecnica', 'Resolvida']
@@ -68,11 +73,25 @@ export class OcorrenciaController {
       escolaId: ocorrencia.escolaId,
       actor: request.actor,
     })
+
+    if (estaCriticaEmAberto(ocorrencia)) {
+      await NotificacaoModel.criar({
+        tipo: 'URGENTE',
+        titulo: 'Ocorrência crítica registrada',
+        descricao: `${ocorrencia.titulo} - ${ocorrencia.escola}`,
+        protocolo: ocorrencia.protocolo,
+        ocorrenciaId: ocorrencia.id,
+        escolaId: ocorrencia.escolaId,
+        criadoPorEmail: ocorrencia.criadoPorEmail,
+      })
+    }
+
     return response.status(201).json(ocorrencia)
   }
 
   static async update(request, response) {
     const payload = parseOrThrow(atualizarOcorrenciaSchema, request.body)
+    const anterior = await OcorrenciaModel.findById(request.params.id)
     const ocorrencia = await OcorrenciaModel.update(request.params.id, payload)
     await LogAuditoriaModel.registrar({
       acao: 'ATUALIZAR',
@@ -82,6 +101,19 @@ export class OcorrenciaController {
       escolaId: ocorrencia.escolaId,
       actor: request.actor,
     })
+
+    if (estaCriticaEmAberto(ocorrencia) && !estaCriticaEmAberto(anterior)) {
+      await NotificacaoModel.criar({
+        tipo: 'URGENTE',
+        titulo: 'Ocorrência crítica em aberto',
+        descricao: `${ocorrencia.titulo} - ${ocorrencia.escola}`,
+        protocolo: ocorrencia.protocolo,
+        ocorrenciaId: ocorrencia.id,
+        escolaId: ocorrencia.escolaId,
+        criadoPorEmail: ocorrencia.criadoPorEmail,
+      })
+    }
+
     return response.json(ocorrencia)
   }
 
@@ -115,6 +147,17 @@ export class OcorrenciaController {
       escolaId: ocorrencia.escolaId,
       actor: request.actor,
     })
+
+    await NotificacaoModel.criar({
+      tipo: 'MOVIMENTACAO',
+      titulo: 'Nova mensagem na ocorrência',
+      descricao: `${payload.autor}: ${payload.mensagem}`,
+      protocolo: ocorrencia.protocolo,
+      ocorrenciaId: ocorrencia.id,
+      escolaId: ocorrencia.escolaId,
+      criadoPorEmail: ocorrencia.criadoPorEmail,
+    })
+
     return response.status(201).json(ocorrencia)
   }
 

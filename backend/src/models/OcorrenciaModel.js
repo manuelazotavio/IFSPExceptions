@@ -37,9 +37,15 @@ function serialize(ocorrencia) {
 }
 
 async function proximoProtocolo() {
-  const ano = new Date().getFullYear()
-  const total = await prisma.ocorrencia.count()
-  return `${ano}-${String(total + 1).padStart(4, '0')}`
+  let protocolo
+  let existente = true
+
+  while (existente) {
+    protocolo = String(Math.floor(Math.random() * 1_000_000)).padStart(6, '0')
+    existente = await prisma.ocorrencia.findUnique({ where: { protocolo } })
+  }
+
+  return protocolo
 }
 
 export class OcorrenciaModel {
