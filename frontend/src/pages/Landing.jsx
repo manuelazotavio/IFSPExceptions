@@ -1,7 +1,4 @@
 import { useEffect, useState } from 'react'
-import exteriorImage from '../assets/school-exterior.png'
-import courtyardImage from '../assets/school-courtyard.png'
-import corridorImage from '../assets/school-corridor.png'
 import { Icon } from '../components/Icons.jsx'
 import { listarEscolas, listarOcorrencias } from '../services/api.js'
 
@@ -113,7 +110,7 @@ export function Landing({ onNavigate, user }) {
     <main className="min-h-screen bg-white text-slate-950">
       <section className="relative min-h-[92vh] overflow-hidden bg-slate-950 text-white">
         <img
-          src={exteriorImage}
+          src="/school-exterior.png"
           alt=""
           className="absolute inset-0 h-full w-full object-cover opacity-62"
         />
@@ -129,7 +126,7 @@ export function Landing({ onNavigate, user }) {
           <div>
           
             <h1 className="flex justify-center">
-              <img src="/geo/logo_fundo_escuro.svg" alt="Zela+" className="h-14 w-auto md:h-20" />
+              <img src="/logo_fundo_escuro.svg" alt="Zela+" className="h-14 w-auto md:h-20" />
             </h1>
             <p className="mx-auto mt-6 max-w-3xl text-lg font-medium leading-8 text-slate-100">
               Um panorama público dos avanços da manutenção escolar: escolas acompanhadas, bairros atendidos,
@@ -190,10 +187,10 @@ export function Landing({ onNavigate, user }) {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <img src={courtyardImage} alt="" className="h-72 w-full rounded-lg object-cover shadow-sm md:h-full" />
+            <img src="/school-courtyard.png" alt="" className="h-72 w-full rounded-lg object-cover shadow-sm md:h-full" />
             <div className="grid gap-4">
-              <img src={corridorImage} alt="" className="h-48 w-full rounded-lg object-cover shadow-sm" />
-              <img src="/geo/1-13.jpg" alt="" className="h-64 w-full rounded-lg object-cover shadow-sm" />
+              <img src="/school-corridor.png" alt="" className="h-48 w-full rounded-lg object-cover shadow-sm" />
+              <img src="/1-13.jpg" alt="" className="h-64 w-full rounded-lg object-cover shadow-sm" />
             </div>
           </div>
         </div>

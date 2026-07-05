@@ -25,9 +25,14 @@ Sistema de acompanhamento de manutenção escolar da rede municipal de Caraguata
 IFSPExceptions/
 ├── backend/
 │   ├── prisma/
-│   │   ├── schema.prisma          # modelos: Escola, User, Ocorrencia, Interacao, LogAuditoria, Notificacao
+│   │   ├── schema.prisma          # modelos: Escola, User, Ocorrencia, Interacao, LogAuditoria, Notificacao, Comodo
 │   │   ├── migrations/
-│   │   └── seed.js                # popula escolas (a partir do JSON da SEDUC) + usuários de teste
+│   │   ├── seed.js                # popula escolas + usuários de teste + ocorrências de exemplo
+│   │   └── seeds/                 # dados-fonte da SEDUC usados pelo seed.js
+│   │       ├── unidades_seduc_caraguatatuba.json          # escolas (nome, endereço, cômodos cadastrados...)
+│   │       ├── ocorrencias_seduc_caraguatatuba_seed.json  # ocorrências de exemplo
+│   │       └── scripts/           # scripts auxiliares de geração/normalização desses JSONs
+│   ├── uploads/                    # fotos enviadas nas ocorrências (multer) — gerado em runtime, git-ignored
 │   └── src/
 │       ├── server.js               # ponto de entrada (sobe o Express)
 │       ├── app.js                  # configuração do app (cors, json, rotas)
@@ -40,16 +45,20 @@ IFSPExceptions/
 │
 └── frontend/
     ├── public/
-    │   ├── geo/                    # SVGs da logo, GeoJSON de bairros, dados das escolas da SEDUC
-    │   └── seeds/                  # JSON de ocorrências usado para popular o banco
+    │   ├── geo/                    # GeoJSON de bairros e do limite do município (usados no mapa de calor)
+    │   ├── logo_fundo_branco.svg, logo_fundo_escuro.svg, icon_fundo_branco.svg
+    │   └── school-exterior.png, school-courtyard.png, school-corridor.png, 1-13.jpg  # fotos da Landing
     └── src/
         ├── main.jsx / App.jsx      # bootstrap e roteador por hash (define quem vê o quê por role)
         ├── auth/                   # sessão do usuário (token/local storage)
         ├── components/             # componentes reutilizáveis (Layout, Sidebar, Select, Modal, etc.)
         ├── pages/                  # uma página por rota (Dashboard, Ocorrencias, Escolas, Mapa, AdminPages, Landing...)
-        ├── services/api.js         # client HTTP (fetch) que fala com o backend
+        ├── services/                # api.js (client HTTP) e mapa.js (dados do mapa de calor)
+        ├── seeds/                  # dados mock usados como fallback no frontend quando a API não responde
         └── utils/                  # formatação, métricas, geo de bairros, etc.
 ```
+
+> Os JSONs de escolas/ocorrências da SEDUC vivem em `backend/prisma/seeds/` (fonte usada pelo `seed.js`). O `frontend/src/seeds/` é independente: dados mock usados só como fallback local do frontend.
 
 ## Papéis de usuário
 
@@ -124,13 +133,13 @@ Isso cria (ou atualiza) as tabelas no MySQL de acordo com `prisma/schema.prisma`
 npm run prisma:seed
 ```
 
-Isso carrega as escolas reais da SEDUC (`frontend/public/geo/unidades_seduc_caraguatatuba.json`) e cria os usuários de teste abaixo (senha `123456` para todos):
+Isso carrega as escolas reais da SEDUC (`frontend/public/geo/unidades_seduc_caraguatatuba.json`) e cria os usuários de teste abaixo — um por papel (o seed também cria vários outros usuários `EXTERNO`, um por escola, todos com a mesma senha):
 
-| Papel | Email |
-| --- | --- |
-| SEDUC | `seduc@escola.gov.br` |
-| Diretor(a) | `diretor@escola.gov.br` |
-| Externo | `externo@escola.gov.br` |
+| Papel | Email | Senha |
+| --- | --- | --- |
+| SEDUC | `seduc@escola.gov.br` | `123456` |
+| Diretor(a) | `diretor@escola.gov.br` | `123456` |
+| Externo | `externo@escola.gov.br` | `123456` |
 
 ### 7. Suba o servidor
 
