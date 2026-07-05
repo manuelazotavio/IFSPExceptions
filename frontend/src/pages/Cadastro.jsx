@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { listarEscolas, registro } from '../services/api.js'
+import { Select } from '../components/ui.jsx'
 
 const roles = [
   { value: 'DIRETOR', label: 'Diretor(a)' },
@@ -26,6 +27,10 @@ export function Cadastro({ onNavigate }) {
   async function handleSubmit(event) {
     event.preventDefault()
     setError('')
+    if (!escolaId) {
+      setError('Selecione uma escola')
+      return
+    }
     setLoading(true)
     try {
       await registro({ nome, email, senha, role, escolaId })
@@ -98,29 +103,17 @@ export function Cadastro({ onNavigate }) {
           </label>
           <label className="block">
             <span className="mb-1 block text-xs font-bold  text-slate-500">Perfil</span>
-            <select
-              value={role}
-              onChange={(event) => setRole(event.target.value)}
-              className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
-            >
-              {roles.map((item) => (
-                <option key={item.value} value={item.value}>{item.label}</option>
-              ))}
-            </select>
+            <Select size="lg" value={role} onChange={setRole} options={roles} />
           </label>
           <label className="block">
             <span className="mb-1 block text-xs font-bold  text-slate-500">Escola</span>
-            <select
-              required
+            <Select
+              size="lg"
               value={escolaId}
-              onChange={(event) => setEscolaId(event.target.value)}
-              className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
-            >
-              <option value="">Selecione</option>
-              {escolas.map((escola) => (
-                <option key={escola.id} value={escola.id}>{escola.nome}</option>
-              ))}
-            </select>
+              onChange={setEscolaId}
+              placeholder="Selecione"
+              options={escolas.map((escola) => ({ value: escola.id, label: escola.nome }))}
+            />
           </label>
 
           {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</p>}

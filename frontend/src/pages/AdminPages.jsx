@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { categorias } from '../data/mockData.js'
 import { dashboardMetrics, groupCount } from '../utils/metrics.js'
 import { atualizarUsuario, listarAuditoria, listarEscolas, listarOcorrencias, listarUsuarios } from '../services/api.js'
-import { Badge, BarList, Card, FilterSelect, MetricCard, Modal } from '../components/ui.jsx'
+import { Badge, BarList, Card, FilterSelect, MetricCard, Modal, Select } from '../components/ui.jsx'
 
 export function Indicadores() {
   const [escolas, setEscolas] = useState([])
@@ -112,24 +112,17 @@ export function Usuarios() {
                   <td className="px-4 py-3 font-bold text-slate-800">{user.nome}</td>
                   <td className="px-4 py-3 text-slate-600">{user.email}</td>
                   <td className="px-4 py-3">
-                    <select
-                      value={user.role}
-                      onChange={(event) => alterarPermissao(user.id, event.target.value)}
-                      className="h-10 cursor-pointer rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500"
-                    >
-                      {PERMISSOES.map((opcao) => <option key={opcao.value} value={opcao.value}>{opcao.label}</option>)}
-                    </select>
+                    <Select value={user.role} onChange={(value) => alterarPermissao(user.id, value)} options={PERMISSOES} className="inline-block w-auto min-w-[10rem]" />
                   </td>
                   <td className="px-4 py-3">
                     {user.role === 'DIRETOR' ? (
-                      <select
+                      <Select
                         value={user.escolaId || ''}
-                        onChange={(event) => alterarEscola(user.id, event.target.value)}
-                        className="h-10 w-full max-w-56 cursor-pointer rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-500"
-                      >
-                        <option value="">Sem vinculo</option>
-                        {escolas.map((escola) => <option key={escola.id} value={escola.id}>{escola.nome}</option>)}
-                      </select>
+                        onChange={(value) => alterarEscola(user.id, value)}
+                        placeholder="Sem vinculo"
+                        options={escolas.map((escola) => ({ value: escola.id, label: escola.nome }))}
+                        className="w-full max-w-56"
+                      />
                     ) : (
                       <span className="text-slate-400">—</span>
                     )}

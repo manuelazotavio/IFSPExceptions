@@ -19,6 +19,7 @@ export function Icon({ name, className = 'h-4 w-4' }) {
     history: 'M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0',
     download: 'M12 4v11m0 0 4-4m-4 4-4-4M4 20h16',
     close: 'M18 6 6 18M6 6l12 12',
+    check: 'm5 12 5 5 9-9',
   }
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

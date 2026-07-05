@@ -191,6 +191,9 @@ export function Layout({ route, onNavigate, onExport, user, onLogout, children }
           </div>
         </header>
         <main className="px-5 py-6 lg:px-8">{children}</main>
+        <footer className="border-t border-slate-200 bg-white px-5 py-5 text-center text-xs font-semibold text-slate-400 lg:px-8">
+          IFSP Exceptions © {new Date().getFullYear()} — Todos os direitos reservados.
+        </footer>
       </div>
     </div>
   )

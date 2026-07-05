@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { dashboardMetrics, groupCount, sortOcorrencias } from '../utils/metrics.js'
 import { listarEscolas, listarOcorrencias } from '../services/api.js'
-import { BarList, Card } from '../components/ui.jsx'
+import { BarList, Card, Select } from '../components/ui.jsx'
 import { Icon } from '../components/Icons.jsx'
 
 function ThickBarList({ data }) {
@@ -222,31 +222,23 @@ export function Dashboard({ onNavigate, user }) {
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <label className="block">
             <span className="mb-1 block text-xs font-bold text-slate-500">Escola</span>
-            <select
+            <Select
               value={filtros.escolaId}
-              onChange={(event) => setFiltros((prev) => ({ ...prev, escolaId: event.target.value }))}
+              onChange={(value) => setFiltros((prev) => ({ ...prev, escolaId: value }))}
               disabled={isDiretor}
-              className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500 disabled:bg-slate-50 disabled:text-slate-500"
-            >
-              <option value="">{isDiretor ? formatLabel(minhaEscola?.nome || 'Minha escola') : 'Todas as escolas'}</option>
-              {!isDiretor && escolasDisponiveis.map((escola) => (
-                <option key={escola.id} value={escola.id}>{formatLabel(escola.nome)}</option>
-              ))}
-            </select>
+              placeholder={isDiretor ? formatLabel(minhaEscola?.nome || 'Minha escola') : 'Todas as escolas'}
+              options={!isDiretor ? escolasDisponiveis.map((escola) => ({ value: escola.id, label: formatLabel(escola.nome) })) : []}
+            />
           </label>
           <label className="block">
             <span className="mb-1 block text-xs font-bold text-slate-500">Bairro</span>
-            <select
+            <Select
               value={filtros.bairro}
-              onChange={(event) => setFiltros((prev) => ({ ...prev, bairro: event.target.value, escolaId: prev.escolaId && escolas.find((escola) => escola.id === prev.escolaId)?.bairro !== event.target.value && event.target.value ? '' : prev.escolaId }))}
+              onChange={(value) => setFiltros((prev) => ({ ...prev, bairro: value, escolaId: prev.escolaId && escolas.find((escola) => escola.id === prev.escolaId)?.bairro !== value && value ? '' : prev.escolaId }))}
               disabled={isDiretor}
-              className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500 disabled:bg-slate-50 disabled:text-slate-500"
-            >
-              <option value="">{isDiretor ? formatLabel(minhaEscola?.bairro || 'Bairro da escola') : 'Todos os bairros'}</option>
-              {!isDiretor && bairrosDisponiveis.map((bairro) => (
-                <option key={bairro} value={bairro}>{formatLabel(bairro)}</option>
-              ))}
-            </select>
+              placeholder={isDiretor ? formatLabel(minhaEscola?.bairro || 'Bairro da escola') : 'Todos os bairros'}
+              options={!isDiretor ? bairrosDisponiveis.map((bairro) => ({ value: bairro, label: formatLabel(bairro) })) : []}
+            />
           </label>
           <label className="block">
             <span className="mb-1 block text-xs font-bold text-slate-500">Data inicial</span>

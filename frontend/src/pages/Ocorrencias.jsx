@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { bairros, categorias, criticidadeValues, statusValues } from '../data/mockData.js'
 import { diasEmAberto, sortOcorrencias } from '../utils/metrics.js'
-import { Card, FilterSelect, Modal, Toast } from '../components/ui.jsx'
+import { Card, FilterSelect, Modal, Select, Toast } from '../components/ui.jsx'
 import { Pagination } from '../components/Pagination.jsx'
 import { Icon } from '../components/Icons.jsx'
 import { atualizarOcorrencia, criarOcorrencia, listarOcorrencias, uploadFotosOcorrencia } from '../services/api.js'
@@ -404,10 +404,11 @@ export function Ocorrencias({ onNavigate, user }) {
         <div className="space-y-3">
           <label className="block">
             <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Escola <span className="text-red-500">*</span></span>
-            <select value={novaOcorrencia.escolaId} onChange={(e) => alterarEscolaNovaOcorrencia(e.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500">
-              <option value="">Selecione...</option>
-              {escolas.map((escola) => <option key={escola.id} value={escola.id}>{escola.nome} - {formatDisplayLabel(escola.bairro)}</option>)}
-            </select>
+            <Select
+              value={novaOcorrencia.escolaId}
+              onChange={alterarEscolaNovaOcorrencia}
+              options={escolas.map((escola) => ({ value: escola.id, label: `${escola.nome} - ${formatDisplayLabel(escola.bairro)}` }))}
+            />
           </label>
           <label className="block">
             <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Título <span className="text-red-500">*</span></span>
@@ -416,40 +417,28 @@ export function Ocorrencias({ onNavigate, user }) {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="block">
               <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Tipo <span className="text-red-500">*</span></span>
-              <select value={novaOcorrencia.tipo} onChange={(e) => setCampo('tipo', e.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500">
-                <option value="">Selecione...</option>
-                {categorias.map((item) => <option key={item} value={item}>{item}</option>)}
-              </select>
+              <Select value={novaOcorrencia.tipo} onChange={(value) => setCampo('tipo', value)} options={categorias} />
             </label>
             <label className="block">
               <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Criticidade <span className="text-red-500">*</span></span>
-              <select value={novaOcorrencia.criticidade} onChange={(e) => setCampo('criticidade', e.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500">
-                <option value="">Selecione...</option>
-                {criticidadeValues.map((item) => <option key={item} value={item}>{item}</option>)}
-              </select>
+              <Select value={novaOcorrencia.criticidade} onChange={(value) => setCampo('criticidade', value)} options={criticidadeValues} />
             </label>
           </div>
           <label className="block">
             <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Localização interna <span className="text-red-500">*</span></span>
-            <select
+            <Select
               value={novaOcorrencia.localizacaoInterna}
-              onChange={(e) => setCampo('localizacaoInterna', e.target.value)}
+              onChange={(value) => setCampo('localizacaoInterna', value)}
               disabled={!novaOcorrencia.escolaId || comodosDaEscola.length === 0}
-              className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
-            >
-              <option value="">
-                {!novaOcorrencia.escolaId
+              placeholder={
+                !novaOcorrencia.escolaId
                   ? 'Selecione uma escola primeiro'
                   : comodosDaEscola.length === 0
                     ? 'Nenhum cômodo cadastrado para esta escola'
-                    : 'Selecione...'}
-              </option>
-              {comodosDaEscola.map((comodo) => (
-                <option key={getComodoChave(comodo)} value={getComodoChave(comodo)}>
-                  {getComodoRotulo(comodo)}
-                </option>
-              ))}
-            </select>
+                    : 'Selecione...'
+              }
+              options={comodosDaEscola.map((comodo) => ({ value: getComodoChave(comodo), label: getComodoRotulo(comodo) }))}
+            />
           </label>
           <label className="block">
             <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Descrição <span className="text-red-500">*</span></span>
