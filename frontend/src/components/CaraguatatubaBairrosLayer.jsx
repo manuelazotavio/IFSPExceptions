@@ -1,3 +1,4 @@
+import L from 'leaflet'
 import { GeoJSON } from 'react-leaflet'
 import { getBairroKey } from '../utils/mapaBairros.js'
 
@@ -59,7 +60,8 @@ export function CaraguatatubaBairrosLayer({
       onEachFeature={(feature, layer) => {
         if (!onSelectBairro) return
 
-        layer.on('click', () => {
+        layer.on('click', (event) => {
+          L.DomEvent.stopPropagation(event)
           layer.bringToFront()
           onSelectBairro(feature)
         })

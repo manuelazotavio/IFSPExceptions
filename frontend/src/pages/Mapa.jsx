@@ -4,7 +4,7 @@ import 'leaflet/dist/leaflet.css'
 import { MapContainer, Marker, TileLayer, Tooltip, useMap, useMapEvents } from 'react-leaflet'
 import { CaraguatatubaBairrosLayer, bairroStyleDefaults } from '../components/CaraguatatubaBairrosLayer.jsx'
 import { CaraguatatubaBoundary } from '../components/Mapa_com_boundary.jsx'
-import { Badge, Card, FilterSelect, Select } from '../components/ui.jsx'
+import { Card, FilterSelect, Select } from '../components/ui.jsx'
 import { getEscolaOcorrenciasFallback, loadMapOccurrences } from '../services/mapa.js'
 import { getAllSchools, loadSchoolCatalog } from '../utils/schools.js'
 import {
@@ -264,46 +264,40 @@ function matchesOccurrenceFilters(occurrence, filters) {
   return true
 }
 
-function sortByLatestDate(left, right) {
-  return new Date(right.data || right.dataEnvio || 0) - new Date(left.data || left.dataEnvio || 0)
+function getCriticidadeRank(criticidade) {
+  const key = normalizeOccurrenceCriticidadeKey(criticidade)
+  if (key === 'critica') return 3
+  if (key === 'atencao') return 2
+  return 1
 }
 
-function formatPercent(value, total) {
-  if (!total || total <= 0) return '0%'
-  return `${Math.round((Number(value || 0) / total) * 100)}%`
+function getOccurrenceOpenDate(occurrence) {
+  const raw = occurrence.dataAbertura || occurrence.dataEnvio || occurrence.data || occurrence.dataAtualizacao
+  const date = new Date(raw)
+  return Number.isNaN(date.getTime()) ? null : date
 }
 
-function buildMetricItems({ metrics, maxIntensity, schoolCount, totalSchools }) {
+function sortOcorrenciasByUrgencia(left, right) {
+  const rankDiff = getCriticidadeRank(right.criticidade) - getCriticidadeRank(left.criticidade)
+  if (rankDiff !== 0) return rankDiff
+
+  const leftDate = getOccurrenceOpenDate(left)
+  const rightDate = getOccurrenceOpenDate(right)
+  if (leftDate && rightDate) return leftDate - rightDate
+  if (leftDate) return -1
+  if (rightDate) return 1
+  return 0
+}
+
+function buildMetricItems({ metrics }) {
   return [
     {
       label: 'Ocorrencias',
       value: Number(metrics.totalOcorrencias || 0),
-      helper: '100% do contexto',
     },
     {
       label: 'Criticas',
       value: Number(metrics.criticas || 0),
-      helper: `${formatPercent(metrics.criticas, metrics.totalOcorrencias)} do total`,
-    },
-    {
-      label: 'Atencao',
-      value: Number(metrics.atencao || 0),
-      helper: `${formatPercent(metrics.atencao, metrics.totalOcorrencias)} do total`,
-    },
-    {
-      label: 'Baixas',
-      value: Number(metrics.baixas || 0),
-      helper: `${formatPercent(metrics.baixas, metrics.totalOcorrencias)} do total`,
-    },
-    {
-      label: 'Intensidade',
-      value: Number(metrics.intensidade || 0),
-      helper: `${formatPercent(metrics.intensidade, maxIntensity || metrics.intensidade || 0)} do pico`,
-    },
-    {
-      label: 'Escolas',
-      value: Number(schoolCount || 0),
-      helper: `${formatPercent(schoolCount, totalSchools)} da rede`,
     },
   ]
 }
@@ -385,7 +379,7 @@ function getBairroSolicitacoes({ bairroKey, bairroStats, occurrences, schoolsByI
       ...occurrence,
       escolaNome: occurrence.escola || schoolsById[occurrence.escolaId]?.escolaNome || schoolsById[occurrence.escolaId]?.nome || 'Escola sem nome',
     }))
-    .sort(sortByLatestDate)
+    .sort(sortOcorrenciasByUrgencia)
 }
 
 function getBairroLabelStyle({ entry, currentZoom, isSelected, hasSchools }) {
@@ -678,11 +672,11 @@ export function Mapa({ onNavigate }) {
 
   const ocorrenciasEscola = useMemo(() => {
     if (Array.isArray(detalheEscola?.ocorrencias)) {
-      return detalheEscola.ocorrencias
+      return [...detalheEscola.ocorrencias].sort(sortOcorrenciasByUrgencia)
     }
 
     const fallback = getEscolaOcorrenciasFallback(escolaSelecionada, allMapSchools, filteredOccurrences)
-    return fallback.ocorrencias
+    return [...fallback.ocorrencias].sort(sortOcorrenciasByUrgencia)
   }, [allMapSchools, detalheEscola, escolaSelecionada, filteredOccurrences])
 
   const schoolOptions = useMemo(() => (
@@ -900,6 +894,16 @@ export function Mapa({ onNavigate }) {
     }
   }
 
+  function deselectAll() {
+    if (!modalContext && !selectedBairro && !escolaSelecionada && !filters.escolaId) return
+
+    closeDrawer()
+    setSelectedBairro('')
+    if (filters.escolaId) {
+      setFilter('escolaId', '')
+    }
+  }
+
   function openSchoolRegistry() {
     if (modalContext?.type !== 'escola' || !escolaSelecionada) return
     onNavigate?.(`/escolas/${encodeURIComponent(escolaSelecionada)}`)
@@ -944,6 +948,7 @@ export function Mapa({ onNavigate }) {
               url={selectedMapStyle.url}
             />
             <MapZoomWatcher onZoomChange={setCurrentZoom} />
+            <MapBackgroundClickHandler onBackgroundClick={deselectAll} />
             {showMunicipioBoundary ? (
               <CaraguatatubaBoundary data={caraguatatubaBoundary} styleConfig={bairroStyleConfig} />
             ) : null}
@@ -1081,6 +1086,7 @@ export function Mapa({ onNavigate }) {
             ocorrenciasEscola={ocorrenciasEscola}
             onClose={closeDrawer}
             onOpenSchoolRegistry={openSchoolRegistry}
+            onOpenOcorrencia={(ocorrenciaId) => onNavigate?.(`/ocorrencias/${encodeURIComponent(ocorrenciaId)}`)}
           />
         </div>
       </Card>
@@ -1091,7 +1097,7 @@ export function Mapa({ onNavigate }) {
 function MetricPanel({ context }) {
   return (
     <div className="absolute left-4 top-4 z-[650] w-[260px] rounded-xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur">
-      <p className="text-[10px] font-bold tracking-[0.18em] text-slate-500">
+      <p className="text-[10px] font-bold text-slate-500">
         {context.title}
       </p>
       <p className="mt-1 text-xs font-semibold text-slate-500">
@@ -1111,7 +1117,6 @@ function MetricCard({ item }) {
     <div className="rounded-lg bg-slate-50 px-3 py-2">
       <span className="block text-[10px] font-bold tracking-wide text-slate-500">{item.label}</span>
       <strong className="mt-1 block text-base font-800 text-slate-950">{item.value}</strong>
-      <span className="mt-1 block text-[10px] font-semibold text-slate-400">{item.helper}</span>
     </div>
   )
 }
@@ -1121,7 +1126,7 @@ function MapColorScaleControl({ colorScale, isExpanded, legendGradient, legendRa
     <div className={`absolute bottom-4 left-20 z-[650] border border-slate-200 bg-white/95 shadow-md backdrop-blur transition-all ${isExpanded ? 'w-[280px] rounded-xl p-3 shadow-lg' : 'w-[210px] rounded-lg px-3 py-2'}`}>
       <div className="flex items-center justify-between gap-2">
         <p className="text-[10px] font-bold tracking-wide text-slate-600">
-          Solicitacoes pendentes
+          Solicitações pendentes
         </p>
         <button
           type="button"
@@ -1231,6 +1236,7 @@ function MapContextDrawer({
   loadingDetalhe,
   ocorrenciasEscola,
   onClose,
+  onOpenOcorrencia,
   onOpenSchoolRegistry,
 }) {
   if (!context) return null
@@ -1257,13 +1263,13 @@ function MapContextDrawer({
             ) : (
               <div className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2">
                 <span className="block truncate text-sm font-bold text-slate-800">{drawerTitle}</span>
-                <span className="mt-1 block text-[11px] font-semibold text-slate-500">Solicitacoes das escolas do bairro</span>
+                <span className="mt-1 block text-[11px] font-semibold text-slate-500">Solicitações das escolas do bairro</span>
               </div>
             )}
             <button type="button" onClick={onClose} className="shrink-0 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
               Fechar
             </button>
-          </div>
+          </div> 
         </div>
 
         <div className="flex-1 space-y-5 overflow-y-auto p-4">
@@ -1278,9 +1284,14 @@ function MapContextDrawer({
                   Nenhuma solicitacao encontrada para as escolas deste bairro com os filtros atuais.
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {bairroOcorrencias.map((ocorrencia) => (
-                    <OcorrenciaCard key={ocorrencia.id} ocorrencia={ocorrencia} schoolName={ocorrencia.escolaNome} />
+                    <OcorrenciaCard
+                      key={ocorrencia.id}
+                      ocorrencia={ocorrencia}
+                      schoolName={ocorrencia.escolaNome}
+                      onClick={() => onOpenOcorrencia?.(ocorrencia.id)}
+                    />
                   ))}
                 </div>
               )}
@@ -1296,15 +1307,19 @@ function MapContextDrawer({
               {detalheEscola ? (
                 <div>
                   <div className="mb-3 flex items-center justify-between gap-3">
-                    <h4 className="text-sm font-800 tracking-wide text-slate-500">Solicitacoes pendentes</h4>
+                    <h4 className="text-sm font-800 tracking-wide text-slate-500">Solicitações pendentes</h4>
                     <span className="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-bold text-primary-strong">
                       {ocorrenciasEscola.length}
                     </span>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {ocorrenciasEscola.length > 0 ? ocorrenciasEscola.map((ocorrencia) => (
-                      <OcorrenciaCard key={ocorrencia.id} ocorrencia={ocorrencia} />
+                      <OcorrenciaCard
+                        key={ocorrencia.id}
+                        ocorrencia={ocorrencia}
+                        onClick={() => onOpenOcorrencia?.(ocorrencia.id)}
+                      />
                     )) : (
                       <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-semibold text-slate-500">
                         Nenhuma ocorrencia encontrada para esta escola.
@@ -1325,25 +1340,79 @@ function MapContextDrawer({
   )
 }
 
-function OcorrenciaCard({ ocorrencia, schoolName = '' }) {
+const criticidadeTextStyles = {
+  critica: 'text-red-600',
+  atencao: 'text-amber-600',
+  baixa: 'text-emerald-600',
+}
+
+function OcorrenciaCriticidadeTag({ ocorrencia }) {
+  const key = normalizeOccurrenceCriticidadeKey(ocorrencia.criticidade)
+  const label = ocorrencia.criticidadeLabel || ocorrencia.criticidade
+
   return (
-    <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
+    <span className="shrink-0 text-xs font-semibold text-slate-400">
+      Prioridade: <span className={`font-bold ${criticidadeTextStyles[key]}`}>{label}</span>
+    </span>
+  )
+}
+
+function OcorrenciaStatusTag({ ocorrencia }) {
+  const label = ocorrencia.statusLabel || ocorrencia.status
+
+  return (
+    <span className="text-[11px] font-semibold text-slate-500">
+      Status: <span className="font-bold text-slate-700">{label}</span>
+    </span>
+  )
+}
+
+function formatOcorrenciaData(value) {
+  if (!value) return 'Sem data'
+
+  const isoMatch = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (isoMatch) {
+    const [, year, month, day] = isoMatch
+    return `${day}/${month}/${year}`
+  }
+
+  const parsedDate = new Date(value)
+  return Number.isNaN(parsedDate.getTime()) ? String(value) : parsedDate.toLocaleDateString('pt-BR')
+}
+
+function OcorrenciaCard({ ocorrencia, schoolName = '', onClick }) {
+  return (
+    <article
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={onClick ? (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onClick()
+        }
+      } : undefined}
+      className={`rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition hover:border-slate-300 hover:shadow-md ${onClick ? 'cursor-pointer' : ''}`}
+    >
+      <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <h5 className="font-bold text-slate-900">{ocorrencia.titulo}</h5>
+          <h5 className="text-sm font-bold leading-snug text-slate-900">{ocorrencia.titulo}</h5>
           {schoolName ? (
-            <p className="mt-1 truncate text-[11px] font-bold tracking-wide text-slate-500">
+            <p className="mt-0.5 truncate text-[10px] font-bold tracking-wide text-slate-500">
               {schoolName}
             </p>
           ) : null}
         </div>
-        <Badge>{ocorrencia.criticidadeLabel || ocorrencia.criticidade}</Badge>
+        <OcorrenciaCriticidadeTag ocorrencia={ocorrencia} />
       </div>
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        <Badge>{ocorrencia.statusLabel || ocorrencia.status}</Badge>
-        <span className="text-xs font-semibold text-slate-500">{ocorrencia.data || ocorrencia.dataAtualizacao || ocorrencia.dataAbertura || ocorrencia.dataEnvio || 'Sem data'}</span>
+      <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400">
+        <OcorrenciaStatusTag ocorrencia={ocorrencia} />
+        <span className="text-slate-300">•</span>
+        <span className="font-semibold text-slate-500">
+          {formatOcorrenciaData(ocorrencia.data || ocorrencia.dataAtualizacao || ocorrencia.dataAbertura || ocorrencia.dataEnvio)}
+        </span>
       </div>
-      <p className="mt-3 text-sm leading-6 text-slate-600">
+      <p className="mt-2 text-xs leading-5 text-slate-600">
         {ocorrencia.descricao || 'Sem descricao resumida para esta ocorrencia.'}
       </p>
     </article>
@@ -1413,6 +1482,16 @@ function MapZoomWatcher({ onZoomChange }) {
   useEffect(() => {
     onZoomChange(map.getZoom())
   }, [map, onZoomChange])
+
+  return null
+}
+
+function MapBackgroundClickHandler({ onBackgroundClick }) {
+  useMapEvents({
+    click: () => {
+      onBackgroundClick()
+    },
+  })
 
   return null
 }
