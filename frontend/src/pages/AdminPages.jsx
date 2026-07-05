@@ -41,6 +41,29 @@ function formatarDataBR(dataIso) {
   return `${dia}/${mes}/${ano}`
 }
 
+async function svgUrlParaPngDataUrl(url, width = 240, height = 240) {
+  return new Promise((resolve) => {
+    const image = new Image()
+    image.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const context = canvas.getContext('2d')
+      const scale = Math.min(width / image.naturalWidth, height / image.naturalHeight)
+      const drawWidth = image.naturalWidth * scale
+      const drawHeight = image.naturalHeight * scale
+      const drawX = (width - drawWidth) / 2
+      const drawY = (height - drawHeight) / 2
+      context.fillStyle = '#ffffff'
+      context.fillRect(0, 0, width, height)
+      context.drawImage(image, drawX, drawY, drawWidth, drawHeight)
+      resolve(canvas.toDataURL('image/png'))
+    }
+    image.onerror = () => resolve(null)
+    image.src = url
+  })
+}
+
 export function Usuarios() {
   const [lista, setLista] = useState([])
   const [escolas, setEscolas] = useState([])
@@ -156,17 +179,25 @@ export function Usuarios() {
   async function exportarUsuariosPdf() {
     const { jsPDF } = await import('jspdf')
     const doc = new jsPDF()
+    const logo = await svgUrlParaPngDataUrl('/prefeitura-de-caraguatatuba-seeklogo.svg')
     const pageWidth = doc.internal.pageSize.getWidth()
     const pageHeight = doc.internal.pageSize.getHeight()
     const margin = 14
 
     function drawHeader() {
-      doc.setFillColor(10, 37, 64)
-      doc.rect(0, 0, pageWidth, 22, 'F')
+      doc.setFillColor(0, 18, 156)
+      doc.rect(0, 0, pageWidth, 34, 'F')
+      doc.setFillColor(255, 255, 255)
+      doc.roundedRect(pageWidth - margin - 22, 7, 22, 20, 2, 2, 'F')
+      if (logo) doc.addImage(logo, 'PNG', pageWidth - margin - 19, 9, 16, 16)
       doc.setTextColor(255, 255, 255)
       doc.setFont('helvetica', 'bold')
-      doc.setFontSize(14)
+      doc.setFontSize(13)
       doc.text('Usuários cadastrados', margin, 14)
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(8.5)
+      doc.text('Secretaria Municipal de Educacao - Caraguatatuba', margin, 21)
+      doc.text('Relatorio administrativo de acessos do sistema', margin, 27)
       doc.setTextColor(23, 32, 51)
     }
 
@@ -174,9 +205,12 @@ export function Usuarios() {
       const pageCount = doc.internal.getNumberOfPages()
       for (let page = 1; page <= pageCount; page += 1) {
         doc.setPage(page)
+        doc.setDrawColor(219, 228, 240)
+        doc.line(margin, pageHeight - 14, pageWidth - margin, pageHeight - 14)
         doc.setFont('helvetica', 'normal')
         doc.setFontSize(8)
         doc.setTextColor(100, 116, 139)
+        doc.text('Zela+ - IFSP Exceptions', margin, pageHeight - 8)
         doc.text(`Página ${page} de ${pageCount}`, pageWidth - margin, pageHeight - 8, { align: 'right' })
       }
       doc.setTextColor(23, 32, 51)
@@ -186,11 +220,11 @@ export function Usuarios() {
       if (y + alturaNecessaria <= pageHeight - 16) return y
       doc.addPage()
       drawHeader()
-      return 32
+      return 42
     }
 
     drawHeader()
-    let y = 32
+    let y = 42
 
     listaFiltrada.forEach((user) => {
       const escolaNome = escolas.find((escola) => escola.id === user.escolaId)?.nome || 'Sem vínculo'
