@@ -14,6 +14,15 @@ import { Escolas } from './pages/Escolas.jsx'
 import { Auditoria, Categorias, Configuracoes, Indicadores, Usuarios } from './pages/AdminPages.jsx'
 import { dashboardMetrics, groupCount } from './utils/metrics.js'
 
+const PRESENTATION_ROUTE = '/apresentacao-seduc'
+const PRESENTATION_USER = {
+  id: 'apresentacao-seduc',
+  nome: 'Apresentacao SEDUC',
+  email: 'apresentacao@seduc.gov.br',
+  role: 'SEDUC',
+  escolaId: null,
+}
+
 function normalizeRoute() {
   const hash = window.location.hash.replace('#', '')
   return hash || '/'
@@ -29,6 +38,10 @@ function parseRoute(route) {
 
 function isPublicRoute(pathname) {
   return pathname === '/' || pathname === '/publico'
+}
+
+function isPresentationRoute(pathname) {
+  return pathname === PRESENTATION_ROUTE
 }
 
 async function svgUrlParaPngDataUrl(url, width = 240, height = 240) {
@@ -60,6 +73,7 @@ export default function App() {
   const isExterno = user?.role === 'EXTERNO'
   const isDiretor = user?.role === 'DIRETOR'
   const { pathname, searchParams } = parseRoute(route)
+  const presentationMode = isPresentationRoute(pathname)
   const [escolas, setEscolas] = useState([])
   const [ocorrenciasAprovadas, setOcorrenciasAprovadas] = useState([])
 
@@ -94,6 +108,7 @@ export default function App() {
   }, [user, isExterno, isDiretor, user?.escolaId])
 
   useEffect(() => {
+    if (presentationMode) return
     if (isPublicRoute(pathname)) return
 
     const rotaDeOcorrencia = route === '/ocorrencias' || route.startsWith('/ocorrencias/')
@@ -102,7 +117,7 @@ export default function App() {
     } else if (isDiretor && route !== '/dashboard' && !rotaDeOcorrencia) {
       navigate('/dashboard')
     }
-  }, [isExterno, isDiretor, pathname, route])
+  }, [isExterno, isDiretor, pathname, presentationMode, route])
 
   function navigate(path) {
     window.location.hash = path
@@ -125,6 +140,10 @@ export default function App() {
     clearStoredUser()
     setUser(null)
     navigate('/login')
+  }
+
+  function navigatePresentation(path) {
+    navigate(path === '/mapa' ? PRESENTATION_ROUTE : path)
   }
 
   function buildDashboardExportRows() {
@@ -349,6 +368,21 @@ export default function App() {
 
   if (isPublicRoute(pathname)) {
     return <Landing onNavigate={navigate} user={user} />
+  }
+
+  if (presentationMode) {
+    return (
+      <Layout
+        route="/mapa"
+        onNavigate={navigatePresentation}
+        onExport={() => {}}
+        user={PRESENTATION_USER}
+        onLogout={() => navigate('/login')}
+        presentationMode
+      >
+        <Mapa onNavigate={navigatePresentation} />
+      </Layout>
+    )
   }
 
   if (!user) {
