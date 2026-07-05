@@ -7,6 +7,8 @@ import { ImageCropper } from '../components/ImageCropper.jsx'
 import { FotoThumbnail } from '../components/FotoThumbnail.jsx'
 import { formatDisplayLabel } from '../utils/labels.js'
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3333/api'
+
 function formatarDataBR(dataIso) {
   if (!dataIso) return ''
   const [ano, mes, dia] = dataIso.split('-')
@@ -18,11 +20,49 @@ function campoClasse(extra = '') {
 }
 
 function isFotoImagem(foto) {
-  return typeof foto === 'string' && (foto.startsWith('data:image') || foto.startsWith('http://') || foto.startsWith('https://'))
+  return typeof foto === 'string' && (
+    foto.startsWith('data:image')
+    || foto.startsWith('blob:')
+    || foto.startsWith('/uploads/')
+    || foto.startsWith('http://')
+    || foto.startsWith('https://')
+  )
+}
+
+function getApiOrigin() {
+  try {
+    return new URL(API_URL, window.location.origin).origin
+  } catch {
+    return window.location.origin
+  }
+}
+
+function getFotoSrc(foto) {
+  if (typeof foto !== 'string') return ''
+  if (foto.startsWith('/uploads/')) return `${getApiOrigin()}${foto}`
+  return foto
+}
+
+function getFormatoImagemPdf(dataUrl) {
+  const match = /^data:image\/([a-zA-Z0-9+.-]+);/i.exec(dataUrl)
+  const tipo = match?.[1]?.toUpperCase()
+  return tipo === 'JPG' ? 'JPEG' : (tipo || 'JPEG')
+}
+
+function desenharImagemPdf(doc, dataUrl, x, y, maxWidth, maxHeight) {
+  const { width, height } = doc.getImageProperties(dataUrl)
+  const scale = Math.min(maxWidth / width, maxHeight / height)
+  const drawWidth = width * scale
+  const drawHeight = height * scale
+  const drawX = x + (maxWidth - drawWidth) / 2
+  const drawY = y + (maxHeight - drawHeight) / 2
+
+  doc.addImage(dataUrl, getFormatoImagemPdf(dataUrl), drawX, drawY, drawWidth, drawHeight)
 }
 
 async function urlParaDataUrl(url) {
-  const response = await fetch(url)
+  const response = await fetch(getFotoSrc(url))
+  if (!response.ok) throw new Error('Imagem indisponivel')
   const blob = await response.blob()
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -172,9 +212,9 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
     const labelWidth = 34
 
     function drawHeader() {
-      doc.setFillColor(10, 37, 64)
-      doc.rect(0, 0, pageWidth, 28, 'F')
-      doc.setTextColor(255, 255, 255)
+      doc.setDrawColor(0, 0, 0)
+      doc.line(margin, 28, pageWidth - margin, 28)
+      doc.setTextColor(0, 0, 0)
       doc.setFont('helvetica', 'bold')
       doc.setFontSize(15)
       doc.text(`Ocorrência ${ocorrencia.protocolo}`, margin, 12)
@@ -226,7 +266,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
 
       doc.setFont('helvetica', 'bold')
       doc.setFontSize(9)
-      doc.setTextColor(30, 64, 175)
+      doc.setTextColor(0, 0, 0)
       doc.text(label, margin, y + 5)
       doc.setFont('helvetica', 'normal')
       doc.setTextColor(23, 32, 51)
@@ -243,7 +283,10 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
       y += 10
 
       const fotosParaImprimir = await Promise.all(fotos.map(async (foto) => {
-        if (typeof foto === 'string' && foto.startsWith('http')) {
+        if (typeof foto === 'string' && foto.startsWith('data:image')) {
+          return foto
+        }
+        if (isFotoImagem(foto)) {
           return urlParaDataUrl(foto).catch(() => foto)
         }
         return foto
@@ -253,7 +296,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
       fotosParaImprimir.forEach((foto, index) => {
         y = quebrarPagina(y, fotoAltura)
         if (typeof foto === 'string' && foto.startsWith('data:image')) {
-          doc.addImage(foto, 'JPEG', margin, y, pageWidth - margin * 2, fotoAltura)
+          desenharImagemPdf(doc, foto, margin, y, pageWidth - margin * 2, fotoAltura)
         } else {
           doc.setDrawColor(203, 213, 225)
           doc.setFillColor(248, 250, 252)
@@ -279,9 +322,9 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
     const margin = 14
 
     function drawHeader() {
-      doc.setFillColor(10, 37, 64)
-      doc.rect(0, 0, pageWidth, 28, 'F')
-      doc.setTextColor(255, 255, 255)
+      doc.setDrawColor(0, 0, 0)
+      doc.line(margin, 28, pageWidth - margin, 28)
+      doc.setTextColor(0, 0, 0)
       doc.setFont('helvetica', 'bold')
       doc.setFontSize(15)
       doc.text('Histórico da ocorrência', margin, 12)
@@ -324,7 +367,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
 
       doc.setFont('helvetica', 'bold')
       doc.setFontSize(9)
-      doc.setTextColor(30, 64, 175)
+      doc.setTextColor(0, 0, 0)
       doc.text(`${cabecalho} - ${entry.data}`, margin, y + 5)
       y += 7
 
@@ -363,12 +406,10 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
     const contentWidth = pageWidth - margin * 2
 
     function drawHeader() {
-      doc.setFillColor(0, 18, 156)
-      doc.rect(0, 0, pageWidth, 34, 'F')
-      doc.setFillColor(255, 255, 255)
-      doc.roundedRect(margin, 7, 22, 20, 2, 2, 'F')
-      if (logo) doc.addImage(logo, 'PNG', margin + 3, 9, 16, 16)
-      doc.setTextColor(255, 255, 255)
+      doc.setDrawColor(0, 0, 0)
+      doc.line(margin, 31, pageWidth - margin, 31)
+      if (logo) doc.addImage(logo, 'PNG', margin, 7, 20, 20)
+      doc.setTextColor(0, 0, 0)
       doc.setFont('helvetica', 'bold')
       doc.setFontSize(13)
       doc.text('Relatório de ocorrência', pageWidth - margin, 12, { align: 'right' })
@@ -407,7 +448,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
       doc.setFontSize(12)
       doc.setTextColor(15, 23, 42)
       doc.text(title, margin, y)
-      doc.setDrawColor(0, 30, 255)
+      doc.setDrawColor(0, 0, 0)
       doc.setLineWidth(0.7)
       doc.line(margin, y + 3, margin + 34, y + 3)
       return y + 10
@@ -417,8 +458,6 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
       doc.setDrawColor(219, 228, 240)
       doc.setFillColor(248, 250, 252)
       doc.roundedRect(x, y, width, 20, 2, 2, 'FD')
-      doc.setFillColor(0, 30, 255)
-      doc.rect(x, y, 1.5, 20, 'F')
       doc.setFont('helvetica', 'bold')
       doc.setFontSize(13)
       doc.setTextColor(15, 23, 42)
@@ -440,7 +479,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
         doc.roundedRect(margin, y, contentWidth, height, 1.8, 1.8, 'FD')
         doc.setFont('helvetica', 'bold')
         doc.setFontSize(8)
-        doc.setTextColor(0, 18, 156)
+        doc.setTextColor(0, 0, 0)
         doc.text(label, margin + 4, y + 7)
         doc.setFont('helvetica', 'normal')
         doc.setFontSize(8.5)
@@ -484,14 +523,15 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
     if (fotos.length > 0) {
       y = drawSectionTitle('Fotos anexadas', y + 4)
       const fotosParaImprimir = await Promise.all(fotos.map(async (foto) => {
-        if (typeof foto === 'string' && foto.startsWith('http')) return urlParaDataUrl(foto).catch(() => foto)
+        if (typeof foto === 'string' && foto.startsWith('data:image')) return foto
+        if (isFotoImagem(foto)) return urlParaDataUrl(foto).catch(() => foto)
         return foto
       }))
       const photoHeight = 58
       fotosParaImprimir.forEach((foto, index) => {
         y = ensurePage(y, photoHeight + 9)
         if (typeof foto === 'string' && foto.startsWith('data:image')) {
-          doc.addImage(foto, 'JPEG', margin, y, contentWidth, photoHeight)
+          desenharImagemPdf(doc, foto, margin, y, contentWidth, photoHeight)
         } else {
           doc.setDrawColor(203, 213, 225)
           doc.setFillColor(248, 250, 252)
@@ -519,12 +559,10 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
     const contentWidth = pageWidth - margin * 2
 
     function drawHeader() {
-      doc.setFillColor(0, 18, 156)
-      doc.rect(0, 0, pageWidth, 34, 'F')
-      doc.setFillColor(255, 255, 255)
-      doc.roundedRect(margin, 7, 22, 20, 2, 2, 'F')
-      if (logo) doc.addImage(logo, 'PNG', margin + 3, 9, 16, 16)
-      doc.setTextColor(255, 255, 255)
+      doc.setDrawColor(0, 0, 0)
+      doc.line(margin, 31, pageWidth - margin, 31)
+      if (logo) doc.addImage(logo, 'PNG', margin, 7, 20, 20)
+      doc.setTextColor(0, 0, 0)
       doc.setFont('helvetica', 'bold')
       doc.setFontSize(13)
       doc.text('Histórico da ocorrência', pageWidth - margin, 12, { align: 'right' })
@@ -591,11 +629,11 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
       doc.setDrawColor(219, 228, 240)
       doc.setFillColor(255, 255, 255)
       doc.roundedRect(margin, y, contentWidth, height, 2, 2, 'FD')
-      doc.setFillColor(index === 0 ? 0 : 0, index === 0 ? 30 : 18, index === 0 ? 255 : 156)
+      doc.setFillColor(index === 0 ? 0 : 90, index === 0 ? 0 : 90, index === 0 ? 0 : 90)
       doc.circle(margin + 6, y + 7, 2, 'F')
       doc.setFont('helvetica', 'bold')
       doc.setFontSize(9)
-      doc.setTextColor(0, 18, 156)
+      doc.setTextColor(0, 0, 0)
       doc.text(`${cabecalho} - ${entry.data}${entry.hora ? ` às ${entry.hora}` : ''}`, margin + 12, y + 8)
       let textY = y + 15
       if (linhasMensagem.length) {
@@ -784,7 +822,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
               {fotos.length === 0 ? (
                 <div className="flex h-full w-full items-center justify-center text-center text-sm font-bold text-slate-500">Nenhuma foto</div>
               ) : isFotoImagem(fotos[fotoIndex]) ? (
-                <img src={fotos[fotoIndex]} alt={`Foto ${fotoIndex + 1}`} className="h-full w-auto max-w-full rounded-md object-contain" />
+                <img src={getFotoSrc(fotos[fotoIndex])} alt={`Foto ${fotoIndex + 1}`} className="h-full w-auto max-w-full rounded-md object-contain" />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-center text-sm font-bold text-slate-500">{fotos[fotoIndex]}</div>
               )}
@@ -993,7 +1031,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
               <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {fotos.map((foto, index) => (
                   isFotoImagem(foto) ? (
-                    <FotoThumbnail key={foto} src={foto} alt={`Foto ${index + 1}`}>
+                    <FotoThumbnail key={foto} src={getFotoSrc(foto)} alt={`Foto ${index + 1}`}>
                       <button
                         type="button"
                         onClick={() => removerFoto(index)}
@@ -1061,7 +1099,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
           onClick={() => setFotoTelaCheia(false)}
         >
           <img
-            src={fotos[fotoIndex]}
+            src={getFotoSrc(fotos[fotoIndex])}
             alt={`Foto ${fotoIndex + 1}`}
             className="max-h-full max-w-full object-contain"
             onClick={(event) => event.stopPropagation()}

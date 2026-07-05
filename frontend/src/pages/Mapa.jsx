@@ -676,6 +676,7 @@ export function Mapa({ onNavigate }) {
   const [colorScale, setColorScale] = useState(() => readStoredColorScale())
   const [isColorScaleExpanded, setIsColorScaleExpanded] = useState(false)
   const [isMapStyleExpanded, setIsMapStyleExpanded] = useState(false)
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(false)
   const [schoolSearch, setSchoolSearch] = useState('')
   const warnedSchoolIdsRef = useRef(new Set())
   const [mapStyleKey, setMapStyleKey] = useState(() => {
@@ -1202,47 +1203,54 @@ export function Mapa({ onNavigate }) {
       ) : null}
 
       <div className="shrink-0">
-        <div className="flex flex-wrap items-center gap-2">
-        <div className="w-32">
-          <Select
-            value={filters.criticidade}
-            onChange={(value) => setFilter('criticidade', value)}
-            placeholder="Criticidade"
-            options={[{ value: '', label: 'Criticidade' }, ...criticidadeOptions]}
+        <button
+          type="button"
+          onClick={() => setIsFiltersExpanded((current) => !current)}
+          className="flex w-full items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 shadow-sm sm:hidden"
+          aria-expanded={isFiltersExpanded}
+          aria-label={isFiltersExpanded ? 'Fechar filtros do mapa' : 'Abrir filtros do mapa'}
+        >
+          Filtros
+          <ChevronIcon direction={isFiltersExpanded ? 'up' : 'down'} />
+        </button>
+
+        <div className={`${isFiltersExpanded ? 'grid' : 'hidden'} mt-2 grid-cols-2 gap-2 rounded-lg border border-slate-200 bg-white p-2 shadow-sm sm:mt-0 sm:flex sm:flex-wrap sm:items-center sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none`}>
+          <div className="min-w-0 sm:w-32">
+            <Select
+              value={filters.criticidade}
+              onChange={(value) => setFilter('criticidade', value)}
+              placeholder="Criticidade"
+              options={[{ value: '', label: 'Criticidade' }, ...criticidadeOptions]}
+            />
+          </div>
+          <div className="min-w-0 sm:w-32">
+            <Select
+              value={filters.status}
+              onChange={(value) => setFilter('status', value)}
+              placeholder="Todos"
+              options={[{ value: '', label: 'Todos' }, ...statusOptions]}
+            />
+          </div>
+          <div className="col-span-2 min-w-0 sm:col-span-1 sm:w-72 lg:w-[25rem]">
+            <SchoolSearchCombobox
+              options={filteredSchoolOptions}
+              searchValue={schoolSearch}
+              selectedValue={filters.escolaId}
+              onClear={handleClearSchoolSelection}
+              onSearchChange={handleSchoolSearchChange}
+              onSelectOption={handleSelectSchoolOption}
+            />
+          </div>
+          <MapDateFilter
+            label="Início"
+            value={filters.dataInicial}
+            onChange={(value) => setFilter('dataInicial', value)}
           />
-        </div>
-        <div className="w-32">
-          <Select
-            value={filters.status}
-            onChange={(value) => setFilter('status', value)}
-            placeholder="Todos"
-            options={[{ value: '', label: 'Todos' }, ...statusOptions]}
+          <MapDateFilter
+            label="Fim"
+            value={filters.dataFinal}
+            onChange={(value) => setFilter('dataFinal', value)}
           />
-        </div>
-        <div className="w-full sm:w-72 lg:w-[25rem]">
-          <SchoolSearchCombobox
-            options={filteredSchoolOptions}
-            searchValue={schoolSearch}
-            selectedValue={filters.escolaId}
-            onClear={handleClearSchoolSelection}
-            onSearchChange={handleSchoolSearchChange}
-            onSelectOption={handleSelectSchoolOption}
-          />
-        </div>
-        <input
-          type="date"
-          aria-label="Data inicial"
-          value={filters.dataInicial}
-          onChange={(event) => setFilter('dataInicial', event.target.value)}
-          className="h-10 w-36 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500"
-        />
-        <input
-          type="date"
-          aria-label="Data final"
-          value={filters.dataFinal}
-          onChange={(event) => setFilter('dataFinal', event.target.value)}
-          className="h-10 w-36 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500"
-        />
         </div>
       </div>
 
@@ -1440,22 +1448,64 @@ export function Mapa({ onNavigate }) {
 }
 
 function MetricPanel({ context, drawerAberto }) {
+  const [isMobileExpanded, setIsMobileExpanded] = useState(false)
+
   return (
-    <div
-      className={`absolute left-2 top-2 z-[650] w-[260px] max-w-[calc(100%-1rem)] rounded-xl border border-slate-200 bg-white/95 p-3 shadow-lg backdrop-blur sm:left-4 sm:top-4 sm:p-4 ${drawerAberto ? 'hidden sm:block' : ''}`}
-    >
-      <p className="text-[10px] font-bold text-slate-500">
-        {context.title}
-      </p>
-      <p className="mt-1 text-xs font-semibold text-slate-500">
-        {context.message}
-      </p>
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        {context.items.map((item) => (
-          <MetricCard key={item.label} item={item} />
-        ))}
+    <div className={`absolute left-2 top-2 z-[650] sm:left-4 sm:top-4 ${drawerAberto ? 'hidden sm:block' : ''}`}>
+      <button
+        type="button"
+        onClick={() => setIsMobileExpanded((current) => !current)}
+        className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white/95 px-3 py-2 text-xs font-bold text-slate-700 shadow-md backdrop-blur sm:hidden"
+        aria-expanded={isMobileExpanded}
+        aria-label={isMobileExpanded ? 'Fechar resumo do mapa' : 'Abrir resumo do mapa'}
+      >
+        Resumo
+        <ChevronIcon direction={isMobileExpanded ? 'up' : 'down'} />
+      </button>
+
+      <div
+        className={`mt-2 w-[260px] max-w-[calc(100vw-1rem)] rounded-xl border border-slate-200 bg-white/95 p-3 shadow-lg backdrop-blur sm:mt-0 sm:block sm:max-w-[calc(100%-1rem)] sm:p-4 ${isMobileExpanded ? 'block' : 'hidden'}`}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-bold text-slate-500">
+              {context.title}
+            </p>
+            <p className="mt-1 text-xs font-semibold text-slate-500">
+              {context.message}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsMobileExpanded(false)}
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 sm:hidden"
+            aria-label="Fechar resumo do mapa"
+          >
+            &times;
+          </button>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          {context.items.map((item) => (
+            <MetricCard key={item.label} item={item} />
+          ))}
+        </div>
       </div>
     </div>
+  )
+}
+
+function MapDateFilter({ label, value, onChange }) {
+  return (
+    <label className="min-w-0">
+      <span className="mb-1 block text-[10px] font-bold tracking-wide text-slate-500">{label}</span>
+      <input
+        type="date"
+        aria-label={`Data ${label.toLowerCase()}`}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-10 w-full min-w-0 rounded-md border border-slate-200 bg-white px-2 text-sm text-slate-700 outline-none focus:border-primary-500 sm:w-36 sm:px-3"
+      />
+    </label>
   )
 }
 
