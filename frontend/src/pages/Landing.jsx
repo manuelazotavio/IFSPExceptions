@@ -87,7 +87,6 @@ function goodNewsChartData(metrics, ocorrenciasAprovadas) {
   const movimentadas = ocorrenciasAprovadas.filter((item) => item.status !== 'Aberta').length
   const encaminhadas = ocorrenciasAprovadas.filter((item) => (
     item.status === 'Em andamento'
-    || item.status === 'Aguardando orcamento'
     || item.status === 'Aguardando visita tecnica'
     || item.status === 'Resolvida'
   )).length

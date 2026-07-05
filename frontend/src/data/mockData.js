@@ -1,4 +1,4 @@
-export const bairros = ['Indaia', 'Jardim California', 'Tinga', 'Porto Novo', 'Massaguacu', 'Pereque Mirim', 'Martim de Sa', 'Travessao']
+﻿export const bairros = ['Indaia', 'Jardim California', 'Tinga', 'Porto Novo', 'Massaguacu', 'Pereque Mirim', 'Martim de Sa', 'Travessao']
 
 export const escolas = [
   { id: 'esc-001', nome: 'EMEF Dr. Carlos de Almeida Rodrigues', bairro: 'Indaia', endereco: 'Av. Pernambuco, 1101', status: 'Ativa', dataCadastro: '2026-01-12', x: 50, y: 36, latitude: -23.633, longitude: -45.417 },
@@ -18,7 +18,7 @@ const base = [
   ['occ-004', 'esc-003', 'Telhado com risco de queda', 'Estrutural', 'Critica', 'Aberta', 'Patio coberto', '2026-04-18', true],
   ['occ-005', 'esc-004', 'Banheiro sem descarga', 'Hidraulica', 'Media', 'Aguardando visita tecnica', 'Banheiro infantil', '2026-05-08', true],
   ['occ-006', 'esc-005', 'Luminarias queimadas', 'Eletrica', 'Baixa', 'Resolvida', 'Corredor principal', '2026-04-29', true],
-  ['occ-007', 'esc-006', 'Rampa sem corrimao adequado', 'Acessibilidade', 'Alta', 'Aguardando orcamento', 'Entrada', '2026-04-14', true],
+  ['occ-007', 'esc-006', 'Rampa sem corrimao adequado', 'Acessibilidade', 'Alta', 'Em andamento', 'Entrada', '2026-04-14', true],
   ['occ-008', 'esc-007', 'Computadores sem rede', 'Tecnologia', 'Media', 'Em andamento', 'Laboratorio', '2026-05-01', true],
   ['occ-009', 'esc-008', 'Muro com rachadura', 'Estrutural', 'Alta', 'Aberta', 'Area externa', '2026-04-11', true],
   ['occ-010', 'esc-003', 'Bebedouro quebrado', 'Equipamento', 'Baixa', 'Resolvida', 'Refeitorio', '2026-05-06', true],
@@ -28,14 +28,14 @@ const base = [
   ['occ-014', 'esc-007', 'Vidro trincado', 'Seguranca', 'Alta', 'Aberta', 'Secretaria', '2026-04-26', true],
   ['occ-015', 'esc-002', 'Vazamento em pia', 'Hidraulica', 'Media', 'Aguardando visita tecnica', 'Cozinha', '2026-05-03', true],
   ['occ-016', 'esc-001', 'Ar condicionado parado', 'Equipamento', 'Baixa', 'Aberta', 'Sala dos professores', '2026-05-07', true],
-  ['occ-017', 'esc-008', 'Iluminacao externa insuficiente', 'Seguranca', 'Alta', 'Aguardando orcamento', 'Area externa', '2026-04-17', true],
+  ['occ-017', 'esc-008', 'Iluminacao externa insuficiente', 'Seguranca', 'Alta', 'Em andamento', 'Area externa', '2026-04-17', true],
   ['occ-018', 'esc-005', 'Piso solto', 'Estrutural', 'Media', 'Em analise', 'Sala 5', '2026-04-28', true],
   ['occ-019', 'esc-006', 'Porta emperrada', 'Outros', 'Baixa', 'Resolvida', 'Almoxarifado', '2026-05-05', true],
   ['occ-020', 'esc-004', 'Falta de tomada acessivel', 'Acessibilidade', 'Media', 'Aberta', 'Sala multifuncional', '2026-05-10', true],
   ['occ-021', 'esc-007', 'Caixa d agua sem tampa', 'Hidraulica', 'Critica', 'Aberta', 'Cobertura', '2026-04-13', true],
   ['occ-022', 'esc-003', 'Projetor queimado', 'Tecnologia', 'Baixa', 'Em andamento', 'Sala 1', '2026-05-11', true],
   ['occ-023', 'esc-002', 'Extintor vencido', 'Seguranca', 'Critica', 'Aberta', 'Corredor', '2026-04-10', true],
-  ['occ-024', 'esc-008', 'Mesa quebrada', 'Mobiliario', 'Media', 'Aguardando orcamento', 'Diretoria', '2026-05-12', true],
+  ['occ-024', 'esc-008', 'Mesa quebrada', 'Mobiliario', 'Media', 'Em andamento', 'Diretoria', '2026-05-12', true],
   ['occ-025', 'esc-005', 'Ocorrencia publica pendente', 'Outros', 'Alta', 'Aberta', 'Portaria', '2026-05-13', false],
 ]
 
@@ -151,7 +151,7 @@ export function salvarCategoriasGlobais(lista, descricoes = categoriasDescricoes
 export function getCategoriaDescricao(categoria) {
   return categoriasDescricoes[categoria] || DESCRICAO_CATEGORIA_PADRAO
 }
-export const statusValues = ['Aberta', 'Em analise', 'Em andamento', 'Aguardando orcamento', 'Aguardando visita tecnica', 'Resolvida']
+export const statusValues = ['Aguardando aprovacao', 'Aberta', 'Em analise', 'Em andamento', 'Aguardando visita tecnica', 'Resolvida']
 export const criticidadeValues = ['Baixa', 'Media', 'Alta', 'Critica']
 export const locaisInternos = ['Biblioteca', 'Laboratorio', 'Patio', 'Patio coberto', 'Area externa', 'Entrada', 'Entrada lateral', 'Corredor', 'Refeitorio', 'Cozinha', 'Secretaria', 'Diretoria', 'Portaria', 'Almoxarifado', 'Cobertura', 'Banheiro infantil', 'Sala dos professores', 'Sala multifuncional', 'Sala 1', 'Sala 2', 'Sala 3', 'Sala 4', 'Sala 5', 'Bloco A', 'Bloco B']
 export const usuarios = [
@@ -161,3 +161,4 @@ export const usuarios = [
   { nome: 'Rafael Lima', email: 'rafael.lima@escola.gov.br', role: 'DIRETOR', escolaId: 'esc-002', status: 'Inativo', ultimoAcesso: '18/06/2026' },
   ...usuariosExternos.map((usuario) => ({ ...usuario, role: 'EXTERNO', status: 'Ativo', ultimoAcesso: '01/07/2026' })),
 ]
+

@@ -1,4 +1,4 @@
-import bcrypt from 'bcryptjs'
+﻿import bcrypt from 'bcryptjs'
 import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
@@ -22,7 +22,7 @@ const ocorrenciasSeed = [
   ['esc-003', 'Telhado com risco de queda', 'Estrutural', 'Critica', 'Aberta', 'Patio coberto', '2026-04-18', true],
   ['esc-004', 'Banheiro sem descarga', 'Hidraulica', 'Media', 'Aguardando visita tecnica', 'Banheiro infantil', '2026-05-08', true],
   ['esc-005', 'Luminarias queimadas', 'Eletrica', 'Baixa', 'Resolvida', 'Corredor principal', '2026-04-29', true],
-  ['esc-006', 'Rampa sem corrimao adequado', 'Acessibilidade', 'Alta', 'Aguardando orcamento', 'Entrada', '2026-04-14', true],
+  ['esc-006', 'Rampa sem corrimao adequado', 'Acessibilidade', 'Alta', 'Em andamento', 'Entrada', '2026-04-14', true],
   ['esc-007', 'Computadores sem rede', 'Tecnologia', 'Media', 'Em andamento', 'Laboratorio', '2026-05-01', true],
   ['esc-008', 'Muro com rachadura', 'Estrutural', 'Alta', 'Aberta', 'Area externa', '2026-04-11', true],
   ['esc-003', 'Bebedouro quebrado', 'Equipamento', 'Baixa', 'Resolvida', 'Refeitorio', '2026-05-06', true],
@@ -32,14 +32,14 @@ const ocorrenciasSeed = [
   ['esc-007', 'Vidro trincado', 'Seguranca', 'Alta', 'Aberta', 'Secretaria', '2026-04-26', true],
   ['esc-010', 'Vazamento em pia', 'Hidraulica', 'Media', 'Aguardando visita tecnica', 'Cozinha', '2026-05-03', true], // era esc-002
   ['esc-001', 'Ar condicionado parado', 'Equipamento', 'Baixa', 'Aberta', 'Sala dos professores', '2026-05-07', true],
-  ['esc-008', 'Iluminacao externa insuficiente', 'Seguranca', 'Alta', 'Aguardando orcamento', 'Area externa', '2026-04-17', true],
+  ['esc-008', 'Iluminacao externa insuficiente', 'Seguranca', 'Alta', 'Em andamento', 'Area externa', '2026-04-17', true],
   ['esc-005', 'Piso solto', 'Estrutural', 'Media', 'Em analise', 'Sala 5', '2026-04-28', true],
   ['esc-006', 'Porta emperrada', 'Outros', 'Baixa', 'Resolvida', 'Almoxarifado', '2026-05-05', true],
   ['esc-004', 'Falta de tomada acessivel', 'Acessibilidade', 'Media', 'Aberta', 'Sala multifuncional', '2026-05-10', true],
   ['esc-007', 'Caixa d agua sem tampa', 'Hidraulica', 'Critica', 'Aberta', 'Cobertura', '2026-04-13', true],
   ['esc-003', 'Projetor queimado', 'Tecnologia', 'Baixa', 'Em andamento', 'Sala 1', '2026-05-11', true],
   ['esc-009', 'Extintor vencido', 'Seguranca', 'Critica', 'Aberta', 'Corredor', '2026-04-10', true], // era esc-002
-  ['esc-008', 'Mesa quebrada', 'Mobiliario', 'Media', 'Aguardando orcamento', 'Diretoria', '2026-05-12', true],
+  ['esc-008', 'Mesa quebrada', 'Mobiliario', 'Media', 'Em andamento', 'Diretoria', '2026-05-12', true],
   ['esc-005', 'Ocorrencia publica pendente', 'Outros', 'Alta', 'Aberta', 'Portaria', '2026-05-13', false],
 ]
 
@@ -77,7 +77,7 @@ async function main() {
   const senhaHash = await bcrypt.hash('123456', 10)
 
   const usuarios = [
-    { email: 'seduc@escola.gov.br', nome: 'João Beserra', role: 'SEDUC', escolaId: null },
+    { email: 'seduc@escola.gov.br', nome: 'JoÃ£o Beserra', role: 'SEDUC', escolaId: null },
     { email: 'diretor@escola.gov.br', nome: 'Diretora Alberto Souza', role: 'DIRETOR', escolaId: 'esc-001' },
     ...usuariosExternosSeed.map((usuario) => ({ ...usuario, role: 'EXTERNO' })),
   ]
@@ -146,3 +146,4 @@ main()
     await prisma.$disconnect()
     process.exit(1)
   })
+
