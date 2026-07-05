@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -22,7 +22,10 @@ model Escola {
   longitude Float
   criadoEm  DateTime @default(now())
 
-  usuarios User[]
+  usuarios      User[]
+  ocorrencias   Ocorrencia[]
+  logs          LogAuditoria[]
+  notificacoes  Notificacao[]
 }
 
 model User {
@@ -36,4 +39,74 @@ model User {
 
   escolaId String?
   escola   Escola? @relation(fields: [escolaId], references: [id])
+}
+
+model Ocorrencia {
+  id                 String    @id @default(cuid())
+  protocolo          String    @unique
+  titulo             String
+  descricao          String    @db.Text
+  tipo               String
+  criticidade        String
+  status             String    @default("Aberta")
+  localizacaoInterna String
+  endereco           String
+  dataEnvio          DateTime
+  dataAprovacao      DateTime?
+  dataResolucao      DateTime?
+  aprovadaPelaEscola Boolean   @default(true)
+  criadoPorEmail     String
+  criadoPorNome      String    @default("")
+  chatPendente       Boolean   @default(false)
+  fotos              String    @db.Text
+  criadoEm           DateTime  @default(now())
+  atualizadoEm       DateTime  @updatedAt
+
+  escolaId String
+  escola   Escola      @relation(fields: [escolaId], references: [id])
+  interacoes Interacao[]
+  notificacoes Notificacao[]
+}
+
+model Interacao {
+  id       String   @id @default(cuid())
+  origem   String
+  autor    String
+  mensagem String   @db.Text
+  status   String?
+  anexos   String   @db.Text
+  criadoEm DateTime @default(now())
+
+  ocorrenciaId String
+  ocorrencia   Ocorrencia @relation(fields: [ocorrenciaId], references: [id], onDelete: Cascade)
+}
+
+model LogAuditoria {
+  id           String   @id @default(cuid())
+  acao         String
+  entidade     String
+  entidadeId   String?
+  descricao    String   @db.Text
+  usuarioEmail String?
+  usuarioNome  String?
+  criadoEm     DateTime @default(now())
+
+  escolaId String?
+  escola   Escola? @relation(fields: [escolaId], references: [id], onDelete: SetNull)
+}
+
+model Notificacao {
+  id             String   @id @default(cuid())
+  tipo           String
+  titulo         String
+  descricao      String   @db.Text
+  protocolo      String?
+  lida           Boolean  @default(false)
+  criadoPorEmail String?
+  criadoEm       DateTime @default(now())
+
+  ocorrenciaId String?
+  ocorrencia   Ocorrencia? @relation(fields: [ocorrenciaId], references: [id], onDelete: Cascade)
+  escolaId     String?
+  escola       Escola?     @relation(fields: [escolaId], references: [id], onDelete: Cascade)
 }

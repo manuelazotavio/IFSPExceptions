@@ -1,9 +1,25 @@
 import bcrypt from 'bcryptjs'
+import { z } from 'zod'
 import { EscolaModel } from '../models/EscolaModel.js'
 import { UserModel } from '../models/UserModel.js'
 import { AppError } from '../utils/AppError.js'
+import { parseOrThrow } from '../utils/validate.js'
+import { signToken } from '../utils/jwt.js'
 
 const REGISTRO_ROLES = ['DIRETOR', 'EXTERNO']
+
+const loginSchema = z.object({
+  email: z.string({ message: 'Informe email e senha' }).trim().toLowerCase().min(1, 'Informe email e senha'),
+  senha: z.string({ message: 'Informe email e senha' }).min(1, 'Informe email e senha'),
+})
+
+const registroSchema = z.object({
+  nome: z.string({ message: 'Informe o nome' }).trim().min(1, 'Informe o nome'),
+  email: z.string({ message: 'Informe o email' }).trim().toLowerCase().email('Email invalido'),
+  senha: z.string({ message: 'Informe a senha' }).min(6, 'A senha deve ter ao menos 6 caracteres'),
+  role: z.enum(REGISTRO_ROLES, { message: 'Perfil invalido' }),
+  escolaId: z.string({ message: 'Informe a escola' }).trim().min(1, 'Informe a escola'),
+})
 
 function sanitizeUser(user) {
   const { senha, ...rest } = user
@@ -12,38 +28,33 @@ function sanitizeUser(user) {
 
 export class AuthController {
   static async login(request, response) {
-    const { email, senha } = request.body
-    if (!email?.trim() || !senha) throw new AppError('Informe email e senha', 422)
+    const { email, senha } = parseOrThrow(loginSchema, request.body)
 
-    const user = await UserModel.findByEmail(email.trim().toLowerCase())
+    const user = await UserModel.findByEmail(email)
     if (!user) throw new AppError('Email ou senha invalidos', 401)
 
     const senhaValida = await bcrypt.compare(senha, user.senha)
     if (!senhaValida) throw new AppError('Email ou senha invalidos', 401)
     if (!user.ativo) throw new AppError('Usuario inativo', 403)
 
-    return response.json({ user: sanitizeUser(user) })
+    const usuario = sanitizeUser(user)
+    const token = signToken({
+      id: usuario.id,
+      nome: usuario.nome,
+      email: usuario.email,
+      role: usuario.role,
+      escolaId: usuario.escolaId,
+    })
+
+    return response.json({ user: usuario, token })
   }
 
   static async registro(request, response) {
-    const { nome, email, senha, role, escolaId } = request.body
+    const payload = parseOrThrow(registroSchema, request.body)
 
-    if (!nome?.trim()) throw new AppError('Informe o nome', 422)
-    if (!email?.trim()) throw new AppError('Informe o email', 422)
-    if (!senha || senha.length < 6) throw new AppError('A senha deve ter ao menos 6 caracteres', 422)
-    if (!REGISTRO_ROLES.includes(role)) throw new AppError('Perfil invalido', 422)
-    if (!escolaId) throw new AppError('Informe a escola', 422)
+    await EscolaModel.findById(payload.escolaId)
 
-    await EscolaModel.findById(escolaId)
-
-    const usuario = await UserModel.create({
-      nome: nome.trim(),
-      email: email.trim().toLowerCase(),
-      senha,
-      role,
-      escolaId,
-    })
-
+    const usuario = await UserModel.create(payload)
     return response.status(201).json(usuario)
   }
 }

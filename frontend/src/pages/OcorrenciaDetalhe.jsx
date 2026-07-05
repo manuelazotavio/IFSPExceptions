@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
-import { categorias, criticidadeValues, escolas, locaisInternos, ocorrenciasAprovadas, statusValues } from '../data/mockData.js'
-import { Card, Modal } from '../components/ui.jsx'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { categorias, criticidadeValues, locaisInternos, statusValues } from '../data/mockData.js'
+import { adicionarInteracao, atualizarOcorrencia, listarEscolas, obterOcorrencia, uploadFotosOcorrencia } from '../services/api.js'
+import { Card, Modal, Select } from '../components/ui.jsx'
 import { Icon } from '../components/Icons.jsx'
+import { formatDisplayLabel } from '../utils/labels.js'
 
 function formatarDataBR(dataIso) {
   if (!dataIso) return ''
@@ -13,17 +15,76 @@ function campoClasse(extra = '') {
   return `w-full rounded-md border border-slate-300 bg-white px-3 outline-none transition-colors hover:border-slate-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 ${extra}`
 }
 
-function lerComoDataUrl(file) {
+function isFotoImagem(foto) {
+  return typeof foto === 'string' && (foto.startsWith('data:image') || foto.startsWith('http://') || foto.startsWith('https://'))
+}
+
+async function urlParaDataUrl(url) {
+  const response = await fetch(url)
+  const blob = await response.blob()
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => resolve(reader.result)
     reader.onerror = reject
-    reader.readAsDataURL(file)
+    reader.readAsDataURL(blob)
   })
 }
 
-export function OcorrenciaDetalhe({ id, onNavigate }) {
-  const ocorrencia = ocorrenciasAprovadas.find((item) => item.id === id) || ocorrenciasAprovadas[0]
+export function OcorrenciaDetalhe({ id, onNavigate, user }) {
+  const [ocorrencia, setOcorrencia] = useState(null)
+  const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState('')
+
+  useEffect(() => {
+    let ativo = true
+    setCarregando(true)
+    setErro('')
+    obterOcorrencia(id)
+      .then((dados) => { if (ativo) setOcorrencia(dados) })
+      .catch((error) => { if (ativo) setErro(error.message) })
+      .finally(() => { if (ativo) setCarregando(false) })
+    return () => {
+      ativo = false
+    }
+  }, [id])
+
+  if (carregando) {
+    return <Card><p className="text-sm font-semibold text-slate-500">Carregando ocorrência...</p></Card>
+  }
+
+  if (erro || !ocorrencia) {
+    return (
+      <div className="space-y-4">
+        <button onClick={() => onNavigate('/ocorrencias')} className="cursor-pointer rounded-md border border-slate-200 px-4 py-2 text-sm font-bold">Voltar para lista</button>
+        <Card><p className="text-sm font-semibold text-red-600">{erro || 'Ocorrência não encontrada.'}</p></Card>
+      </div>
+    )
+  }
+
+  return (
+    <OcorrenciaDetalheConteudo
+      key={ocorrencia.id}
+      ocorrencia={ocorrencia}
+      onNavigate={onNavigate}
+      user={user}
+      onAtualizar={setOcorrencia}
+    />
+  )
+}
+
+function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }) {
+  const podeEditarOcorrencia = user?.role !== 'EXTERNO'
+  const [escolas, setEscolas] = useState([])
+  useEffect(() => {
+    let ativo = true
+    listarEscolas()
+      .then((dados) => { if (ativo) setEscolas(dados) })
+      .catch(() => { if (ativo) setEscolas([]) })
+    return () => {
+      ativo = false
+    }
+  }, [])
+
   const [status, setStatus] = useState(ocorrencia.status)
   const [criticidade, setCriticidade] = useState(ocorrencia.criticidade)
   const [form, setForm] = useState({
@@ -33,19 +94,48 @@ export function OcorrenciaDetalhe({ id, onNavigate }) {
     localizacaoInterna: ocorrencia.localizacaoInterna,
     tipo: ocorrencia.tipo,
     dataEnvio: ocorrencia.dataEnvio,
-    dataAprovacao: ocorrencia.dataAprovacao,
-    dataResolucao: ocorrencia.dataResolucao,
+    dataAprovacao: ocorrencia.dataAprovacao || '',
+    dataResolucao: ocorrencia.dataResolucao || '',
   })
   const updateForm = (key, value) => setForm((prev) => ({ ...prev, [key]: value }))
-  const escolaSelecionada = escolas.find((item) => item.id === form.escolaId) || {}
+  const escolaSelecionada = escolas.find((item) => item.id === form.escolaId) || { nome: ocorrencia.escola, bairro: ocorrencia.bairro, endereco: ocorrencia.endereco }
   const [savedAt, setSavedAt] = useState('')
+  const [salvando, setSalvando] = useState(false)
+  const [erroSalvar, setErroSalvar] = useState('')
   const [modalEdicaoAberto, setModalEdicaoAberto] = useState(false)
   const [historicoAberto, setHistoricoAberto] = useState(false)
 
-  const handleSalvar = () => {
-    // Front-only: sem backend ainda. Quando existir API, disparar aqui o PUT/PATCH de ocorrência com { ...form, status, criticidade }.
-    setSavedAt(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }))
-    setModalEdicaoAberto(false)
+  const handleSalvar = async () => {
+    if (!podeEditarOcorrencia) return
+    setSalvando(true)
+    setErroSalvar('')
+    try {
+      let atualizada = await atualizarOcorrencia(ocorrencia.id, {
+        escolaId: form.escolaId,
+        titulo: form.titulo,
+        descricao: form.descricao,
+        tipo: form.tipo,
+        criticidade,
+        status,
+        localizacaoInterna: form.localizacaoInterna,
+        dataAprovacao: form.dataAprovacao || null,
+        dataResolucao: form.dataResolucao || null,
+        fotos,
+      })
+      if (novosArquivosFotos.length > 0) {
+        atualizada = await uploadFotosOcorrencia(ocorrencia.id, novosArquivosFotos)
+      }
+      onAtualizar(atualizada)
+      setFotos(atualizada.fotos)
+      setInteracoes(atualizada.interacoes)
+      setNovosArquivosFotos([])
+      setSavedAt(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }))
+      setModalEdicaoAberto(false)
+    } catch (error) {
+      setErroSalvar(error.message)
+    } finally {
+      setSalvando(false)
+    }
   }
 
   async function exportarPdf() {
@@ -97,8 +187,8 @@ export function OcorrenciaDetalhe({ id, onNavigate }) {
       ['Status', status],
       ['Descrição', form.descricao],
       ['Endereço', escolaSelecionada.endereco],
-      ['Localização', form.localizacaoInterna],
-      ['Tipo', form.tipo],
+      ['Localização', form.localizacaoInterna ? formatDisplayLabel(form.localizacaoInterna) : 'Não informada'],
+      ['Tipo', formatDisplayLabel(form.tipo)],
       ['Envio', formatarDataBR(form.dataEnvio)],
       ['Aprovação', formatarDataBR(form.dataAprovacao)],
       ['Resolução', formatarDataBR(form.dataResolucao)],
@@ -127,8 +217,15 @@ export function OcorrenciaDetalhe({ id, onNavigate }) {
       doc.text('Fotos', margin, y + 5)
       y += 10
 
+      const fotosParaImprimir = await Promise.all(fotos.map(async (foto) => {
+        if (typeof foto === 'string' && foto.startsWith('http')) {
+          return urlParaDataUrl(foto).catch(() => foto)
+        }
+        return foto
+      }))
+
       const fotoAltura = 60
-      fotos.forEach((foto, index) => {
+      fotosParaImprimir.forEach((foto, index) => {
         y = quebrarPagina(y, fotoAltura)
         if (typeof foto === 'string' && foto.startsWith('data:image')) {
           doc.addImage(foto, 'JPEG', margin, y, pageWidth - margin * 2, fotoAltura)
@@ -237,20 +334,24 @@ export function OcorrenciaDetalhe({ id, onNavigate }) {
   const nextFoto = () => setFotoIndex((i) => (i + 1) % fotos.length)
   const fotoInputRef = useRef(null)
   const handleFotoInputClick = () => fotoInputRef.current?.click()
-  const handleFotoChange = async (e) => {
-    const files = Array.from(e.target.files || [])
-    e.target.value = ''
-    const novasFotos = await Promise.all(files.map(lerComoDataUrl))
-    setFotos((prev) => [...prev, ...novasFotos])
-  }
   const removerFoto = (index) => {
     setFotos((prev) => prev.filter((_, i) => i !== index))
     setFotoIndex((prev) => (prev >= index && prev > 0 ? prev - 1 : prev))
   }
 
+  const [novosArquivosFotos, setNovosArquivosFotos] = useState([])
+  const previewsNovasFotos = useMemo(() => novosArquivosFotos.map((file) => URL.createObjectURL(file)), [novosArquivosFotos])
+  const handleFotoChange = (e) => {
+    const files = Array.from(e.target.files || [])
+    e.target.value = ''
+    setNovosArquivosFotos((prev) => [...prev, ...files])
+  }
+  const removerNovaFoto = (index) => setNovosArquivosFotos((prev) => prev.filter((_, i) => i !== index))
+
   const [interacoes, setInteracoes] = useState(ocorrencia.interacoes)
   const [mensagem, setMensagem] = useState('')
   const [anexos, setAnexos] = useState([])
+  const [enviandoMensagem, setEnviandoMensagem] = useState(false)
   const fileInputRef = useRef(null)
   const chatFimRef = useRef(null)
 
@@ -266,20 +367,26 @@ export function OcorrenciaDetalhe({ id, onNavigate }) {
   }
   const removerAnexo = (index) => setAnexos((prev) => prev.filter((_, i) => i !== index))
 
-  const enviarMensagem = () => {
+  const enviarMensagem = async () => {
     if (!mensagem.trim() && anexos.length === 0) return
-    const agora = new Date()
-    setInteracoes((prev) => [...prev, {
-      origem: 'seduc',
-      autor: 'Você',
-      data: agora.toISOString().slice(0, 10),
-      hora: agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-      status,
-      mensagem,
-      anexos: anexos.map((file) => file.name),
-    }])
-    setMensagem('')
-    setAnexos([])
+    setEnviandoMensagem(true)
+    try {
+      const atualizada = await adicionarInteracao(ocorrencia.id, {
+        origem: 'seduc',
+        autor: user?.nome || 'Você',
+        mensagem,
+        status,
+        anexos: anexos.map((file) => file.name),
+      })
+      onAtualizar(atualizada)
+      setInteracoes(atualizada.interacoes)
+      setMensagem('')
+      setAnexos([])
+    } catch (error) {
+      setErroSalvar(error.message)
+    } finally {
+      setEnviandoMensagem(false)
+    }
   }
 
   return (
@@ -287,7 +394,7 @@ export function OcorrenciaDetalhe({ id, onNavigate }) {
       <div className="flex gap-2 xl:shrink-0">
         <button
           onClick={() => onNavigate('/ocorrencias')}
-          className="flex flex-1 items-center justify-center gap-2 rounded-md border border-slate-200 px-4 py-2 text-sm font-bold xl:flex-none"
+          className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border border-slate-200 px-4 py-2 text-sm font-bold xl:flex-none"
         >
           <Icon name="arrow-left" className="h-4 w-4" />
           Voltar
@@ -295,7 +402,7 @@ export function OcorrenciaDetalhe({ id, onNavigate }) {
         <button
           type="button"
           onClick={() => setHistoricoAberto(true)}
-          className="flex flex-1 items-center justify-center gap-2 rounded-md border border-slate-200 px-4 py-2 text-sm font-bold xl:hidden"
+          className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border border-slate-200 px-4 py-2 text-sm font-bold xl:hidden"
         >
           <Icon name="history" className="h-4 w-4" />
           Histórico
@@ -313,16 +420,18 @@ export function OcorrenciaDetalhe({ id, onNavigate }) {
               <div className="flex w-full gap-2 sm:w-auto">
                 <button
                   onClick={exportarPdf}
-                  className="flex-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 sm:flex-none"
+                  className="cursor-pointer flex-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 sm:flex-none"
                 >
                   Exportar PDF
                 </button>
-                <button
-                  onClick={() => setModalEdicaoAberto(true)}
-                  className="flex-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 sm:flex-none"
-                >
-                  Editar
-                </button>
+                {podeEditarOcorrencia ? (
+                  <button
+                    onClick={() => setModalEdicaoAberto(true)}
+                    className="flex-1 cursor-pointer rounded-md border border-slate-300 px-3 py-1.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 sm:flex-none"
+                  >
+                    Editar
+                  </button>
+                ) : null}
               </div>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -336,16 +445,16 @@ export function OcorrenciaDetalhe({ id, onNavigate }) {
               <InfoField label="Título" value={form.titulo} />
             </div>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <InfoField label="Criticidade" value={criticidade} />
-              <InfoField label="Status" value={status} />
+              <InfoField label="Criticidade" value={formatDisplayLabel(criticidade)} />
+              <InfoField label="Status" value={formatDisplayLabel(status)} />
             </div>
             <div className="mt-4">
               <InfoField label="Descrição" value={form.descricao} />
             </div>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <InfoField label="Endereço" value={escolaSelecionada.endereco} />
-              <InfoField label="Localização" value={form.localizacaoInterna} />
-              <InfoField label="Tipo" value={form.tipo} />
+              <InfoField label="Localização" value={form.localizacaoInterna ? formatDisplayLabel(form.localizacaoInterna) : 'Não informada'} />
+              <InfoField label="Tipo" value={formatDisplayLabel(form.tipo)} />
               <InfoField label="Envio" value={formatarDataBR(form.dataEnvio)} />
               <InfoField label="Aprovação" value={formatarDataBR(form.dataAprovacao)} />
               <InfoField label="Resolução" value={formatarDataBR(form.dataResolucao)} />
@@ -354,21 +463,21 @@ export function OcorrenciaDetalhe({ id, onNavigate }) {
             <div className="relative">
               {fotos.length === 0 ? (
                 <div className="flex h-48 items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 text-center text-sm font-bold text-slate-500">Nenhuma foto</div>
-              ) : typeof fotos[fotoIndex] === 'string' && fotos[fotoIndex].startsWith('data:image') ? (
+              ) : isFotoImagem(fotos[fotoIndex]) ? (
                 <img src={fotos[fotoIndex]} alt={`Foto ${fotoIndex + 1}`} className="h-48 w-full rounded-md border border-slate-300 object-cover" />
               ) : (
                 <div className="flex h-48 items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 text-center text-sm font-bold text-slate-500">{fotos[fotoIndex]}</div>
               )}
               {fotos.length > 1 && (
                 <>
-                  <button onClick={prevFoto} aria-label="Foto anterior" className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 px-2.5 py-1 text-lg font-bold text-slate-700 shadow hover:bg-white">&lsaquo;</button>
-                  <button onClick={nextFoto} aria-label="Próxima foto" className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 px-2.5 py-1 text-lg font-bold text-slate-700 shadow hover:bg-white">&rsaquo;</button>
+                  <button onClick={prevFoto} aria-label="Foto anterior" className="cursor-pointer absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 px-2.5 py-1 text-lg font-bold text-slate-700 shadow hover:bg-white">&lsaquo;</button>
+                  <button onClick={nextFoto} aria-label="Próxima foto" className="cursor-pointer absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 px-2.5 py-1 text-lg font-bold text-slate-700 shadow hover:bg-white">&rsaquo;</button>
                 </>
               )}
             </div>
             <div className="mt-3 flex justify-center gap-1.5">
               {fotos.map((foto, index) => (
-                <button key={foto} onClick={() => setFotoIndex(index)} aria-label={`Ir para foto ${index + 1}`} className={`h-1.5 w-1.5 rounded-full transition ${index === fotoIndex ? 'bg-primary' : 'bg-slate-300'}`} />
+                <button className="cursor-pointer" key={foto} onClick={() => setFotoIndex(index)} aria-label={`Ir para foto ${index + 1}`} className={`h-1.5 w-1.5 rounded-full transition ${index === fotoIndex ? 'bg-primary' : 'bg-slate-300'}`} />
               ))}
             </div>
           </Card>
@@ -379,7 +488,7 @@ export function OcorrenciaDetalhe({ id, onNavigate }) {
           }`}
         >
           <div className="flex justify-end border-b border-slate-200 px-2 py-2 shrink-0 xl:hidden">
-            <button
+            <button className="cursor-pointer"
               type="button"
               onClick={() => setHistoricoAberto(false)}
               aria-label="Fechar histórico"
@@ -389,15 +498,15 @@ export function OcorrenciaDetalhe({ id, onNavigate }) {
             </button>
           </div>
         
-          <div className="flex flex-nowrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-4 shrink-0">
-            <h3 className="min-w-0 flex-1 truncate text-lg font-800 text-slate-950">Histórico da ocorrência</h3>
+          <div className="flex shrink-0 flex-col items-stretch gap-3 border-b border-slate-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <h3 className="min-w-0 text-lg font-800 leading-tight text-slate-950">Histórico da ocorrência</h3>
             <button
               onClick={exportarHistoricoPdf}
               aria-label="Exportar PDF"
-              className="flex shrink-0 items-center gap-2 rounded-md border border-slate-300 px-2 py-1.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 xl:px-3"
+              className="cursor-pointer flex w-full shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 sm:w-auto"
             >
               <Icon name="download" className="h-4 w-4" />
-              <span className="hidden xl:inline">Exportar PDF</span>
+              <span>Exportar PDF</span>
             </button>
           </div>
           <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
@@ -407,18 +516,18 @@ export function OcorrenciaDetalhe({ id, onNavigate }) {
                 const fechado = status === 'Resolvida'
                 const mostrarLinha = !ultimo || !fechado
                 return (
-                  <div key={index} className={`relative ${ultimo && fechado ? 'pb-0' : 'pb-5'}`}>
+                  <div key={entry.id || index} className={`relative ${ultimo && fechado ? 'pb-0' : 'pb-5'}`}>
                     {mostrarLinha && <span className="absolute left-[4px] top-1 bottom-0 w-0.5 bg-slate-200" />}
                     <span className="absolute left-0 top-1 h-2.5 w-2.5 rounded-full border-2 border-white bg-primary ring-1 ring-primary-200" />
-                    <div className="pl-5">
-                      <p className="text-base font-bold text-slate-700">
+                    <div className="min-w-0 pl-5">
+                      <p className="break-words text-base font-bold text-slate-700">
                         {index === 0 ? `Cadastro da ocorrência por ${ocorrencia.criadoPorNome}` : entry.origem === 'sistema' ? 'Sistema' : entry.autor}
                       </p>
-                      <p className="text-sm text-slate-500">
+                      <p className="break-words text-sm text-slate-500">
                         Em {formatarDataBR(entry.data)}{entry.hora ? ` às ${entry.hora}` : ''}
                       </p>
                       {entry.status && <p className="mt-0.5 text-sm font-semibold text-primary">Status: {entry.status}</p>}
-                      {entry.mensagem && <p className="mt-0.5 text-sm text-slate-600">{entry.mensagem}</p>}
+                      {entry.mensagem && <p className="mt-0.5 break-words text-sm text-slate-600">{entry.mensagem}</p>}
                       {entry.anexos?.length > 0 && (
                         <div className="mt-1.5 flex flex-wrap gap-1.5">
                           {entry.anexos.map((nome) => (
@@ -443,7 +552,7 @@ export function OcorrenciaDetalhe({ id, onNavigate }) {
                   <span key={`${file.name}-${index}`} className="flex items-center gap-1.5 rounded bg-slate-100 px-2 py-1 text-xs font-bold text-slate-600">
                     <Icon name="paperclip" className="h-3.5 w-3.5" />
                     {file.name}
-                    <button onClick={() => removerAnexo(index)} aria-label={`Remover ${file.name}`} className="text-slate-400 hover:text-red-600">&times;</button>
+                    <button className="cursor-pointer" onClick={() => removerAnexo(index)} aria-label={`Remover ${file.name}`} className="text-slate-400 hover:text-red-600">&times;</button>
                   </span>
                 ))}
               </div>
@@ -452,7 +561,7 @@ export function OcorrenciaDetalhe({ id, onNavigate }) {
               <button
                 onClick={handleAnexarClick}
                 aria-label="Anexar arquivo"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100"
+                className="cursor-pointer flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100"
               >
                 <Icon name="paperclip" className="h-5 w-5" />
               </button>
@@ -472,9 +581,9 @@ export function OcorrenciaDetalhe({ id, onNavigate }) {
               <input ref={fileInputRef} type="file" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" onChange={handleFileChange} className="hidden" />
               <button
                 onClick={enviarMensagem}
-                disabled={!mensagem.trim() && anexos.length === 0}
+                disabled={enviandoMensagem || (!mensagem.trim() && anexos.length === 0)}
                 aria-label="Enviar mensagem"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-white hover:bg-primary-strong disabled:cursor-not-allowed disabled:opacity-40"
+                className="cursor-pointer flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-white hover:bg-primary-strong disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Icon name="send" className="h-4 w-4 -rotate-270 transition-transform" />
 
@@ -483,13 +592,16 @@ export function OcorrenciaDetalhe({ id, onNavigate }) {
           </div>
         </Card>
       </div>
-      <Modal open={modalEdicaoAberto} onClose={() => setModalEdicaoAberto(false)} title="Editar ocorrência">
+      <Modal open={modalEdicaoAberto && podeEditarOcorrencia} onClose={() => setModalEdicaoAberto(false)} title="Editar ocorrência">
         <div className="space-y-4">
           <label className="block">
             <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Escola</span>
-            <select value={form.escolaId} onChange={(e) => updateForm('escolaId', e.target.value)} className={campoClasse('h-9 text-sm font-semibold text-slate-800')}>
-              {escolas.map((item) => <option key={item.id} value={item.id}>{item.nome} - {item.bairro}</option>)}
-            </select>
+            <Select
+              size="sm"
+              value={form.escolaId}
+              onChange={(value) => updateForm('escolaId', value)}
+              options={escolas.map((item) => ({ value: item.id, label: `${item.nome} - ${item.bairro}` }))}
+            />
           </label>
           <label className="block">
             <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Título</span>
@@ -498,15 +610,11 @@ export function OcorrenciaDetalhe({ id, onNavigate }) {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="block">
               <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Criticidade</span>
-              <select value={criticidade} onChange={(e) => setCriticidade(e.target.value)} className={campoClasse('h-9 text-sm font-semibold text-slate-800')}>
-                {criticidadeValues.map((item) => <option key={item}>{item}</option>)}
-              </select>
+              <Select size="sm" value={criticidade} onChange={setCriticidade} options={criticidadeValues} />
             </label>
             <label className="block">
               <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Status</span>
-              <select value={status} onChange={(e) => setStatus(e.target.value)} className={campoClasse('h-9 text-sm font-semibold text-slate-800')}>
-                {statusValues.map((item) => <option key={item}>{item}</option>)}
-              </select>
+              <Select size="sm" value={status} onChange={setStatus} options={statusValues} />
             </label>
           </div>
           <label className="block">
@@ -520,15 +628,11 @@ export function OcorrenciaDetalhe({ id, onNavigate }) {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="block">
               <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Localização</span>
-              <select value={form.localizacaoInterna} onChange={(e) => updateForm('localizacaoInterna', e.target.value)} className={campoClasse('h-9 text-sm font-semibold text-slate-800')}>
-                {locaisInternos.map((item) => <option key={item} value={item}>{item}</option>)}
-              </select>
+              <Select size="sm" value={form.localizacaoInterna} onChange={(value) => updateForm('localizacaoInterna', value)} options={locaisInternos} />
             </label>
             <label className="block">
               <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Tipo</span>
-              <select value={form.tipo} onChange={(e) => updateForm('tipo', e.target.value)} className={campoClasse('h-9 text-sm font-semibold text-slate-800')}>
-                {categorias.map((item) => <option key={item} value={item}>{item}</option>)}
-              </select>
+              <Select size="sm" value={form.tipo} onChange={(value) => updateForm('tipo', value)} options={categorias} />
             </label>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -542,20 +646,20 @@ export function OcorrenciaDetalhe({ id, onNavigate }) {
           <div>
             <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Fotos</span>
             <input ref={fotoInputRef} type="file" accept="image/*" multiple onChange={handleFotoChange} className="hidden" />
-            <button type="button" onClick={handleFotoInputClick} className="flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
+            <button type="button" onClick={handleFotoInputClick} className="cursor-pointer flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
               <Icon name="image" className="h-4 w-4" />
               Adicionar fotos
             </button>
-            {fotos.length > 0 && (
+            {(fotos.length > 0 || novosArquivosFotos.length > 0) && (
               <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {fotos.map((foto, index) => (
-                  <div key={index} className="group relative aspect-square overflow-hidden rounded-md border border-slate-200 bg-slate-50">
-                    {typeof foto === 'string' && foto.startsWith('data:image') ? (
+                  <div key={foto} className="group relative aspect-square overflow-hidden rounded-md border border-slate-200 bg-slate-50">
+                    {isFotoImagem(foto) ? (
                       <img src={foto} alt={`Foto ${index + 1}`} className="h-full w-full object-cover" />
                     ) : (
                       <div className="flex h-full items-center justify-center p-1 text-center text-[10px] font-bold text-slate-500">{foto}</div>
                     )}
-                    <button
+                    <button className="cursor-pointer"
                       type="button"
                       onClick={() => removerFoto(index)}
                       aria-label={`Remover foto ${index + 1}`}
@@ -565,12 +669,31 @@ export function OcorrenciaDetalhe({ id, onNavigate }) {
                     </button>
                   </div>
                 ))}
+                {novosArquivosFotos.map((arquivo, index) => (
+                  <div key={`${arquivo.name}-${index}`} className="group relative aspect-square overflow-hidden rounded-md border border-blue-200 bg-slate-50">
+                    <img src={previewsNovasFotos[index]} alt={arquivo.name} className="h-full w-full object-cover" />
+                    <span className="absolute left-1 top-1 rounded bg-blue-600 px-1.5 py-0.5 text-[9px] font-bold text-white">Nova</span>
+                    <button className="cursor-pointer"
+                      type="button"
+                      onClick={() => removerNovaFoto(index)}
+                      aria-label={`Remover ${arquivo.name}`}
+                      className="absolute right-1 top-1 rounded-full bg-black/60 px-1.5 text-xs font-bold text-white hover:bg-black/80"
+                    >
+                      &times;
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
           </div>
+          {erroSalvar && (
+            <p className="rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{erroSalvar}</p>
+          )}
           <div className="flex justify-end gap-2 pt-2">
-            <button onClick={() => setModalEdicaoAberto(false)} className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">Cancelar</button>
-            <button onClick={handleSalvar} className="rounded-md bg-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-primary-strong">Salvar</button>
+            <button className="cursor-pointer" onClick={() => setModalEdicaoAberto(false)} className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">Cancelar</button>
+            <button onClick={handleSalvar} disabled={salvando} className="cursor-pointer rounded-md bg-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-primary-strong disabled:cursor-not-allowed disabled:opacity-60">
+              {salvando ? 'Salvando...' : 'Salvar'}
+            </button>
           </div>
         </div>
       </Modal>

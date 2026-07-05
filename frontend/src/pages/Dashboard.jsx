@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { escolas, ocorrenciasAprovadas } from '../data/mockData.js'
+import { useEffect, useState } from 'react'
 import { dashboardMetrics, groupCount, sortOcorrencias } from '../utils/metrics.js'
-import { BarList, Card } from '../components/ui.jsx'
+import { listarEscolas, listarOcorrencias } from '../services/api.js'
+import { BarList, Card, Select } from '../components/ui.jsx'
 import { Icon } from '../components/Icons.jsx'
 
 function ThickBarList({ data }) {
@@ -143,11 +143,56 @@ function formatLabel(label) {
 
 export function Dashboard({ onNavigate, user }) {
   const isDiretor = user?.role === 'DIRETOR'
-  const minhaEscola = isDiretor ? escolas.find((escola) => escola.id === user.escolaId) : null
-  const escopo = isDiretor ? ocorrenciasAprovadas.filter((item) => item.escolaId === user.escolaId) : ocorrenciasAprovadas
+  const [escolas, setEscolas] = useState([])
+  const [ocorrenciasAprovadas, setOcorrenciasAprovadas] = useState([])
+  const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState('')
+  const [filtros, setFiltros] = useState({ escolaId: '', bairro: '', dataInicial: '', dataFinal: '' })
 
-  const [chartEscolaId, setChartEscolaId] = useState('')
-  const metrics = dashboardMetrics(escopo, isDiretor ? 1 : escolas.length)
+  useEffect(() => {
+    let ativo = true
+
+    async function carregarDados() {
+      setCarregando(true)
+      setErro('')
+      try {
+        const [escolasApi, ocorrenciasApi] = await Promise.all([
+          listarEscolas(),
+          listarOcorrencias(isDiretor && user?.escolaId ? { escolaId: user.escolaId } : {}),
+        ])
+        if (!ativo) return
+        setEscolas(escolasApi)
+        setOcorrenciasAprovadas(ocorrenciasApi.filter((item) => item.aprovadaPelaEscola))
+      } catch (error) {
+        if (ativo) setErro(error.message)
+      } finally {
+        if (ativo) setCarregando(false)
+      }
+    }
+
+    carregarDados()
+    return () => {
+      ativo = false
+    }
+  }, [isDiretor, user?.escolaId])
+
+  const minhaEscola = isDiretor ? escolas.find((escola) => escola.id === user.escolaId) : null
+  const escolasDisponiveis = isDiretor && minhaEscola ? [minhaEscola] : escolas
+  const bairrosDisponiveis = [...new Set(escolasDisponiveis.map((escola) => escola.bairro).filter(Boolean))].sort((a, b) => formatLabel(a).localeCompare(formatLabel(b), 'pt-BR'))
+  const escopoBase = isDiretor ? ocorrenciasAprovadas.filter((item) => item.escolaId === user.escolaId) : ocorrenciasAprovadas
+  const escopo = escopoBase.filter((item) => {
+    if (filtros.escolaId && item.escolaId !== filtros.escolaId) return false
+    if (filtros.bairro && item.bairro !== filtros.bairro) return false
+    if (filtros.dataInicial && item.dataEnvio < filtros.dataInicial) return false
+    if (filtros.dataFinal && item.dataEnvio > filtros.dataFinal) return false
+    return true
+  })
+  const escolasFiltradas = escolasDisponiveis.filter((escola) => {
+    if (filtros.escolaId && escola.id !== filtros.escolaId) return false
+    if (filtros.bairro && escola.bairro !== filtros.bairro) return false
+    return true
+  })
+  const metrics = dashboardMetrics(escopo, isDiretor ? 1 : escolasFiltradas.length)
   const porBairro = Object.values(escopo.reduce((acc, item) => {
     const bairro = item.bairro
     if (!acc[bairro]) {
@@ -157,21 +202,64 @@ export function Dashboard({ onNavigate, user }) {
     return acc
   }, {}))
   const porTipo = Object.entries(groupCount(escopo, 'tipo')).map(([label, value]) => ({ label: formatLabel(label), value }))
-  const ocorrenciasDoChart = isDiretor
-    ? escopo
-    : chartEscolaId
-      ? escopo.filter((item) => item.escolaId === chartEscolaId)
-      : escopo
-  const porCriticidade = Object.entries(groupCount(ocorrenciasDoChart, 'criticidade')).map(([label, value]) => ({ label: formatLabel(label), value }))
-  const chartEscola = isDiretor ? minhaEscola : escolas.find((escola) => escola.id === chartEscolaId)
-  const escolasRank = escolas.map((escola) => ({
+  const porCriticidade = Object.entries(groupCount(escopo, 'criticidade')).map(([label, value]) => ({ label: formatLabel(label), value }))
+  const escolasRank = escolasFiltradas.map((escola) => ({
     ...escola,
-    total: ocorrenciasAprovadas.filter((item) => item.escolaId === escola.id).length,
-    criticas: ocorrenciasAprovadas.filter((item) => item.escolaId === escola.id && item.criticidade === 'Critica').length,
+    total: escopo.filter((item) => item.escolaId === escola.id).length,
+    criticas: escopo.filter((item) => item.escolaId === escola.id && item.criticidade === 'Critica').length,
   })).sort((a, b) => b.total - a.total)
+
+  if (carregando) {
+    return <Card><p className="text-sm font-semibold text-slate-500">Carregando dados do dashboard...</p></Card>
+  }
 
   return (
     <div className="space-y-6">
+      {erro && (
+        <p className="rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{erro}</p>
+      )}
+      <Card>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <label className="block">
+            <span className="mb-1 block text-xs font-bold text-slate-500">Escola</span>
+            <Select
+              value={filtros.escolaId}
+              onChange={(value) => setFiltros((prev) => ({ ...prev, escolaId: value }))}
+              disabled={isDiretor}
+              placeholder={isDiretor ? formatLabel(minhaEscola?.nome || 'Minha escola') : 'Todas as escolas'}
+              options={!isDiretor ? escolasDisponiveis.map((escola) => ({ value: escola.id, label: formatLabel(escola.nome) })) : []}
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-bold text-slate-500">Bairro</span>
+            <Select
+              value={filtros.bairro}
+              onChange={(value) => setFiltros((prev) => ({ ...prev, bairro: value, escolaId: prev.escolaId && escolas.find((escola) => escola.id === prev.escolaId)?.bairro !== value && value ? '' : prev.escolaId }))}
+              disabled={isDiretor}
+              placeholder={isDiretor ? formatLabel(minhaEscola?.bairro || 'Bairro da escola') : 'Todos os bairros'}
+              options={!isDiretor ? bairrosDisponiveis.map((bairro) => ({ value: bairro, label: formatLabel(bairro) })) : []}
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-bold text-slate-500">Data inicial</span>
+            <input
+              type="date"
+              value={filtros.dataInicial}
+              onChange={(event) => setFiltros((prev) => ({ ...prev, dataInicial: event.target.value }))}
+              className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-bold text-slate-500">Data final</span>
+            <input
+              type="date"
+              value={filtros.dataFinal}
+              onChange={(event) => setFiltros((prev) => ({ ...prev, dataFinal: event.target.value }))}
+              className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
+            />
+          </label>
+        </div>
+      </Card>
       <div className={`grid grid-cols-2 gap-4 md:grid-cols-3 ${isDiretor ? 'xl:grid-cols-5' : 'xl:grid-cols-6'}`}>
         {!isDiretor && <StatCard label="Escolas" value={metrics.escolas} tone="pink" />}
         <StatCard label="Aprovadas" value={metrics.aprovadas} tone="primary" />
@@ -187,12 +275,9 @@ export function Dashboard({ onNavigate, user }) {
             <div>
               <h2 className="text-lg font-800 text-slate-950">Ocorrências por criticidade</h2>
               <p className="mt-1 text-sm font-medium text-slate-500">
-                {chartEscola
-                  ? `Distribuição das ocorrências aprovadas em ${formatLabel(chartEscola.nome)}.`
-                  : 'Distribuição geral das ocorrências aprovadas pela escola.'}
+                Distribuição das ocorrências aprovadas conforme os filtros aplicados.
               </p>
             </div>
-            {!isDiretor && <SchoolChartSelect value={chartEscolaId} onChange={setChartEscolaId} escolas={escolas} />}
           </div>
           <PieChart data={porCriticidade} />
         </Card>
@@ -201,7 +286,7 @@ export function Dashboard({ onNavigate, user }) {
           <Card>
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-800 text-slate-950">Escolas com mais ocorrências</h2>
-              <button onClick={() => onNavigate('/ocorrencias')} className="cursor-pointer text-sm font-bold text-primary-strong">Ver lista</button>
+              <button className="cursor-pointer" onClick={() => onNavigate('/ocorrencias')} className="cursor-pointer text-sm font-bold text-primary-strong">Ver lista</button>
             </div>
             <div className="space-y-3">
               {escolasRank.slice(0, 5).map((escola) => (
@@ -234,7 +319,7 @@ export function Dashboard({ onNavigate, user }) {
           <h2 className="mb-4 text-lg font-800 text-slate-950">Prioridades mais antigas</h2>
           <div className="space-y-3">
             {sortOcorrencias(escopo).slice(0, 5).map((item) => (
-              <button key={item.id} onClick={() => onNavigate(`/ocorrencias/${item.id}`)} className="block w-full cursor-pointer rounded-md border border-slate-100 px-3 py-2 text-left hover:bg-slate-50">
+              <button className="cursor-pointer" key={item.id} onClick={() => onNavigate(`/ocorrencias/${item.id}`)} className="block w-full cursor-pointer rounded-md border border-slate-100 px-3 py-2 text-left hover:bg-slate-50">
                 <p className="font-bold text-slate-800">{formatLabel(item.titulo)}</p>
                 <p className="text-sm text-slate-500">{formatLabel(item.escola)} - {item.dataEnvio}</p>
               </button>
@@ -284,7 +369,7 @@ function SchoolChartSelect({ value, onChange, escolas }) {
 
   return (
     <div className="relative">
-      <button
+      <button className="cursor-pointer"
         type="button"
         onClick={() => setOpen((current) => !current)}
         className={`flex h-12 w-full cursor-pointer items-center justify-between rounded-lg border bg-white px-3 text-left transition ${open ? 'border-primary-500 ring-4 ring-primary-50' : 'border-slate-200 hover:border-primary-300'
@@ -312,7 +397,7 @@ function SchoolChartSelect({ value, onChange, escolas }) {
             </label>
           </div>
 
-          <button
+          <button className="cursor-pointer"
             type="button"
             onClick={() => selectValue('')}
             className={`flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-left text-sm font-bold transition ${value === '' ? 'bg-primary-50 text-primary-strong' : 'text-slate-700 hover:bg-slate-50'
@@ -326,7 +411,7 @@ function SchoolChartSelect({ value, onChange, escolas }) {
           </button>
 
           {filteredEscolas.map((escola) => (
-            <button
+            <button className="cursor-pointer"
               key={escola.id}
               type="button"
               onClick={() => selectValue(escola.id)}

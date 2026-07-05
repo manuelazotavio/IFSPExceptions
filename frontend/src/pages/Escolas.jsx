@@ -1,12 +1,21 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getSchoolStats } from '../utils/metrics.js'
 import { loadCustomSchools, loadSchoolCatalog, saveCustomSchool } from '../utils/schools.js'
-import { Badge, Card, FilterSelect } from '../components/ui.jsx'
+import { criarEscola, listarOcorrencias } from '../services/api.js'
+import { Card, FilterSelect } from '../components/ui.jsx'
+import { Pagination } from '../components/Pagination.jsx'
+import { Icon } from '../components/Icons.jsx'
+import { formatDisplayLabel } from '../utils/labels.js'
+
+const ITENS_POR_PAGINA = 10
 
 export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
   const [schoolList, setSchoolList] = useState(loadCustomSchools)
+  const [ocorrencias, setOcorrencias] = useState([])
   const [loadingSchools, setLoadingSchools] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [salvandoEscola, setSalvandoEscola] = useState(false)
+  const [erroCadastro, setErroCadastro] = useState('')
   const [loadingCep, setLoadingCep] = useState(false)
   const [cepFeedback, setCepFeedback] = useState('')
   const [novoCadastro, setNovoCadastro] = useState({
@@ -16,9 +25,9 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
     endereco: '',
     latitude: '',
     longitude: '',
-    descricao: '',
     fotoNome: '',
     fotoUrl: '',
+    fotos: [],
     comodos: [],
   })
   const [novoComodo, setNovoComodo] = useState({ nome: '', codigo: '' })
@@ -28,7 +37,17 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
     bairro: escolaFiltrada?.bairro || '',
     status: escolaFiltrada?.status || '',
   })
-  const setFilter = (key, value) => setFilters((prev) => ({ ...prev, [key]: value }))
+  const setFilter = (key, value) => { setFilters((prev) => ({ ...prev, [key]: value })); setPagina(1) }
+  const [pagina, setPagina] = useState(1)
+  const [expandidos, setExpandidos] = useState(() => new Set())
+  const toggleExpandido = (id) => {
+    setExpandidos((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   useEffect(() => {
     setFilters({
@@ -60,6 +79,16 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
     }
   }, [])
 
+  useEffect(() => {
+    let active = true
+    listarOcorrencias()
+      .then((dados) => { if (active) setOcorrencias(dados) })
+      .catch(() => { if (active) setOcorrencias([]) })
+    return () => {
+      active = false
+    }
+  }, [])
+
   const bairroOptions = useMemo(
     () => [...new Set(schoolList.map((escola) => escola.bairro).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR')),
     [schoolList],
@@ -80,6 +109,8 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
       return true
     })
   }, [filters, schoolList])
+  const totalPaginas = Math.max(1, Math.ceil(escolasFiltradas.length / ITENS_POR_PAGINA))
+  const escolasPaginadas = escolasFiltradas.slice((pagina - 1) * ITENS_POR_PAGINA, pagina * ITENS_POR_PAGINA)
 
   function updateNovoCadastro(key, value) {
     setNovoCadastro((prev) => ({ ...prev, [key]: value }))
@@ -88,7 +119,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
   async function preencherEnderecoPorCep() {
     const cep = normalizeCep(novoCadastro.cep)
     if (cep.length !== 8) {
-      setCepFeedback('Informe um CEP valido com 8 digitos.')
+      setCepFeedback('Informe um CEP válido com 8 dígitos.')
       return
     }
 
@@ -114,27 +145,43 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
         longitude: geocode?.longitude || prev.longitude,
       }))
 
-      setCepFeedback(geocode ? 'Endereco preenchido com latitude e longitude.' : 'Endereco preenchido. Ajuste latitude e longitude se necessario.')
+      setCepFeedback(geocode ? 'Endereço preenchido com latitude e longitude.' : 'Endereço preenchido. Ajuste latitude e longitude se necessário.')
     } catch (error) {
-      setCepFeedback(error.message || 'Nao foi possivel localizar o CEP informado.')
+      setCepFeedback(error.message || 'Não foi possível localizar o CEP informado.')
     } finally {
       setLoadingCep(false)
     }
   }
 
-  function handleFotoSelecionada(event) {
-    const file = event.target.files?.[0]
-    if (!file) return
+  async function handleFotoSelecionada(event) {
+    const files = Array.from(event.target.files || [])
+    if (!files.length) return
 
-    const reader = new FileReader()
-    reader.onload = () => {
-      setNovoCadastro((prev) => ({
+    const novasFotos = await Promise.all(files.map((file) => readImageFile(file)))
+    setNovoCadastro((prev) => {
+      const fotos = [...prev.fotos, ...novasFotos]
+      const capa = fotos[0] || { nome: '', url: '' }
+      return {
         ...prev,
-        fotoNome: file.name,
-        fotoUrl: typeof reader.result === 'string' ? reader.result : '',
-      }))
-    }
-    reader.readAsDataURL(file)
+        fotoNome: capa.nome,
+        fotoUrl: capa.url,
+        fotos,
+      }
+    })
+    event.target.value = ''
+  }
+
+  function removerFotoCadastro(index) {
+    setNovoCadastro((prev) => {
+      const fotos = prev.fotos.filter((_, itemIndex) => itemIndex !== index)
+      const capa = fotos[0] || { nome: '', url: '' }
+      return {
+        ...prev,
+        fotoNome: capa.nome,
+        fotoUrl: capa.url,
+        fotos,
+      }
+    })
   }
 
   function addComodo() {
@@ -163,26 +210,38 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
 
   async function handleCadastrarEscola(event) {
     event.preventDefault()
+    setErroCadastro('')
+    setSalvandoEscola(true)
 
-    const createdSchool = {
-      id: `esc-custom-${Date.now()}`,
-      nome: novoCadastro.nome.trim(),
+    let escolaCriada
+    try {
+      escolaCriada = await criarEscola({
+        nome: novoCadastro.nome.trim(),
+        bairro: novoCadastro.bairro.trim(),
+        endereco: novoCadastro.endereco.trim(),
+        latitude: Number(novoCadastro.latitude),
+        longitude: Number(novoCadastro.longitude),
+      })
+    } catch (error) {
+      setErroCadastro(error.message)
+      setSalvandoEscola(false)
+      return
+    }
+
+    saveCustomSchool({
+      ...escolaCriada,
       cep: normalizeCep(novoCadastro.cep),
-      bairro: novoCadastro.bairro.trim(),
-      endereco: novoCadastro.endereco.trim(),
-      latitude: Number(novoCadastro.latitude),
-      longitude: Number(novoCadastro.longitude),
-      descricao: novoCadastro.descricao.trim(),
+      descricao: '',
       status: 'Ativo',
       fotoNome: novoCadastro.fotoNome,
       fotoUrl: novoCadastro.fotoUrl,
+      fotos: novoCadastro.fotos,
       comodos: novoCadastro.comodos,
-      dataCadastro: new Date().toISOString().slice(0, 10),
+      dataCadastro: escolaCriada.criadoEm?.slice(0, 10) || new Date().toISOString().slice(0, 10),
       x: 50,
       y: 50,
-    }
+    })
 
-    saveCustomSchool(createdSchool)
     try {
       setSchoolList(await loadSchoolCatalog())
     } catch {
@@ -195,14 +254,27 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
       endereco: '',
       latitude: '',
       longitude: '',
-      descricao: '',
       fotoNome: '',
       fotoUrl: '',
+      fotos: [],
       comodos: [],
     })
     setNovoComodo({ nome: '', codigo: '' })
+    setSalvandoEscola(false)
     setCepFeedback('')
     setIsModalOpen(false)
+  }
+
+  function exportarCsv() {
+    const cabecalho = ['Nome', 'Bairro', 'Endereço', 'Status', 'Cadastro']
+    const linhas = escolasFiltradas.map((escola) => [escola.nome, formatDisplayLabel(escola.bairro), escola.endereco, escola.status, escola.dataCadastro])
+    const csv = [cabecalho, ...linhas].map((linha) => linha.map((valor) => `"${String(valor).replace(/"/g, '""')}"`).join(',')).join('\n')
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'escolas.csv'
+    link.click()
+    URL.revokeObjectURL(url)
   }
 
   return (
@@ -211,7 +283,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
       {escolaFiltrada ? (
         <Card className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-primary">Filtro aplicado pelo mapa</p>
+            <p className="text-xs font-bold tracking-wide text-primary">Filtro aplicado pelo mapa</p>
             <p className="text-sm font-semibold text-slate-700">
               Exibindo a escola selecionada no mapa de calor.
             </p>
@@ -219,114 +291,184 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
           <button
             type="button"
             onClick={() => onNavigate('/escolas')}
-            className="rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            className="cursor-pointer rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
           >
             Limpar filtro
           </button>
         </Card>
       ) : null}
 
-      <Card>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-800 text-slate-950">Lista de escolas</h2>
-            <p className="mt-1 text-sm text-slate-500">Gerencie as unidades cadastradas e abra o detalhe de cada escola.</p>
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-center w-full mb-4">
+        <div className="relative w-full flex-1">
+          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+            <svg className="h-5 w-5 text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clipRule="evenodd" />
+            </svg>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
-            >
-              Importar csv
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsModalOpen(true)}
-              className="rounded-md bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-strong"
-            >
-              Cadastrar escola
-            </button>
-          </div>
+          <input
+            type="text"
+            placeholder="Buscar escolas..."
+            value={filters.busca}
+            onChange={(event) => setFilter('busca', event.target.value)}
+            className="block w-full rounded-lg border-0 py-2 pl-10 pr-4 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary text-sm"
+          />
         </div>
-        <div className="grid gap-3 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
-          <label className="block">
-            <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Busca</span>
-            <input
-              value={filters.busca}
-              onChange={(event) => setFilter('busca', event.target.value)}
-              placeholder="Nome, bairro ou endereco"
-              className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500"
-            />
-          </label>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <button
+            type="button"
+            onClick={exportarCsv}
+            className="cursor-pointer w-full sm:w-auto rounded-lg border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors duration-200 flex items-center justify-center gap-2"
+          >
+            Exportar
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsModalOpen(true)}
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white shadow-sm transition-colors duration-200 hover:bg-primary-strong sm:w-auto"
+          >
+            <span className="text-sm leading-none">+</span> Cadastrar escola
+          </button>
+        </div>
+      </div>
+
+      <Card>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <FilterSelect label="Bairro" value={filters.bairro} onChange={(value) => setFilter('bairro', value)} options={bairroOptions} />
           <FilterSelect label="Status" value={filters.status} onChange={(value) => setFilter('status', value)} options={statusOptions} />
         </div>
-        <p className="mt-3 text-sm font-semibold text-slate-500">
-          {escolasFiltradas.length} de {schoolList.length} escolas encontradas
-        </p>
         {loadingSchools ? <p className="mt-1 text-xs font-semibold text-slate-400">Carregando escolas do banco...</p> : null}
       </Card>
 
-      <Card className="p-0">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-sm">
-            <thead className="bg-slate-50 text-left text-xs font-800 uppercase text-slate-500">
-              <tr>
-                {['Nome', 'Bairro', 'Endereco', 'Status', 'Ocorrencias', 'Criticas', 'Cadastro'].map((head) => <th key={head} className="px-4 py-3">{head}</th>)}
-              </tr>
-            </thead>
-            <tbody>
-              {escolasFiltradas.map((escola) => {
-                const stats = getSchoolStats(escola.id)
-                return (
-                  <tr
-                    key={escola.id}
-                    onClick={() => onNavigate(`/escolas/${escola.id}`)}
-                    className="cursor-pointer border-t border-slate-100 hover:bg-primary-50/40"
-                  >
-                    <td className="px-4 py-3 font-bold">{escola.nome}</td>
-                    <td className="px-4 py-3">{escola.bairro}</td>
-                    <td className="px-4 py-3">{escola.endereco}</td>
-                    <td className="px-4 py-3"><Badge>{escola.status}</Badge></td>
-                    <td className="px-4 py-3">{stats.total}</td>
-                    <td className="px-4 py-3">{stats.criticas}</td>
-                    <td className="px-4 py-3">{escola.dataCadastro}</td>
-                  </tr>
-                )
-              })}
-              {!escolasFiltradas.length && (
-                <tr>
-                  <td colSpan="7" className="border-t border-slate-100 px-4 py-8 text-center text-sm font-semibold text-slate-500">
-                    Nenhuma escola encontrada com os filtros selecionados.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+      <div className="overflow-hidden rounded-xl border border-slate-200 shadow-sm sm:hidden">
+        <div className="border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-extrabold tracking-wide text-slate-700">
+          Nome
         </div>
-      </Card>
+        <div className="divide-y divide-slate-200">
+          {escolasPaginadas.map((escola) => {
+            const stats = getSchoolStats(escola.id, ocorrencias)
+            const aberto = expandidos.has(escola.id)
+            return (
+              <div key={escola.id}>
+                <button
+                  type="button"
+                  onClick={() => toggleExpandido(escola.id)}
+                  aria-expanded={aberto}
+                  className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-left hover:bg-slate-50"
+                >
+                  <span className="font-bold text-slate-800">{escola.nome}</span>
+                  <Icon name="chevron-down" className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${aberto ? 'rotate-180' : ''}`} />
+                </button>
+                {aberto && (
+                  <div className="space-y-3 border-t border-slate-200 bg-white px-4 py-3 text-sm">
+                    <div>
+                      <span className="block text-xs font-bold tracking-wide text-slate-500">Bairro:</span>
+                      <span className="block text-slate-700">{formatDisplayLabel(escola.bairro)}</span>
+                    </div>
+                    <div>
+                      <span className="block text-xs font-bold tracking-wide text-slate-500">Endereço:</span>
+                      <span className="block text-slate-700">{escola.endereco}</span>
+                    </div>
+                    <div>
+                      <span className="block text-xs font-bold tracking-wide text-slate-500">Status:</span>
+                      <span className="block text-slate-700">{escola.status}</span>
+                    </div>
+                    <div>
+                      <span className="block text-xs font-bold tracking-wide text-slate-500">Ocorrências:</span>
+                      <span className="block text-slate-700">{stats.total}</span>
+                    </div>
+                    <div>
+                      <span className="block text-xs font-bold tracking-wide text-slate-500">Críticas:</span>
+                      <span className="block text-slate-700">{stats.criticas}</span>
+                    </div>
+                    <div>
+                      <span className="block text-xs font-bold tracking-wide text-slate-500">Cadastro:</span>
+                      <span className="block text-slate-700">{escola.dataCadastro}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onNavigate(`/escolas/${escola.id}`)}
+                      className="mt-2 w-full cursor-pointer rounded-md border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
+                    >
+                      Ver detalhes
+                    </button>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+          {!escolasPaginadas.length && (
+            <p className="px-4 py-8 text-center text-sm font-semibold text-slate-500">
+              Nenhuma escola encontrada com os filtros selecionados.
+            </p>
+          )}
+        </div>
       </div>
 
+      <div className="hidden w-full overflow-x-auto rounded-xl border border-slate-200 shadow-sm sm:block">
+        <table className="w-full min-w-[1000px] border-collapse rounded-2 text-sm">
+          <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-extrabold tracking-wide text-slate-600">
+            <tr className="divide-x divide-slate-200">
+              {['Nome', 'Bairro', 'Endereço', 'Status', 'Ocorrências', 'Críticas', 'Cadastro'].map((head) => <th key={head} className="px-4 py-3">{head}</th>)}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-200">
+            {escolasPaginadas.map((escola) => {
+              const stats = getSchoolStats(escola.id, ocorrencias)
+              return (
+                <tr
+                  key={escola.id}
+                  onClick={() => onNavigate(`/escolas/${escola.id}`)}
+                  className="cursor-pointer divide-x divide-slate-200 border-x border-slate-200 hover:bg-primary-50/40"
+                >
+                  <td className="px-4 py-3 font-bold text-slate-800">{escola.nome}</td>
+                  <td className="px-4 py-3 text-slate-600">{formatDisplayLabel(escola.bairro)}</td>
+                  <td className="px-4 py-3 text-slate-600">{escola.endereco}</td>
+                  <td className="px-4 py-3 text-slate-600">{escola.status}</td>
+                  <td className="px-4 py-3 text-slate-600">{stats.total}</td>
+                  <td className="px-4 py-3 text-slate-600">{stats.criticas}</td>
+                  <td className="px-4 py-3 text-slate-600">{escola.dataCadastro}</td>
+                </tr>
+              )
+            })}
+            {!escolasFiltradas.length && (
+              <tr>
+                <td colSpan="7" className="border-t border-slate-100 px-4 py-8 text-center text-sm font-semibold text-slate-500">
+                  Nenhuma escola encontrada com os filtros selecionados.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <Pagination page={pagina} totalPages={totalPaginas} onPageChange={setPagina} totalItems={escolasFiltradas.length} pageSize={ITENS_POR_PAGINA} />
+
       {isModalOpen && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/45 px-4 py-8">
-          <div className="w-full max-w-lg rounded-lg border border-slate-200 bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+        <div
+          className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-slate-950/45 px-3 py-4 sm:items-center sm:px-4 sm:py-8"
+          onClick={() => setIsModalOpen(false)}
+        >
+          <div
+            onClick={(event) => event.stopPropagation()}
+            className="flex max-h-[calc(100vh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl sm:max-h-[calc(100vh-4rem)]"
+          >
+            <div className="flex shrink-0 flex-col gap-3 border-b border-slate-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
               <div>
                 <h3 className="text-lg font-800 text-slate-950">Cadastrar escola</h3>
                 <p className="mt-1 text-sm text-slate-500">Adicione uma nova unidade para aparecer na listagem.</p>
               </div>
-              <button type="button" onClick={() => setIsModalOpen(false)} className="rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700">
-                Fechar
+              <button type="button" onClick={() => setIsModalOpen(false)} aria-label="Fechar" className="cursor-pointer self-end rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 sm:self-auto">
+                <Icon name="close" className="h-5 w-5" />
               </button>
             </div>
-            <form onSubmit={handleCadastrarEscola} className="space-y-4 p-5">
+            <form onSubmit={handleCadastrarEscola} className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
               <label className="block">
-                <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Nome</span>
+                <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Nome <span className="text-red-500">*</span></span>
                 <input required value={novoCadastro.nome} onChange={(event) => updateNovoCadastro('nome', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500" />
               </label>
               <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto]">
                 <label className="block">
-                  <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">CEP</span>
+                  <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">CEP <span className="text-red-500">*</span></span>
                   <input
                     required
                     value={novoCadastro.cep}
@@ -344,23 +486,23 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                   type="button"
                   onClick={preencherEnderecoPorCep}
                   disabled={loadingCep}
-                  className="mt-[22px] rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60"
+                  className="cursor-pointer mt-[22px] rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60"
                 >
                   {loadingCep ? 'Buscando...' : 'Preencher'}
                 </button>
               </div>
               {cepFeedback ? <p className="text-xs font-semibold text-slate-500">{cepFeedback}</p> : null}
               <label className="block">
-                <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Bairro</span>
+                <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Bairro <span className="text-red-500">*</span></span>
                 <input required value={novoCadastro.bairro} onChange={(event) => updateNovoCadastro('bairro', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500" />
               </label>
               <label className="block">
-                <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Endereco</span>
+                <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Endereço <span className="text-red-500">*</span></span>
                 <input required value={novoCadastro.endereco} onChange={(event) => updateNovoCadastro('endereco', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500" />
               </label>
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="block">
-                  <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Latitude</span>
+                  <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Latitude <span className="text-red-500">*</span></span>
                   <input
                     required
                     type="number"
@@ -374,7 +516,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                   />
                 </label>
                 <label className="block">
-                  <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Longitude</span>
+                  <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Longitude <span className="text-red-500">*</span></span>
                   <input
                     required
                     type="number"
@@ -389,74 +531,106 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                 </label>
               </div>
               <label className="block">
-                <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Descricao</span>
-                <textarea value={novoCadastro.descricao} onChange={(event) => updateNovoCadastro('descricao', event.target.value)} className="min-h-24 w-full rounded-md border border-slate-200 bg-white p-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500" placeholder="Descreva a escola e seus ambientes principais..." />
-              </label>
-              <label className="block">
-                <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Foto</span>
-                <input type="file" accept="image/*" onChange={handleFotoSelecionada} className="block w-full text-sm font-semibold text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-bold file:text-slate-700 hover:file:bg-slate-200" />
-                {novoCadastro.fotoNome ? <p className="mt-2 text-xs font-semibold text-slate-500">Arquivo selecionado: {novoCadastro.fotoNome}</p> : null}
-                {novoCadastro.fotoUrl ? (
-                  <div className="mt-3 overflow-hidden rounded-md border border-slate-200">
-                    <img src={novoCadastro.fotoUrl} alt="Previa da escola" className="h-40 w-full object-cover" />
+                <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Fotos</span>
+                <input type="file" accept="image/*" multiple onChange={handleFotoSelecionada} className="block w-full text-sm font-semibold text-slate-600 file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-bold file:text-slate-700 hover:file:bg-slate-200" />
+                {novoCadastro.fotos.length ? (
+                  <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {novoCadastro.fotos.map((foto, index) => (
+                      <div key={`${foto.nome}-${index}`} className="group relative aspect-video overflow-hidden rounded-md border border-slate-200">
+                        <img src={foto.url} alt={`Prévia ${index + 1}`} className="h-full w-full object-cover" />
+                        <button className="cursor-pointer"
+                          type="button"
+                          onClick={() => removerFotoCadastro(index)}
+                          aria-label={`Remover ${foto.nome}`}
+                          className="absolute right-1 top-1 cursor-pointer rounded-full bg-black/60 px-1.5 text-xs font-bold text-white hover:bg-black/80"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 ) : null}
               </label>
-              <div className="block">
-                <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Comodos cadastrados</span>
-                <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_140px_auto]">
-                  <input
-                    value={novoComodo.nome}
-                    onChange={(event) => setNovoComodo((prev) => ({ ...prev, nome: event.target.value }))}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        event.preventDefault()
-                        addComodo()
-                      }
-                    }}
-                    className="h-11 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
-                    placeholder="Ex.: Sala, Biblioteca, Banheiro"
-                  />
-                  <input
-                    value={novoComodo.codigo}
-                    onChange={(event) => setNovoComodo((prev) => ({ ...prev, codigo: event.target.value }))}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        event.preventDefault()
-                        addComodo()
-                      }
-                    }}
-                    className="h-11 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
-                    placeholder="Codigo"
-                  />
-                  <button type="button" onClick={addComodo} className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
+              <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-4">
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div>
+                    <span className="block text-sm font-800 text-slate-800">Cômodos cadastrados</span>
+                    <p className="mt-1 text-xs font-semibold text-slate-500">Adicione os ambientes da escola para organizar ocorrências por local.</p>
+                  </div>
+                  <span className="rounded-full bg-white px-2.5 py-1 text-xs font-800 text-slate-500 ring-1 ring-slate-200">
+                    {novoCadastro.comodos.length}
+                  </span>
+                </div>
+                <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_120px_auto]">
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-bold text-slate-500">Ambiente</span>
+                    <input
+                      value={novoComodo.nome}
+                      onChange={(event) => setNovoComodo((prev) => ({ ...prev, nome: event.target.value }))}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault()
+                          addComodo()
+                        }
+                      }}
+                      className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
+                      placeholder="Ex.: Biblioteca"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-bold text-slate-500">Código</span>
+                    <input
+                      value={novoComodo.codigo}
+                      onChange={(event) => setNovoComodo((prev) => ({ ...prev, codigo: event.target.value }))}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault()
+                          addComodo()
+                        }
+                      }}
+                      className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
+                      placeholder="A01"
+                    />
+                  </label>
+                  <button type="button" onClick={addComodo} className="h-11 cursor-pointer self-end rounded-md bg-primary px-4 text-sm font-bold text-white hover:bg-primary-strong">
                     Adicionar
                   </button>
                 </div>
-                <p className="mt-2 text-xs font-semibold text-slate-500">
-                  Cadastre cada ambiente como "Comodo - Codigo". No relatorio, comodos iguais sao somados automaticamente.
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-3 space-y-2">
                   {novoCadastro.comodos.map((comodo) => (
-                    <button key={`${comodo.nome}-${comodo.codigo}`} type="button" onClick={() => removeComodo(comodo)} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-700 hover:bg-slate-100">
-                      {comodo.nome} - {comodo.codigo} x
-                    </button>
+                    <div key={`${comodo.nome}-${comodo.codigo}`} className="flex items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-3 py-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-bold text-slate-800">{comodo.nome}</p>
+                        <p className="text-xs font-semibold text-slate-500">Código {comodo.codigo}</p>
+                      </div>
+                      <button type="button" onClick={() => removeComodo(comodo)} className="cursor-pointer rounded-md px-2 py-1 text-xs font-bold text-red-600 hover:bg-red-50">
+                        Remover
+                      </button>
+                    </div>
                   ))}
-                  {!novoCadastro.comodos.length && <p className="text-xs font-semibold text-slate-500">Nenhum comodo adicionado ainda.</p>}
+                  {!novoCadastro.comodos.length && (
+                    <div className="rounded-md border border-dashed border-slate-200 bg-white px-3 py-4 text-center text-sm font-semibold text-slate-400">
+                      Nenhum cômodo adicionado ainda.
+                    </div>
+                  )}
                 </div>
               </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">
+              {erroCadastro && (
+                <p className="rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{erroCadastro}</p>
+              )}
+              <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="w-full cursor-pointer rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 sm:w-auto">
                   Cancelar
                 </button>
-                <button type="submit" className="rounded-md bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-strong">
-                  Salvar escola
+                <button type="submit" disabled={salvandoEscola} className="cursor-pointer w-full rounded-md bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-strong disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
+                  {salvandoEscola ? 'Salvando...' : 'Salvar escola'}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+      </div>
     </>
   )
 }
@@ -469,6 +643,17 @@ function normalizeCep(value) {
   return String(value || '').replace(/\D/g, '').slice(0, 8)
 }
 
+function readImageFile(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve({
+      nome: file.name,
+      url: typeof reader.result === 'string' ? reader.result : '',
+    })
+    reader.readAsDataURL(file)
+  })
+}
+
 function formatCepInput(value) {
   const digits = normalizeCep(value)
   if (digits.length <= 5) return digits
@@ -478,12 +663,12 @@ function formatCepInput(value) {
 async function fetchCepData(cep) {
   const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
   if (!response.ok) {
-    throw new Error('Nao foi possivel consultar o CEP.')
+    throw new Error('Não foi possível consultar o CEP.')
   }
 
   const data = await response.json()
   if (data.erro) {
-    throw new Error('CEP nao encontrado.')
+    throw new Error('CEP não encontrado.')
   }
 
   return data

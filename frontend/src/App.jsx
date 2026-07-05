@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Layout } from './components/Layout.jsx'
-import { clearStoredUser, getStoredUser, setStoredUser } from './auth/session.js'
-import { escolas, ocorrenciasAprovadas } from './data/mockData.js'
+import { clearStoredUser, getStoredUser, setStoredToken, setStoredUser } from './auth/session.js'
+import { listarEscolas, listarOcorrencias } from './services/api.js'
 import { Cadastro } from './pages/Cadastro.jsx'
 import { Dashboard } from './pages/Dashboard.jsx'
 import { Landing } from './pages/Landing.jsx'
@@ -11,7 +11,7 @@ import { Ocorrencias } from './pages/Ocorrencias.jsx'
 import { OcorrenciaDetalhe } from './pages/OcorrenciaDetalhe.jsx'
 import { EscolaDetalhe } from './pages/EscolaDetalhe.jsx'
 import { Escolas } from './pages/Escolas.jsx'
-import { Categorias, Configuracoes, Indicadores, Usuarios } from './pages/AdminPages.jsx'
+import { Auditoria, Categorias, Configuracoes, Indicadores, Usuarios } from './pages/AdminPages.jsx'
 import { dashboardMetrics, groupCount } from './utils/metrics.js'
 
 function normalizeRoute() {
@@ -37,12 +37,38 @@ export default function App() {
   const isExterno = user?.role === 'EXTERNO'
   const isDiretor = user?.role === 'DIRETOR'
   const { pathname, searchParams } = parseRoute(route)
+  const [escolas, setEscolas] = useState([])
+  const [ocorrenciasAprovadas, setOcorrenciasAprovadas] = useState([])
 
   useEffect(() => {
     const onHashChange = () => setRoute(normalizeRoute())
     window.addEventListener('hashchange', onHashChange)
     return () => window.removeEventListener('hashchange', onHashChange)
   }, [])
+
+  useEffect(() => {
+    if (!user || isExterno) return
+
+    let ativo = true
+    Promise.all([
+      listarEscolas(),
+      listarOcorrencias(isDiretor && user?.escolaId ? { escolaId: user.escolaId } : {}),
+    ])
+      .then(([escolasApi, ocorrenciasApi]) => {
+        if (!ativo) return
+        setEscolas(escolasApi)
+        setOcorrenciasAprovadas(ocorrenciasApi.filter((item) => item.aprovadaPelaEscola))
+      })
+      .catch(() => {
+        if (ativo) {
+          setEscolas([])
+          setOcorrenciasAprovadas([])
+        }
+      })
+    return () => {
+      ativo = false
+    }
+  }, [user, isExterno, isDiretor, user?.escolaId])
 
   useEffect(() => {
     if (isPublicRoute(pathname)) return
@@ -60,8 +86,9 @@ export default function App() {
     setRoute(path)
   }
 
-  function handleLogin(loggedUser) {
+  function handleLogin(loggedUser, token) {
     setStoredUser(loggedUser)
+    setStoredToken(token)
     setUser(loggedUser)
     navigate(loggedUser.role === 'EXTERNO' ? '/ocorrencias' : '/dashboard')
   }
@@ -278,6 +305,7 @@ export default function App() {
       '/indicadores': <Indicadores />,
       '/usuarios': <Usuarios />,
       '/categorias': <Categorias />,
+      '/auditoria': <Auditoria />,
       '/configuracoes': <Configuracoes />,
     }
 

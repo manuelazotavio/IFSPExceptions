@@ -1,8 +1,11 @@
 import { Router } from 'express'
 import { UserController } from '../controllers/UserController.js'
+import { authenticate, requireRole } from '../middlewares/auth.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 
 export const userRoutes = Router()
+
+userRoutes.use(authenticate, requireRole('SEDUC'))
 
 userRoutes.get('/', asyncHandler(UserController.getAll))
 userRoutes.get('/:id', asyncHandler(UserController.get))
