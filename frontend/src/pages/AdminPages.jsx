@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { categorias } from '../data/mockData.js'
+import { categorias, escolas as escolasMock, usuarios as usuariosMock } from '../data/mockData.js'
 import { dashboardMetrics, groupCount } from '../utils/metrics.js'
 import { atualizarUsuario, criarUsuario, listarAuditoria, listarEscolas, listarOcorrencias, listarUsuarios } from '../services/api.js'
 import { Badge, BarList, Card, FilterSelect, MetricCard, Modal, Select } from '../components/ui.jsx'
@@ -64,7 +64,44 @@ async function svgUrlParaPngDataUrl(url, width = 240, height = 240) {
   })
 }
 
-export function Usuarios() {
+function buildPresentationUsers() {
+  return usuariosMock.map((usuario, index) => ({
+    id: usuario.id || `presentation-user-${index + 1}`,
+    nome: usuario.nome,
+    email: usuario.email,
+    role: usuario.role,
+    escolaId: usuario.escolaId || null,
+    ativo: usuario.status !== 'Inativo',
+    criadoEm: `2026-07-${String((index % 5) + 1).padStart(2, '0')}T09:00:00.000Z`,
+  }))
+}
+
+function buildPresentationAuditLogs(escolaId = '') {
+  const baseLogs = [
+    ['LOGIN', 'Sistema', 'Acesso administrativo ao painel SEDUC'],
+    ['ATUALIZAR', 'Ocorrencia', 'Status de ocorrencia atualizado para Em andamento'],
+    ['CRIAR', 'Usuario', 'Usuario diretor vinculado a unidade escolar'],
+    ['EXPORTAR', 'Dashboard', 'Relatorio consolidado exportado pela SEDUC'],
+    ['ATUALIZAR', 'Escola', 'Dados cadastrais de unidade escolar revisados'],
+  ]
+
+  return baseLogs.map(([acao, entidade, descricao], index) => {
+    const escola = escolasMock[index % escolasMock.length]
+    return {
+      id: `presentation-log-${index + 1}`,
+      acao,
+      entidade,
+      descricao,
+      usuarioNome: index % 2 === 0 ? 'Apresentacao SEDUC' : 'Joao Beserra',
+      usuarioEmail: 'apresentacao@seduc.gov.br',
+      escolaId: escola?.id || null,
+      escola: escola?.nome || '',
+      criadoEm: `2026-07-0${index + 1}T1${index}:30:00.000Z`,
+    }
+  }).filter((log) => !escolaId || log.escolaId === escolaId)
+}
+
+export function Usuarios({ presentationMode = false }) {
   const [lista, setLista] = useState([])
   const [escolas, setEscolas] = useState([])
   const [carregando, setCarregando] = useState(true)
@@ -90,6 +127,13 @@ export function Usuarios() {
     async function carregar() {
       setCarregando(true)
       setErro('')
+      if (presentationMode) {
+        setLista(buildPresentationUsers())
+        setEscolas(escolasMock)
+        setCarregando(false)
+        return
+      }
+
       try {
         const [usuariosApi, escolasApi] = await Promise.all([listarUsuarios(), listarEscolas()])
         if (!ativo) return
@@ -106,7 +150,7 @@ export function Usuarios() {
     return () => {
       ativo = false
     }
-  }, [])
+  }, [presentationMode])
 
   async function persistirUsuario(usuario) {
     try {
@@ -469,7 +513,7 @@ export function Usuarios() {
   )
 }
 
-export function Auditoria() {
+export function Auditoria({ presentationMode = false }) {
   const [logs, setLogs] = useState([])
   const [escolas, setEscolas] = useState([])
   const [escolaId, setEscolaId] = useState('')
@@ -487,9 +531,14 @@ export function Auditoria() {
 
   useEffect(() => {
     let ativo = true
+    if (presentationMode) {
+      setEscolas(escolasMock)
+      return () => { ativo = false }
+    }
+
     listarEscolas().then((dados) => { if (ativo) setEscolas(dados) }).catch(() => {})
     return () => { ativo = false }
-  }, [])
+  }, [presentationMode])
 
   useEffect(() => {
     let ativo = true
@@ -497,6 +546,12 @@ export function Auditoria() {
     async function carregar() {
       setCarregando(true)
       setErro('')
+      if (presentationMode) {
+        setLogs(buildPresentationAuditLogs(escolaId))
+        setCarregando(false)
+        return
+      }
+
       try {
         const dados = await listarAuditoria(escolaId ? { escolaId } : {})
         if (ativo) setLogs(dados)
@@ -509,7 +564,7 @@ export function Auditoria() {
 
     carregar()
     return () => { ativo = false }
-  }, [escolaId])
+  }, [escolaId, presentationMode])
 
   const nomesEscolas = escolas.map((escola) => escola.nome)
 

@@ -13,7 +13,7 @@ const items = [
 export function Sidebar({ route, onNavigate, user, open = false, onClose, collapsed = false, onToggleCollapsed, nomeExibido, roleLabel, onLogout, presentationMode = false }) {
   const isExterno = user?.role === 'EXTERNO'
   const isDiretor = user?.role === 'DIRETOR'
-  const visibleItems = presentationMode ? [['mapa', 'Mapa de calor', '/mapa', 'map']] : isExterno
+  const visibleItems = isExterno
     ? [['ocorrencias', 'Minhas ocorrências', '/ocorrencias', 'alert']]
     : isDiretor
       ? [
