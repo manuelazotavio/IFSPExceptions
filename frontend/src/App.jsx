@@ -197,7 +197,7 @@ export default function App() {
       doc.setTextColor(255, 255, 255)
       doc.setFont('helvetica', 'bold')
       doc.setFontSize(13)
-      doc.text('Dashboard Geral SEDUC', margin, 12)
+      doc.text('Dashboard SEDUC', margin, 12)
       doc.setFont('helvetica', 'normal')
       doc.setFontSize(9)
       doc.text('Exportação tabulada dos indicadores consolidados', margin, 20)

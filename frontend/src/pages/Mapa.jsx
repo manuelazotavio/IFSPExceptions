@@ -1452,22 +1452,64 @@ export function Mapa({ onNavigate }) {
 }
 
 function MetricPanel({ context, drawerAberto }) {
+  const [isMobileExpanded, setIsMobileExpanded] = useState(false)
+
   return (
-    <div
-      className={`absolute left-2 top-2 z-[650] w-[260px] max-w-[calc(100%-1rem)] rounded-xl border border-slate-200 bg-white/95 p-3 shadow-lg backdrop-blur sm:left-4 sm:top-4 sm:p-4 ${drawerAberto ? 'hidden sm:block' : ''}`}
-    >
-      <p className="text-[10px] font-bold text-slate-500">
-        {context.title}
-      </p>
-      <p className="mt-1 text-xs font-semibold text-slate-500">
-        {context.message}
-      </p>
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        {context.items.map((item) => (
-          <MetricCard key={item.label} item={item} />
-        ))}
+    <div className={`absolute left-2 top-2 z-[650] sm:left-4 sm:top-4 ${drawerAberto ? 'hidden sm:block' : ''}`}>
+      <button
+        type="button"
+        onClick={() => setIsMobileExpanded((current) => !current)}
+        className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white/95 px-3 py-2 text-xs font-bold text-slate-700 shadow-md backdrop-blur sm:hidden"
+        aria-expanded={isMobileExpanded}
+        aria-label={isMobileExpanded ? 'Fechar resumo do mapa' : 'Abrir resumo do mapa'}
+      >
+        Resumo
+        <ChevronIcon direction={isMobileExpanded ? 'up' : 'down'} />
+      </button>
+
+      <div
+        className={`mt-2 w-[260px] max-w-[calc(100vw-1rem)] rounded-xl border border-slate-200 bg-white/95 p-3 shadow-lg backdrop-blur sm:mt-0 sm:block sm:max-w-[calc(100%-1rem)] sm:p-4 ${isMobileExpanded ? 'block' : 'hidden'}`}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-bold text-slate-500">
+              {context.title}
+            </p>
+            <p className="mt-1 text-xs font-semibold text-slate-500">
+              {context.message}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsMobileExpanded(false)}
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 sm:hidden"
+            aria-label="Fechar resumo do mapa"
+          >
+            &times;
+          </button>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          {context.items.map((item) => (
+            <MetricCard key={item.label} item={item} />
+          ))}
+        </div>
       </div>
     </div>
+  )
+}
+
+function MapDateFilter({ label, value, onChange }) {
+  return (
+    <label className="min-w-0">
+      <span className="mb-1 block text-[10px] font-bold tracking-wide text-slate-500">{label}</span>
+      <input
+        type="date"
+        aria-label={`Data ${label.toLowerCase()}`}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-10 w-full min-w-0 rounded-md border border-slate-200 bg-white px-2 text-sm text-slate-700 outline-none focus:border-primary-500 sm:w-36 sm:px-3"
+      />
+    </label>
   )
 }
 
