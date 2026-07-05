@@ -16,6 +16,13 @@ const COR_LINHA_CRITICIDADE = {
   Baixa: 'bg-emerald-500/15 hover:bg-emerald-500/25',
 }
 
+const COR_KANBAN_CRITICIDADE = {
+  Critica: 'border-red-200 bg-red-50 text-red-700',
+  Alta: 'border-orange-200 bg-orange-50 text-orange-700',
+  Media: 'border-amber-200 bg-amber-50 text-amber-700',
+  Baixa: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+}
+
 export function Ocorrencias({ onNavigate, user }) {
   const isDiretor = user?.role === 'DIRETOR'
   const isExterno = user?.role === 'EXTERNO'
@@ -34,6 +41,7 @@ export function Ocorrencias({ onNavigate, user }) {
   const fotoInputRef = useRef(null)
   const [busca, setBusca] = useState('')
   const [pagina, setPagina] = useState(1)
+  const [visualizacao, setVisualizacao] = useState('listagem')
   const [expandidos, setExpandidos] = useState(() => new Set())
   const toggleExpandido = (id) => {
     setExpandidos((prev) => {
@@ -200,7 +208,22 @@ export function Ocorrencias({ onNavigate, user }) {
       {carregando && (
         <p className="text-sm font-semibold text-slate-500">Carregando ocorrências...</p>
       )}
-      <div className="overflow-hidden rounded-xl border border-slate-200 shadow-sm sm:hidden">
+      <div className="grid w-full grid-cols-2 gap-2">
+        {[
+          ['listagem', 'Listagem'],
+          ['kanban', 'Kanban'],
+        ].map(([valor, label]) => (
+          <button
+            key={valor}
+            type="button"
+            onClick={() => setVisualizacao(valor)}
+            className={`w-full cursor-pointer rounded-md px-4 py-2 text-sm font-bold transition-colors ${visualizacao === valor ? 'bg-blue-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      <div className={`${visualizacao === 'listagem' ? '' : 'hidden'} overflow-hidden rounded-xl border border-slate-200 shadow-sm sm:hidden`}>
         <div className="border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-extrabold tracking-wide text-slate-700">
           Protocolo
         </div>
@@ -267,7 +290,7 @@ export function Ocorrencias({ onNavigate, user }) {
           )}
         </div>
       </div>
-      <div className="hidden w-full overflow-x-auto rounded-xl border border-slate-200 shadow-sm sm:block">
+      <div className={`${visualizacao === 'listagem' ? 'hidden sm:block' : 'hidden'} w-full overflow-x-auto rounded-xl border border-slate-200 shadow-sm`}>
         <table className="w-full min-w-[1100px] border-collapse rounded-2 text-sm">
           <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-extrabold tracking-wide">
             <tr className="divide-x divide-slate-200">
@@ -298,7 +321,12 @@ export function Ocorrencias({ onNavigate, user }) {
           </tbody>
         </table>
       </div>
-      <Pagination page={pagina} totalPages={totalPaginas} onPageChange={setPagina} totalItems={lista.length} pageSize={ITENS_POR_PAGINA} />
+      {visualizacao === 'listagem' && (
+        <Pagination page={pagina} totalPages={totalPaginas} onPageChange={setPagina} totalItems={lista.length} pageSize={ITENS_POR_PAGINA} />
+      )}
+      {visualizacao === 'kanban' && (
+        <KanbanOcorrencias lista={lista} onNavigate={onNavigate} />
+      )}
       <Modal open={modalAberto} onClose={() => setModalAberto(false)} title="Nova ocorrencia">
         <div className="space-y-3">
           <label className="block">
@@ -375,6 +403,55 @@ export function Ocorrencias({ onNavigate, user }) {
           </div>
         </div>
       </Modal>
+    </div>
+  )
+}
+
+function KanbanOcorrencias({ lista, onNavigate }) {
+  return (
+    <div className="grid gap-4 xl:grid-cols-4">
+      {statusValues.map((status) => {
+        const itens = lista.filter((item) => item.status === status)
+
+        return (
+          <section key={status} className="min-h-96 rounded-xl border border-slate-200 bg-slate-50/70">
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+              <h2 className="text-sm font-800 text-slate-800">{status}</h2>
+              <span className="rounded-full bg-white px-2.5 py-1 text-xs font-800 text-slate-500 ring-1 ring-slate-200">
+                {itens.length}
+              </span>
+            </div>
+            <div className="space-y-3 p-3">
+              {itens.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => onNavigate(`/ocorrencias/${item.id}`)}
+                  className="w-full cursor-pointer rounded-lg border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:border-blue-200 hover:bg-blue-50/40"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <strong className="text-sm font-800 leading-snug text-slate-900">{item.titulo}</strong>
+                    <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-800 ${COR_KANBAN_CRITICIDADE[item.criticidade] || 'border-slate-200 bg-slate-50 text-slate-600'}`}>
+                      {item.criticidade}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-xs font-bold text-slate-500">{item.protocolo}</p>
+                  <p className="mt-1 line-clamp-2 text-xs font-semibold text-slate-600">{item.escola}</p>
+                  <div className="mt-3 flex items-center justify-between gap-2 text-xs font-semibold text-slate-500">
+                    <span>{item.tipo}</span>
+                    <span>{diasEmAberto(item.dataEnvio)} dias</span>
+                  </div>
+                </button>
+              ))}
+              {!itens.length && (
+                <p className="rounded-lg border border-dashed border-slate-200 bg-white px-3 py-6 text-center text-sm font-semibold text-slate-400">
+                  Sem ocorrências
+                </p>
+              )}
+            </div>
+          </section>
+        )
+      })}
     </div>
   )
 }

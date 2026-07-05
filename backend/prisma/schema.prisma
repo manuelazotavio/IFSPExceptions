@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -44,7 +44,7 @@ model Ocorrencia {
   id                 String    @id @default(cuid())
   protocolo          String    @unique
   titulo             String
-  descricao          String
+  descricao          String    @db.Text
   tipo               String
   criticidade        String
   status             String    @default("Aberta")
@@ -57,7 +57,7 @@ model Ocorrencia {
   criadoPorEmail     String
   criadoPorNome      String    @default("")
   chatPendente       Boolean   @default(false)
-  fotos              String    @default("[]")
+  fotos              String    @default("[]") @db.Text
   criadoEm           DateTime  @default(now())
   atualizadoEm       DateTime  @updatedAt
 
@@ -70,9 +70,9 @@ model Interacao {
   id       String   @id @default(cuid())
   origem   String
   autor    String
-  mensagem String
+  mensagem String   @db.Text
   status   String?
-  anexos   String   @default("[]")
+  anexos   String   @default("[]") @db.Text
   criadoEm DateTime @default(now())
 
   ocorrenciaId String
@@ -84,7 +84,7 @@ model LogAuditoria {
   acao         String
   entidade     String
   entidadeId   String?
-  descricao    String
+  descricao    String   @db.Text
   usuarioEmail String?
   usuarioNome  String?
   criadoEm     DateTime @default(now())

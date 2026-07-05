@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Layout } from './components/Layout.jsx'
 import { clearStoredUser, getStoredUser, setStoredUser } from './auth/session.js'
-import { escolas, ocorrenciasAprovadas } from './data/mockData.js'
+import { listarEscolas, listarOcorrencias } from './services/api.js'
 import { Cadastro } from './pages/Cadastro.jsx'
 import { Dashboard } from './pages/Dashboard.jsx'
 import { Landing } from './pages/Landing.jsx'
@@ -37,12 +37,38 @@ export default function App() {
   const isExterno = user?.role === 'EXTERNO'
   const isDiretor = user?.role === 'DIRETOR'
   const { pathname, searchParams } = parseRoute(route)
+  const [escolas, setEscolas] = useState([])
+  const [ocorrenciasAprovadas, setOcorrenciasAprovadas] = useState([])
 
   useEffect(() => {
     const onHashChange = () => setRoute(normalizeRoute())
     window.addEventListener('hashchange', onHashChange)
     return () => window.removeEventListener('hashchange', onHashChange)
   }, [])
+
+  useEffect(() => {
+    if (!user || isExterno) return
+
+    let ativo = true
+    Promise.all([
+      listarEscolas(),
+      listarOcorrencias(isDiretor && user?.escolaId ? { escolaId: user.escolaId } : {}),
+    ])
+      .then(([escolasApi, ocorrenciasApi]) => {
+        if (!ativo) return
+        setEscolas(escolasApi)
+        setOcorrenciasAprovadas(ocorrenciasApi.filter((item) => item.aprovadaPelaEscola))
+      })
+      .catch(() => {
+        if (ativo) {
+          setEscolas([])
+          setOcorrenciasAprovadas([])
+        }
+      })
+    return () => {
+      ativo = false
+    }
+  }, [user, isExterno, isDiretor, user?.escolaId])
 
   useEffect(() => {
     if (isPublicRoute(pathname)) return
