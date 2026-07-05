@@ -4,7 +4,7 @@ export function Card({ children, className = '' }) {
 
 export function MetricCard({ label, value, tone = 'blue' }) {
   const tones = {
-    blue: 'bg-blue-50 text-blue-700',
+    blue: 'bg-primary-50 text-primary-strong',
     green: 'bg-emerald-50 text-emerald-700',
     yellow: 'bg-amber-50 text-amber-700',
     red: 'bg-red-50 text-red-700',
@@ -30,7 +30,7 @@ export function Badge({ children, type = 'status' }) {
     Media: 'bg-amber-100 text-amber-700',
     Baixa: 'bg-emerald-100 text-emerald-700',
     Aberta: 'bg-red-50 text-red-700',
-    'Em andamento': 'bg-blue-50 text-blue-700',
+    'Em andamento': 'bg-primary-50 text-primary-strong',
     'Em analise': 'bg-indigo-50 text-indigo-700',
     'Aguardando orcamento': 'bg-amber-50 text-amber-700',
     'Aguardando visita tecnica': 'bg-purple-50 text-purple-700',
@@ -60,7 +60,7 @@ export function FilterSelect({ label, value, onChange, options }) {
   return (
     <label className="block">
       <span className="mb-1 block text-xs font-bold  text-slate-500">{label}</span>
-      <select value={value} onChange={(e) => onChange(e.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-500">
+      <select value={value} onChange={(e) => onChange(e.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500">
         <option value="">Todos</option>
         {options.map((option) => <option key={option} value={option}>{option}</option>)}
       </select>
@@ -75,7 +75,7 @@ export function BarList({ data }) {
       {data.map((item) => (
         <div key={item.label}>
           <div className="mb-1 flex justify-between text-sm font-semibold text-slate-600"><span>{item.label}</span><span>{item.value}</span></div>
-          <div className="h-2 rounded-full bg-slate-100"><div className="h-2 rounded-full bg-blue-600" style={{ width: `${(item.value / max) * 100}%` }} /></div>
+          <div className="h-2 rounded-full bg-slate-100"><div className="h-2 rounded-full bg-primary" style={{ width: `${(item.value / max) * 100}%` }} /></div>
         </div>
       ))}
     </div>

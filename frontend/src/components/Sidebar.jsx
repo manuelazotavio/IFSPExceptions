@@ -41,22 +41,15 @@ export function Sidebar({ route, onNavigate, user, open = false, onClose, nomeEx
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="mb-7 flex items-center justify-between gap-3 px-2">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-white">
-              <Icon name="school" className="h-5 w-5" />
-            </div>
-            <div>
-              <strong className="block text-sm font-800 text-slate-950">Escola em Dia</strong>
-            </div>
-          </div>
+        <div className="mb-7 flex items-center justify-between gap-3 ps-2">
+          <img src="/geo/logo_fundo_branco.svg" alt="Escola em Dia" className="h-8 w-auto" />
           <button
             type="button"
             onClick={onClose}
             aria-label="Fechar menu"
             className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 lg:hidden"
           >
-            &times;
+            <Icon name="close" className="h-5 w-5" />
           </button>
         </div>
 
@@ -71,7 +64,7 @@ export function Sidebar({ route, onNavigate, user, open = false, onClose, nomeEx
                 type="button"
                 onClick={() => handleNavigate(path)}
                 className={`flex h-10 w-full items-center gap-3 rounded-md px-3 text-left text-sm font-semibold transition ${
-                  active ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-blue-700'
+                  active ? 'bg-primary-50 text-primary-strong' : 'text-slate-600 hover:bg-slate-50 hover:text-primary-strong'
                 }`}
               >
                 <Icon name={icon} className="h-4 w-4" />

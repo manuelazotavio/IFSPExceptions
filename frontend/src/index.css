@@ -1,10 +1,17 @@
 @import "tailwindcss";
 
+@theme {
+  --color-primary: #001EFF;
+  --color-primary-strong: #00129C;
+}
+
 :root {
   font-family: "Inter", "Segoe UI", Arial, sans-serif;
   color: #172033;
   background: #ffffff;
 }
+
+
 
 * {
   box-sizing: border-box;
@@ -23,3 +30,4 @@ select,
 textarea {
   font-family: inherit;
 }
+

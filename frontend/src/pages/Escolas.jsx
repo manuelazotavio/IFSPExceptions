@@ -7,8 +7,11 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
   const [schoolList, setSchoolList] = useState(loadCustomSchools)
   const [loadingSchools, setLoadingSchools] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [loadingCep, setLoadingCep] = useState(false)
+  const [cepFeedback, setCepFeedback] = useState('')
   const [novoCadastro, setNovoCadastro] = useState({
     nome: '',
+    cep: '',
     bairro: '',
     endereco: '',
     latitude: '',
@@ -82,6 +85,43 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
     setNovoCadastro((prev) => ({ ...prev, [key]: value }))
   }
 
+  async function preencherEnderecoPorCep() {
+    const cep = normalizeCep(novoCadastro.cep)
+    if (cep.length !== 8) {
+      setCepFeedback('Informe um CEP valido com 8 digitos.')
+      return
+    }
+
+    setLoadingCep(true)
+    setCepFeedback('')
+
+    try {
+      const cepData = await fetchCepData(cep)
+      const endereco = buildAddressLine(cepData)
+      const geocode = await fetchAddressCoordinates({
+        endereco,
+        bairro: cepData.bairro,
+        cidade: cepData.localidade,
+        estado: cepData.uf,
+      })
+
+      setNovoCadastro((prev) => ({
+        ...prev,
+        cep,
+        bairro: cepData.bairro || prev.bairro,
+        endereco: endereco || prev.endereco,
+        latitude: geocode?.latitude || prev.latitude,
+        longitude: geocode?.longitude || prev.longitude,
+      }))
+
+      setCepFeedback(geocode ? 'Endereco preenchido com latitude e longitude.' : 'Endereco preenchido. Ajuste latitude e longitude se necessario.')
+    } catch (error) {
+      setCepFeedback(error.message || 'Nao foi possivel localizar o CEP informado.')
+    } finally {
+      setLoadingCep(false)
+    }
+  }
+
   function handleFotoSelecionada(event) {
     const file = event.target.files?.[0]
     if (!file) return
@@ -127,6 +167,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
     const createdSchool = {
       id: `esc-custom-${Date.now()}`,
       nome: novoCadastro.nome.trim(),
+      cep: normalizeCep(novoCadastro.cep),
       bairro: novoCadastro.bairro.trim(),
       endereco: novoCadastro.endereco.trim(),
       latitude: Number(novoCadastro.latitude),
@@ -149,6 +190,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
     }
     setNovoCadastro({
       nome: '',
+      cep: '',
       bairro: '',
       endereco: '',
       latitude: '',
@@ -159,6 +201,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
       comodos: [],
     })
     setNovoComodo({ nome: '', codigo: '' })
+    setCepFeedback('')
     setIsModalOpen(false)
   }
 
@@ -168,7 +211,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
       {escolaFiltrada ? (
         <Card className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-blue-600">Filtro aplicado pelo mapa</p>
+            <p className="text-xs font-bold uppercase tracking-wide text-primary">Filtro aplicado pelo mapa</p>
             <p className="text-sm font-semibold text-slate-700">
               Exibindo a escola selecionada no mapa de calor.
             </p>
@@ -199,7 +242,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
             <button
               type="button"
               onClick={() => setIsModalOpen(true)}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700"
+              className="rounded-md bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-strong"
             >
               Cadastrar escola
             </button>
@@ -212,7 +255,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
               value={filters.busca}
               onChange={(event) => setFilter('busca', event.target.value)}
               placeholder="Nome, bairro ou endereco"
-              className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-500"
+              className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500"
             />
           </label>
           <FilterSelect label="Bairro" value={filters.bairro} onChange={(value) => setFilter('bairro', value)} options={bairroOptions} />
@@ -239,7 +282,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                   <tr
                     key={escola.id}
                     onClick={() => onNavigate(`/escolas/${escola.id}`)}
-                    className="cursor-pointer border-t border-slate-100 hover:bg-blue-50/40"
+                    className="cursor-pointer border-t border-slate-100 hover:bg-primary-50/40"
                   >
                     <td className="px-4 py-3 font-bold">{escola.nome}</td>
                     <td className="px-4 py-3">{escola.bairro}</td>
@@ -279,15 +322,41 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
             <form onSubmit={handleCadastrarEscola} className="space-y-4 p-5">
               <label className="block">
                 <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Nome</span>
-                <input required value={novoCadastro.nome} onChange={(event) => updateNovoCadastro('nome', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500" />
+                <input required value={novoCadastro.nome} onChange={(event) => updateNovoCadastro('nome', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500" />
               </label>
+              <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto]">
+                <label className="block">
+                  <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">CEP</span>
+                  <input
+                    required
+                    value={novoCadastro.cep}
+                    onChange={(event) => updateNovoCadastro('cep', formatCepInput(event.target.value))}
+                    onBlur={() => {
+                      if (normalizeCep(novoCadastro.cep).length === 8) {
+                        preencherEnderecoPorCep()
+                      }
+                    }}
+                    className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500"
+                    placeholder="00000-000"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={preencherEnderecoPorCep}
+                  disabled={loadingCep}
+                  className="mt-[22px] rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60"
+                >
+                  {loadingCep ? 'Buscando...' : 'Preencher'}
+                </button>
+              </div>
+              {cepFeedback ? <p className="text-xs font-semibold text-slate-500">{cepFeedback}</p> : null}
               <label className="block">
                 <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Bairro</span>
-                <input required value={novoCadastro.bairro} onChange={(event) => updateNovoCadastro('bairro', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500" />
+                <input required value={novoCadastro.bairro} onChange={(event) => updateNovoCadastro('bairro', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500" />
               </label>
               <label className="block">
                 <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Endereco</span>
-                <input required value={novoCadastro.endereco} onChange={(event) => updateNovoCadastro('endereco', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500" />
+                <input required value={novoCadastro.endereco} onChange={(event) => updateNovoCadastro('endereco', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500" />
               </label>
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="block">
@@ -300,7 +369,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                     step="any"
                     value={novoCadastro.latitude}
                     onChange={(event) => updateNovoCadastro('latitude', event.target.value)}
-                    className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500"
+                    className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
                     placeholder="-23.633000"
                   />
                 </label>
@@ -314,14 +383,14 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                     step="any"
                     value={novoCadastro.longitude}
                     onChange={(event) => updateNovoCadastro('longitude', event.target.value)}
-                    className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500"
+                    className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
                     placeholder="-45.417000"
                   />
                 </label>
               </div>
               <label className="block">
                 <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Descricao</span>
-                <textarea value={novoCadastro.descricao} onChange={(event) => updateNovoCadastro('descricao', event.target.value)} className="min-h-24 w-full rounded-md border border-slate-200 bg-white p-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500" placeholder="Descreva a escola e seus ambientes principais..." />
+                <textarea value={novoCadastro.descricao} onChange={(event) => updateNovoCadastro('descricao', event.target.value)} className="min-h-24 w-full rounded-md border border-slate-200 bg-white p-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500" placeholder="Descreva a escola e seus ambientes principais..." />
               </label>
               <label className="block">
                 <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Foto</span>
@@ -345,7 +414,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                         addComodo()
                       }
                     }}
-                    className="h-11 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500"
+                    className="h-11 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
                     placeholder="Ex.: Sala, Biblioteca, Banheiro"
                   />
                   <input
@@ -357,7 +426,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                         addComodo()
                       }
                     }}
-                    className="h-11 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500"
+                    className="h-11 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
                     placeholder="Codigo"
                   />
                   <button type="button" onClick={addComodo} className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
@@ -380,7 +449,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                 <button type="button" onClick={() => setIsModalOpen(false)} className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">
                   Cancelar
                 </button>
-                <button type="submit" className="rounded-md bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700">
+                <button type="submit" className="rounded-md bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-strong">
                   Salvar escola
                 </button>
               </div>
@@ -394,4 +463,57 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
 
 function normalizeRoomKey(value) {
   return String(value || '').trim().toLowerCase()
+}
+
+function normalizeCep(value) {
+  return String(value || '').replace(/\D/g, '').slice(0, 8)
+}
+
+function formatCepInput(value) {
+  const digits = normalizeCep(value)
+  if (digits.length <= 5) return digits
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`
+}
+
+async function fetchCepData(cep) {
+  const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
+  if (!response.ok) {
+    throw new Error('Nao foi possivel consultar o CEP.')
+  }
+
+  const data = await response.json()
+  if (data.erro) {
+    throw new Error('CEP nao encontrado.')
+  }
+
+  return data
+}
+
+function buildAddressLine(data) {
+  const parts = [data.logradouro, data.localidade && data.uf ? `${data.localidade} - ${data.uf}` : data.localidade || data.uf]
+  return parts.filter(Boolean).join(', ')
+}
+
+async function fetchAddressCoordinates({ endereco, bairro, cidade, estado }) {
+  const query = [endereco, bairro, cidade, estado, 'Brasil'].filter(Boolean).join(', ')
+  if (!query) return null
+
+  const params = new URLSearchParams({
+    format: 'jsonv2',
+    limit: '1',
+    countrycodes: 'br',
+    q: query,
+  })
+
+  const response = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`)
+  if (!response.ok) return null
+
+  const data = await response.json()
+  const first = Array.isArray(data) ? data[0] : null
+  if (!first) return null
+
+  return {
+    latitude: String(first.lat || ''),
+    longitude: String(first.lon || ''),
+  }
 }

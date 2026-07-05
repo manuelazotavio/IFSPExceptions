@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { escolas, ocorrenciasAprovadas } from '../data/mockData.js'
 import { dashboardMetrics, groupCount, sortOcorrencias } from '../utils/metrics.js'
 import { BarList, Card } from '../components/ui.jsx'
+import { Icon } from '../components/Icons.jsx'
 
 function ThickBarList({ data }) {
   const max = Math.max(...data.map((item) => item.value), 1)
@@ -10,7 +11,7 @@ function ThickBarList({ data }) {
       {data.map((item) => (
         <div key={item.label}>
           <div className="mb-1.5 flex justify-between text-sm font-semibold text-slate-600"><span>{item.label}</span><span>{item.value}</span></div>
-          <div className="h-4 rounded-full bg-slate-100"><div className="h-4 rounded-full bg-blue-600" style={{ width: `${(item.value / max) * 100}%` }} /></div>
+          <div className="h-4 rounded-full bg-slate-100"><div className="h-4 rounded-full bg-primary" style={{ width: `${(item.value / max) * 100}%` }} /></div>
         </div>
       ))}
     </div>
@@ -31,54 +32,56 @@ function NeighborhoodColumnChart({ data }) {
 
   return (
     <div className="px-1 pb-1 pt-2">
-      <div className="grid grid-cols-[34px_1fr] gap-3">
-        <div className="flex h-64 flex-col justify-between pb-12 text-right text-xs font-semibold text-slate-400">
-          {ticks.map((tick) => (
-            <span key={tick}>{tick}</span>
-          ))}
-        </div>
-
-        <div className="relative h-64 border-b border-l border-slate-200">
-          <div className="absolute inset-x-0 top-0 flex h-52 flex-col justify-between">
+      <div className="overflow-x-auto">
+        <div className="grid min-w-[38rem] grid-cols-[34px_1fr] gap-3">
+          <div className="flex h-64 flex-col justify-between pb-12 text-right text-xs font-semibold text-slate-400">
             {ticks.map((tick) => (
-              <div key={tick} className="border-t border-slate-100" />
+              <span key={tick}>{tick}</span>
             ))}
           </div>
 
-          <div className="relative flex h-full items-end gap-5 px-4">
-            {data.map((item) => {
-              return (
-                <div key={item.label} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2">
-                  <div className="flex h-48 w-full items-end justify-center gap-0.5">
-                    {urgencyColumns.map((column) => {
-                      const value = item[column.key] || 0
-                      const height = value ? Math.max((value / chartMax) * 100, 8) : 0
+          <div className="relative h-64 border-b border-l border-slate-200">
+            <div className="absolute inset-x-0 top-0 flex h-52 flex-col justify-between">
+              {ticks.map((tick) => (
+                <div key={tick} className="border-t border-slate-100" />
+              ))}
+            </div>
 
-                      return (
-                        <div key={column.key} className="relative flex h-full w-3 items-end justify-center">
-                          {value > 0 && (
-                            <strong
-                              className="absolute text-[10px] font-800 leading-none text-slate-600"
-                              style={{ bottom: `calc(${height}% + 4px)` }}
-                            >
-                              {value}
-                            </strong>
-                          )}
-                    <div
-                      className={`w-full rounded-t-sm shadow-sm transition ${column.color} ${column.hover}`}
-                      style={{ height: `${height}%` }}
-                      title={`${item.label} - ${column.label}: ${value} ocorrências`}
-                    />
-                        </div>
-                      )
-                    })}
+            <div className="relative flex h-full items-end gap-5 px-4">
+              {data.map((item) => {
+                return (
+                  <div key={item.label} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2">
+                    <div className="flex h-48 w-full items-end justify-center gap-0.5">
+                      {urgencyColumns.map((column) => {
+                        const value = item[column.key] || 0
+                        const height = value ? Math.max((value / chartMax) * 100, 8) : 0
+
+                        return (
+                          <div key={column.key} className="relative flex h-full w-3 items-end justify-center">
+                            {value > 0 && (
+                              <strong
+                                className="absolute text-[10px] font-800 leading-none text-slate-600"
+                                style={{ bottom: `calc(${height}% + 4px)` }}
+                              >
+                                {value}
+                              </strong>
+                            )}
+                            <div
+                              className={`w-full rounded-t-sm shadow-sm transition ${column.color} ${column.hover}`}
+                              style={{ height: `${height}%` }}
+                              title={`${item.label} - ${column.label}: ${value} ocorrências`}
+                            />
+                          </div>
+                        )
+                      })}
+                    </div>
+                    <span className="line-clamp-2 min-h-9 text-center text-[11px] font-semibold leading-tight text-slate-500">
+                      {item.label}
+                    </span>
                   </div>
-                  <span className="line-clamp-2 min-h-9 text-center text-[11px] font-semibold leading-tight text-slate-500">
-                    {item.label}
-                  </span>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
         </div>
       </div>
@@ -169,16 +172,16 @@ export function Dashboard({ onNavigate, user }) {
 
   return (
     <div className="space-y-6">
-      <div className={`grid gap-4 md:grid-cols-3 ${isDiretor ? 'xl:grid-cols-5' : 'xl:grid-cols-6'}`}>
-        {!isDiretor && <StatCard label="Escolas" value={metrics.escolas} tone="slate" />}
-        <StatCard label="Aprovadas" value={metrics.aprovadas} tone="blue" />
+      <div className={`grid grid-cols-2 gap-4 md:grid-cols-3 ${isDiretor ? 'xl:grid-cols-5' : 'xl:grid-cols-6'}`}>
+        {!isDiretor && <StatCard label="Escolas" value={metrics.escolas} tone="pink" />}
+        <StatCard label="Aprovadas" value={metrics.aprovadas} tone="primary" />
         <StatCard label="Abertas" value={metrics.abertas} tone="red" />
         <StatCard label="Em andamento" value={metrics.andamento} tone="amber" />
         <StatCard label="Resolvidas" value={metrics.resolvidas} tone="green" />
         <StatCard label="Críticas" value={metrics.criticas} tone="critical" />
       </div>
 
-      <div className={`grid gap-4 ${isDiretor ? '' : 'xl:grid-cols-[420px_1fr]'}`}>
+      <div className={`grid grid-cols-1 gap-4 ${isDiretor ? '' : 'xl:grid-cols-[420px_1fr]'}`}>
         <Card>
           <div className="mb-5 flex flex-col gap-3">
             <div>
@@ -198,13 +201,16 @@ export function Dashboard({ onNavigate, user }) {
           <Card>
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-800 text-slate-950">Escolas com mais ocorrências</h2>
-              <button onClick={() => onNavigate('/ocorrencias')} className="cursor-pointer text-sm font-bold text-blue-700">Ver lista</button>
+              <button onClick={() => onNavigate('/ocorrencias')} className="cursor-pointer text-sm font-bold text-primary-strong">Ver lista</button>
             </div>
             <div className="space-y-3">
               {escolasRank.slice(0, 5).map((escola) => (
-                <div key={escola.id} className="flex items-center justify-between rounded-md border border-slate-100 px-3 py-2">
-                  <div><p className="font-bold text-slate-800">{formatLabel(escola.nome)}</p><p className="text-sm text-slate-500">{formatLabel(escola.bairro)}</p></div>
-                  <div className="text-right"><p className="font-800 text-slate-950">{escola.total}</p><p className="text-xs text-red-600">{escola.criticas} críticas</p></div>
+                <div key={escola.id} className="flex items-center justify-between gap-3 rounded-md border border-slate-100 px-3 py-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-bold text-slate-800">{formatLabel(escola.nome)}</p>
+                    <p className="truncate text-sm text-slate-500">{formatLabel(escola.bairro)}</p>
+                  </div>
+                  <div className="shrink-0 text-right"><p className="font-800 text-slate-950">{escola.total}</p><p className="text-xs text-red-600">{escola.criticas} críticas</p></div>
                 </div>
               ))}
             </div>
@@ -219,7 +225,7 @@ export function Dashboard({ onNavigate, user }) {
         </Card>
       )}
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <Card>
           <h2 className="mb-4 text-lg font-800 text-slate-950">Ocorrências por tipo</h2>
           <BarList data={porTipo} />
@@ -243,12 +249,14 @@ export function Dashboard({ onNavigate, user }) {
 function StatCard({ label, value, tone = 'slate' }) {
   const tones = {
     slate: 'bg-slate-50 border-slate-200',
-    blue: 'bg-blue-50 border-blue-100',
+    blue: 'bg-primary-50 border-primary-100',
     green: 'bg-emerald-50 border-emerald-100',
     amber: 'bg-amber-50 border-amber-100',
     red: 'bg-red-50 border-red-100',
     critical: 'bg-red-100 border-red-200',
+    pink: 'bg-pink-50 border-pink-100'
   }
+
   return (
     <section className={`rounded-lg border p-5 ${tones[tone] || tones.slate}`}>
       <p className="text-sm font-semibold text-slate-500">{label}</p>
@@ -276,19 +284,17 @@ function SchoolChartSelect({ value, onChange, escolas }) {
 
   return (
     <div className="relative">
-      <span className="mb-1 block text-xs font-bold  text-slate-500">Escola</span>
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
-        className={`flex h-12 w-full cursor-pointer items-center justify-between rounded-lg border bg-white px-3 text-left transition ${
-          open ? 'border-blue-500 ring-4 ring-blue-50' : 'border-slate-200 hover:border-blue-300'
-        }`}
+        className={`flex h-12 w-full cursor-pointer items-center justify-between rounded-lg border bg-white px-3 text-left transition ${open ? 'border-primary-500 ring-4 ring-primary-50' : 'border-slate-200 hover:border-primary-300'
+          }`}
       >
         <span className="min-w-0">
           <strong className="block truncate text-sm font-800 text-slate-900">{label}</strong>
           <span className="block truncate text-xs font-semibold text-slate-500">{bairro}</span>
         </span>
-        <span className={`ml-3 text-slate-400 transition ${open ? 'rotate-180' : ''}`}>⌄</span>
+        <Icon name="chevron-down" className={`ml-3 h-4 w-4 shrink-0 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
@@ -301,7 +307,7 @@ function SchoolChartSelect({ value, onChange, escolas }) {
                 onChange={(event) => setSearch(event.target.value)}
                 autoFocus
                 placeholder="Pesquisar escola..."
-                className="h-10 w-full rounded-md border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white"
+                className="h-10 w-full rounded-md border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-primary-500 focus:bg-white"
               />
             </label>
           </div>
@@ -309,9 +315,8 @@ function SchoolChartSelect({ value, onChange, escolas }) {
           <button
             type="button"
             onClick={() => selectValue('')}
-            className={`flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-left text-sm font-bold transition ${
-              value === '' ? 'bg-blue-50 text-blue-700' : 'text-slate-700 hover:bg-slate-50'
-            }`}
+            className={`flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-left text-sm font-bold transition ${value === '' ? 'bg-primary-50 text-primary-strong' : 'text-slate-700 hover:bg-slate-50'
+              }`}
           >
             <span>
               <span className="block">Geral</span>
@@ -325,9 +330,8 @@ function SchoolChartSelect({ value, onChange, escolas }) {
               key={escola.id}
               type="button"
               onClick={() => selectValue(escola.id)}
-              className={`flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-left text-sm font-bold transition ${
-                value === escola.id ? 'bg-blue-50 text-blue-700' : 'text-slate-700 hover:bg-slate-50'
-              }`}
+              className={`flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-left text-sm font-bold transition ${value === escola.id ? 'bg-primary-50 text-primary-strong' : 'text-slate-700 hover:bg-slate-50'
+                }`}
             >
               <span className="min-w-0">
                 <span className="block truncate">{formatLabel(escola.nome)}</span>
@@ -365,7 +369,7 @@ function PieChart({ data }) {
   const activePercent = activeItem && total ? Math.round((activeItem.value / total) * 100) : null
 
   return (
-    <div className="grid items-center gap-5 md:grid-cols-[180px_1fr]">
+    <div className="grid grid-cols-1 items-center gap-5 md:grid-cols-[180px_1fr]">
       <div className="relative mx-auto h-44 w-44">
         <svg viewBox="0 0 42 42" className="h-full w-full -rotate-90">
           <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#eef2f7" strokeWidth="8" />
@@ -416,9 +420,8 @@ function PieChart({ data }) {
               key={item.label}
               onMouseEnter={() => setHovered(item.label)}
               onMouseLeave={() => setHovered(null)}
-              className={`flex cursor-pointer items-center justify-between gap-4 rounded-md px-2 py-1.5 transition ${
-                isHovered ? 'bg-slate-100' : 'hover:bg-slate-50'
-              } ${hovered && !isHovered ? 'opacity-45' : 'opacity-100'}`}
+              className={`flex cursor-pointer items-center justify-between gap-4 rounded-md px-2 py-1.5 transition ${isHovered ? 'bg-slate-100' : 'hover:bg-slate-50'
+                } ${hovered && !isHovered ? 'opacity-45' : 'opacity-100'}`}
             >
               <span className="flex items-center gap-2 text-sm font-bold text-slate-700">
                 <i className={`h-3 w-3 rounded-full transition-transform ${isHovered ? 'scale-125' : ''}`} style={{ backgroundColor: colors[label] || colors[item.label] || '#64748b' }} />
