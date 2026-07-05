@@ -409,10 +409,6 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                       <span className="block text-xs font-bold tracking-wide text-slate-500">Críticas:</span>
                       <span className="block text-slate-700">{stats.criticas}</span>
                     </div>
-                    <div>
-                      <span className="block text-xs font-bold tracking-wide text-slate-500">Cadastro:</span>
-                      <span className="block text-slate-700">{escola.dataCadastro}</span>
-                    </div>
                     <button
                       type="button"
                       onClick={() => onNavigate(`/escolas/${escola.id}`)}
@@ -437,7 +433,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
         <table className="w-full min-w-[1000px] border-collapse rounded-2 text-sm">
           <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-extrabold tracking-wide text-slate-600">
             <tr className="divide-x divide-slate-200">
-              {['Nome', 'Bairro', 'Endereço', 'Status', 'Ocorrências', 'Críticas', 'Cadastro'].map((head) => <th key={head} className="px-4 py-3">{head}</th>)}
+              {['Nome', 'Bairro', 'Endereço', 'Status', 'Ocorrências', 'Críticas'].map((head) => <th key={head} className="px-4 py-3">{head}</th>)}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
@@ -455,13 +451,12 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                   <td className="px-4 py-3 text-slate-600">{escola.status}</td>
                   <td className="px-4 py-3 text-slate-600">{stats.total}</td>
                   <td className="px-4 py-3 text-slate-600">{stats.criticas}</td>
-                  <td className="px-4 py-3 text-slate-600">{escola.dataCadastro}</td>
                 </tr>
               )
             })}
             {!escolasFiltradas.length && (
               <tr>
-                <td colSpan="7" className="border-t border-slate-100 px-4 py-8 text-center text-sm font-semibold text-slate-500">
+                <td colSpan="6" className="border-t border-slate-100 px-4 py-8 text-center text-sm font-semibold text-slate-500">
                   Nenhuma escola encontrada com os filtros selecionados.
                 </td>
               </tr>

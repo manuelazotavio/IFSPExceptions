@@ -26,7 +26,7 @@ export function MetricCard({ label, value, tone = 'blue' }) {
   )
 }
 
-export function Badge({ children, type = 'status' }) {
+export function Badge({ children, type = 'status', className = '' }) {
   const text = Array.isArray(children) ? children.map((item) => String(item)).join('') : String(children)
   const classes = {
     Critica: 'bg-red-100 text-red-700',
@@ -45,7 +45,7 @@ export function Badge({ children, type = 'status' }) {
     Ativo: 'bg-emerald-50 text-emerald-700',
     Inativo: 'bg-slate-100 text-slate-600',
   }
-  return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${classes[text] || 'bg-slate-100 text-slate-700'}`}>{formatDisplayLabel(text)}</span>
+  return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${classes[text] || 'bg-slate-100 text-slate-700'} ${className}`}>{formatDisplayLabel(text)}</span>
 }
 
 export function Modal({ open, onClose, title, children }) {
