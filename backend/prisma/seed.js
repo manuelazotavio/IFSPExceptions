@@ -9,6 +9,7 @@ const prisma = new PrismaClient()
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const escolasJsonPath = path.resolve(__dirname, 'seeds/unidades_seduc_caraguatatuba.json')
+const ocorrenciasJsonPath = path.resolve(__dirname, 'seeds/ocorrencias_seduc_caraguatatuba_seed.json')
 
 // Preserve ids already referenced by ocorrencias and usuarios seeds.
 const LEGACY_ESCOLA_IDS = new Map([
@@ -57,12 +58,83 @@ function cleanRequiredText(value, fieldName, escolaNome = 'registro') {
   return text
 }
 
+function cleanOptionalText(value) {
+  return repairText(value).replace(/\s+/g, ' ').trim()
+}
+
+function cleanOptionalAsciiText(value) {
+  return cleanOptionalText(value)
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+}
+
+function cleanRequiredAsciiText(value, fieldName, recordName = 'registro') {
+  const text = cleanOptionalAsciiText(value)
+  if (!text) {
+    throw new Error(`Campo obrigatorio ausente (${fieldName}) para ${recordName}.`)
+  }
+  return text
+}
+
 function toRequiredNumber(value, fieldName, escolaNome) {
   const number = Number(value)
   if (!Number.isFinite(number)) {
     throw new Error(`Campo numerico invalido (${fieldName}) para ${escolaNome}.`)
   }
   return number
+}
+
+function toOptionalComodos(record, escolaNome) {
+  const rawComodos = Array.isArray(record?.comodosCadastrados)
+    ? record.comodosCadastrados
+    : (Array.isArray(record?.comodos) ? record.comodos : [])
+
+  const seenCodes = new Set()
+
+  return rawComodos.map((item, index) => {
+    const codigo = cleanRequiredAsciiText(item?.codigo, 'codigo', `${escolaNome} / comodo ${index + 1}`)
+    const nome = cleanRequiredAsciiText(item?.ambiente ?? item?.nome, 'nome', `${escolaNome} / comodo ${index + 1}`)
+
+    if (seenCodes.has(codigo)) {
+      throw new Error(`Codigo de comodo duplicado detectado para ${escolaNome}: ${codigo}.`)
+    }
+
+    seenCodes.add(codigo)
+    return { nome, codigo }
+  })
+}
+
+const CRITICIDADE_SEED_MAP = new Map([
+  ['baixa', 'Baixa'],
+  ['atencao', 'Media'],
+  ['media', 'Media'],
+  ['alta', 'Alta'],
+  ['critica', 'Critica'],
+])
+
+const STATUS_SEED_MAP = new Map([
+  ['aberta', 'Aberta'],
+  ['aguardando_aprovacao', 'Aguardando aprovacao'],
+  ['em_analise', 'Em analise'],
+  ['analise', 'Em analise'],
+  ['em_execucao', 'Em andamento'],
+  ['em_andamento', 'Em andamento'],
+  ['andamento', 'Em andamento'],
+  ['aguardando_visita_tecnica', 'Aguardando visita tecnica'],
+  ['resolvida', 'Resolvida'],
+  ['concluida', 'Resolvida'],
+  ['fechada', 'Resolvida'],
+])
+
+function mapSeedEnum(value, fieldName, optionsMap, recordName) {
+  const normalizedValue = normalizeText(value).replace(/[^a-z0-9]+/g, '_')
+  const mappedValue = optionsMap.get(normalizedValue)
+
+  if (!mappedValue) {
+    throw new Error(`Valor invalido para ${fieldName} em ${recordName}: ${value}.`)
+  }
+
+  return mappedValue
 }
 
 async function loadEscolasSeed() {
@@ -117,6 +189,7 @@ async function loadEscolasSeed() {
       endereco: cleanRequiredText(record?.endereco, 'endereco', nome),
       latitude: toRequiredNumber(record?.latitude, 'latitude', nome),
       longitude: toRequiredNumber(record?.longitude, 'longitude', nome),
+      comodos: toOptionalComodos(record, nome),
     }
   })
 
@@ -130,33 +203,63 @@ async function loadEscolasSeed() {
 
 const escolasSeed = await loadEscolasSeed()
 
-const ocorrenciasSeed = [
-  ['esc-001', 'Infiltracao na biblioteca', 'Hidraulica', 'Alta', 'Aberta', 'Biblioteca', '2026-05-02', true],
-  ['esc-001', 'Quadro eletrico com faiscas', 'Eletrica', 'Critica', 'Em andamento', 'Bloco A', '2026-04-23', true],
-  ['esc-009', 'Portao lateral danificado', 'Seguranca', 'Media', 'Em analise', 'Entrada lateral', '2026-05-04', true], // era esc-002
-  ['esc-003', 'Telhado com risco de queda', 'Estrutural', 'Critica', 'Aberta', 'Patio coberto', '2026-04-18', true],
-  ['esc-004', 'Banheiro sem descarga', 'Hidraulica', 'Media', 'Aguardando visita tecnica', 'Banheiro infantil', '2026-05-08', true],
-  ['esc-005', 'Luminarias queimadas', 'Eletrica', 'Baixa', 'Resolvida', 'Corredor principal', '2026-04-29', true],
-  ['esc-006', 'Rampa sem corrimao adequado', 'Acessibilidade', 'Alta', 'Em andamento', 'Entrada', '2026-04-14', true],
-  ['esc-007', 'Computadores sem rede', 'Tecnologia', 'Media', 'Em andamento', 'Laboratorio', '2026-05-01', true],
-  ['esc-008', 'Muro com rachadura', 'Estrutural', 'Alta', 'Aberta', 'Area externa', '2026-04-11', true],
-  ['esc-003', 'Bebedouro quebrado', 'Equipamento', 'Baixa', 'Resolvida', 'Refeitorio', '2026-05-06', true],
-  ['esc-004', 'Falta de limpeza no patio', 'Limpeza', 'Baixa', 'Em analise', 'Patio', '2026-05-09', true],
-  ['esc-005', 'Carteiras danificadas', 'Mobiliario', 'Media', 'Aberta', 'Sala 3', '2026-04-30', true],
-  ['esc-006', 'Curto em tomada', 'Eletrica', 'Critica', 'Em andamento', 'Sala 2', '2026-04-20', true],
-  ['esc-007', 'Vidro trincado', 'Seguranca', 'Alta', 'Aberta', 'Secretaria', '2026-04-26', true],
-  ['esc-010', 'Vazamento em pia', 'Hidraulica', 'Media', 'Aguardando visita tecnica', 'Cozinha', '2026-05-03', true], // era esc-002
-  ['esc-001', 'Ar condicionado parado', 'Equipamento', 'Baixa', 'Aberta', 'Sala dos professores', '2026-05-07', true],
-  ['esc-008', 'Iluminacao externa insuficiente', 'Seguranca', 'Alta', 'Em andamento', 'Area externa', '2026-04-17', true],
-  ['esc-005', 'Piso solto', 'Estrutural', 'Media', 'Em analise', 'Sala 5', '2026-04-28', true],
-  ['esc-006', 'Porta emperrada', 'Outros', 'Baixa', 'Resolvida', 'Almoxarifado', '2026-05-05', true],
-  ['esc-004', 'Falta de tomada acessivel', 'Acessibilidade', 'Media', 'Aberta', 'Sala multifuncional', '2026-05-10', true],
-  ['esc-007', 'Caixa d agua sem tampa', 'Hidraulica', 'Critica', 'Aberta', 'Cobertura', '2026-04-13', true],
-  ['esc-003', 'Projetor queimado', 'Tecnologia', 'Baixa', 'Em andamento', 'Sala 1', '2026-05-11', true],
-  ['esc-009', 'Extintor vencido', 'Seguranca', 'Critica', 'Aberta', 'Corredor', '2026-04-10', true], // era esc-002
-  ['esc-008', 'Mesa quebrada', 'Mobiliario', 'Media', 'Em andamento', 'Diretoria', '2026-05-12', true],
-  ['esc-005', 'Ocorrencia publica pendente', 'Outros', 'Alta', 'Aberta', 'Portaria', '2026-05-13', false],
-]
+function addDays(dateStr, days) {
+  const date = new Date(`${dateStr}T00:00:00`)
+  date.setDate(date.getDate() + days)
+  return date.toISOString().slice(0, 10)
+}
+
+async function loadOcorrenciasSeed(escolas) {
+  const content = await readFile(ocorrenciasJsonPath, 'utf8')
+  const records = JSON.parse(content)
+
+  if (!Array.isArray(records)) {
+    throw new Error('O arquivo oficial de ocorrencias nao contem uma lista JSON.')
+  }
+
+  if (records.length === 0) {
+    throw new Error('O arquivo oficial de ocorrencias esta vazio.')
+  }
+
+  const escolaIdsValidos = new Set(escolas.map((escola) => escola.id))
+
+  return records.map((record, index) => {
+    const seedIndex = String(index + 1).padStart(4, '0')
+    const escolaId = cleanRequiredText(record?.escolaId, 'escolaId', `ocorrencia ${seedIndex}`)
+    if (!escolaIdsValidos.has(escolaId)) {
+      throw new Error(`Ocorrencia com escola invalida no arquivo oficial: ${escolaId}.`)
+    }
+
+    const titulo = cleanRequiredAsciiText(record?.titulo, 'titulo', `ocorrencia ${seedIndex}`)
+    const dataEnvio = cleanRequiredText(record?.dataEnvio, 'dataEnvio', titulo)
+    const aprovadaPelaEscola = record?.aprovadaPelaEscola !== false
+    const status = mapSeedEnum(record?.status, 'status', STATUS_SEED_MAP, titulo)
+
+    return {
+      id: `oco-seed-${seedIndex}`,
+      protocolo: String(700000 + index + 1),
+      escolaId,
+      titulo,
+      descricao: cleanRequiredAsciiText(record?.descricao, 'descricao', titulo),
+      tipo: cleanRequiredAsciiText(record?.tipo, 'tipo', titulo),
+      criticidade: mapSeedEnum(record?.criticidade, 'criticidade', CRITICIDADE_SEED_MAP, titulo),
+      status,
+      localizacaoInterna: cleanOptionalAsciiText(record?.localizacaoInterna),
+      endereco: cleanOptionalAsciiText(record?.endereco),
+      dataEnvio,
+      dataAprovacao: aprovadaPelaEscola ? addDays(dataEnvio, 4) : null,
+      dataResolucao: status === 'Resolvida' ? addDays(dataEnvio, 8) : null,
+      aprovadaPelaEscola,
+      criadoPorEmail: cleanRequiredText(record?.criadoPorEmail, 'criadoPorEmail', titulo).toLowerCase(),
+      criadoPorNome: cleanOptionalAsciiText(record?.criadoPorNome),
+      fotos: Array.isArray(record?.fotos)
+        ? record.fotos.map((item) => cleanOptionalAsciiText(item)).filter(Boolean)
+        : [],
+    }
+  })
+}
+
+const ocorrenciasSeed = await loadOcorrenciasSeed(escolasSeed)
 
 const usuariosExternosSeed = [
   { email: 'externo@escola.gov.br', nome: 'Usuario Externo', escolaId: 'esc-001' },
@@ -172,19 +275,49 @@ const usuariosExternosSeed = [
 ]
 
 const escolaIdsValidos = new Set(escolasSeed.map((escola) => escola.id))
-function addDays(dateStr, days) {
-  const date = new Date(`${dateStr}T00:00:00`)
-  date.setDate(date.getDate() + days)
-  return date.toISOString().slice(0, 10)
-}
 
-function gerarProtocolo(usados) {
-  let protocolo
-  do {
-    protocolo = String(Math.floor(Math.random() * 1_000_000)).padStart(6, '0')
-  } while (usados.has(protocolo))
-  usados.add(protocolo)
-  return protocolo
+function buildOcorrenciaInteracoes(ocorrencia) {
+  const interacoes = [{
+    origem: 'sistema',
+    autor: 'Sistema',
+    mensagem: ocorrencia.aprovadaPelaEscola
+      ? 'Ocorrencia aberta pela escola.'
+      : 'Ocorrencia enviada e aguardando aprovacao.',
+    status: ocorrencia.aprovadaPelaEscola ? 'Aberta' : 'Aguardando aprovacao',
+  }]
+
+  if (ocorrencia.aprovadaPelaEscola) {
+    interacoes.push({
+      origem: 'seduc',
+      autor: 'Ernesto Cavalcanti',
+      mensagem: 'Protocolo homologado, estamos comecando as tratativas.',
+    })
+  }
+
+  if (ocorrencia.status !== 'Aberta' && ocorrencia.status !== 'Aguardando aprovacao') {
+    interacoes.push({
+      origem: 'escola',
+      autor: 'Direcao da escola',
+      mensagem: 'Os tecnicos vieram aqui hoje para avaliar o problema.',
+    })
+    interacoes.push({
+      origem: 'sistema',
+      autor: 'Sistema',
+      mensagem: `Status atualizado para "${ocorrencia.status}".`,
+      status: ocorrencia.status,
+    })
+  }
+
+  if (ocorrencia.status === 'Resolvida') {
+    interacoes.push({
+      origem: 'seduc',
+      autor: 'Ernesto Cavalcanti',
+      mensagem: 'Servico concluido. Ocorrencia finalizada.',
+      status: 'Resolvida',
+    })
+  }
+
+  return interacoes
 }
 
 async function main() {
@@ -194,14 +327,23 @@ async function main() {
     }
   }
 
-  for (const [escolaId, titulo] of ocorrenciasSeed) {
-    if (!escolaIdsValidos.has(escolaId)) {
-      throw new Error(`Ocorrencia com escola invalida no seed: ${titulo} -> ${escolaId}`)
+  for (const ocorrencia of ocorrenciasSeed) {
+    if (!escolaIdsValidos.has(ocorrencia.escolaId)) {
+      throw new Error(`Ocorrencia com escola invalida no seed: ${ocorrencia.titulo} -> ${ocorrencia.escolaId}`)
     }
   }
 
   for (const escola of escolasSeed) {
-    await prisma.escola.upsert({ where: { id: escola.id }, update: escola, create: escola })
+    const { comodos, ...escolaPayload } = escola
+
+    await prisma.escola.upsert({
+      where: { id: escola.id },
+      update: escolaPayload,
+      create: {
+        ...escolaPayload,
+        ...(comodos.length ? { comodos: { create: comodos } } : {}),
+      },
+    })
   }
 
   const senhaHash = await bcrypt.hash('123456', 10)
@@ -221,49 +363,49 @@ async function main() {
   }
 
   const totalExistentes = await prisma.ocorrencia.count()
-  if (totalExistentes > 0) return
+  const totalOcorrenciasOficiais = await prisma.ocorrencia.count({
+    where: { id: { startsWith: 'oco-seed-' } },
+  })
 
-  const protocolosUsados = new Set()
+  if (totalExistentes > 0 && totalOcorrenciasOficiais === 0) {
+    throw new Error(
+      `Ja existem ${totalExistentes} ocorrencias no banco sem a seed oficial aplicada. ` +
+      'Recrie o banco ou limpe a tabela de ocorrencias antes de rodar a seed oficial.',
+    )
+  }
 
-  for (const [index, [escolaId, titulo, tipo, criticidade, status, localizacaoInterna, dataEnvio, aprovadaPelaEscola]] of ocorrenciasSeed.entries()) {
-    const escola = escolasSeed.find((item) => item.id === escolaId)
-    const criador = index % 4 === 0
-      ? usuariosExternosSeed[0]
-      : usuariosExternosSeed.find((usuario) => usuario.escolaId === escolaId) || usuariosExternosSeed[0]
-    const dataResolucao = status === 'Resolvida' ? addDays(dataEnvio, 8) : null
+  if (totalOcorrenciasOficiais > 0) {
+    console.log(`Seed oficial de ocorrencias ja aplicada (${totalOcorrenciasOficiais} registros). Pulando nova insercao.`)
+    return
+  }
 
-    const interacoes = [
-      { origem: 'sistema', autor: 'Sistema', mensagem: 'Ocorrencia aberta pela escola.' },
-      { origem: 'seduc', autor: 'Ernesto Cavalcanti', mensagem: 'Protocolo homologado, estamos comecando as tratativas.' },
-    ]
-    if (status !== 'Aberta') {
-      interacoes.push({ origem: 'escola', autor: 'Direcao da escola', mensagem: 'Os tecnicos vieram aqui hoje para avaliar o problema.' })
-      interacoes.push({ origem: 'sistema', autor: 'Sistema', mensagem: `Status atualizado para "${status}".` })
-    }
-    if (status === 'Resolvida') {
-      interacoes.push({ origem: 'seduc', autor: 'Ernesto Cavalcanti', mensagem: 'Servico concluido. Ocorrencia finalizada.' })
-    }
+  for (const [index, ocorrencia] of ocorrenciasSeed.entries()) {
+    const escola = escolasSeed.find((item) => item.id === ocorrencia.escolaId)
+    const interacoes = buildOcorrenciaInteracoes(ocorrencia)
 
     await prisma.ocorrencia.create({
       data: {
-        protocolo: gerarProtocolo(protocolosUsados),
-        escolaId,
-        titulo,
-        descricao: `${titulo}. Registro aprovado pela unidade escolar e encaminhado para acompanhamento da SEDUC.`,
-        tipo,
-        criticidade,
-        status,
-        localizacaoInterna,
-        endereco: escola.endereco,
-        dataEnvio: new Date(dataEnvio),
-        dataAprovacao: new Date(addDays(dataEnvio, 4)),
-        dataResolucao: dataResolucao ? new Date(dataResolucao) : null,
-        aprovadaPelaEscola,
-        criadoPorEmail: criador.email,
-        criadoPorNome: criador.nome,
-        chatPendente: index % 3 === 0,
-        fotos: JSON.stringify(['Foto da area', 'Detalhe do problema', 'Contexto da sala']),
-        interacoes: { create: interacoes.map((item) => ({ ...item, anexos: '[]' })) },
+        id: ocorrencia.id,
+        protocolo: ocorrencia.protocolo,
+        escolaId: ocorrencia.escolaId,
+        titulo: ocorrencia.titulo,
+        descricao: ocorrencia.descricao,
+        tipo: ocorrencia.tipo,
+        criticidade: ocorrencia.criticidade,
+        status: ocorrencia.status,
+        localizacaoInterna: ocorrencia.localizacaoInterna,
+        endereco: ocorrencia.endereco || escola.endereco,
+        dataEnvio: new Date(ocorrencia.dataEnvio),
+        dataAprovacao: ocorrencia.dataAprovacao ? new Date(ocorrencia.dataAprovacao) : null,
+        dataResolucao: ocorrencia.dataResolucao ? new Date(ocorrencia.dataResolucao) : null,
+        aprovadaPelaEscola: ocorrencia.aprovadaPelaEscola,
+        criadoPorEmail: ocorrencia.criadoPorEmail,
+        criadoPorNome: ocorrencia.criadoPorNome || '',
+        chatPendente: ocorrencia.status !== 'Resolvida' && index % 3 === 0,
+        fotos: JSON.stringify(ocorrencia.fotos),
+        interacoes: {
+          create: interacoes.map((item) => ({ ...item, anexos: '[]' })),
+        },
       },
     })
   }
