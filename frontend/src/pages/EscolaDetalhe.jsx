@@ -473,7 +473,7 @@ function buildSchoolRoomReport({ escola, salas, roomSummary, roomTypeSummary, oc
   ].join('\n')
 }
 
-function buildSchoolPdfReport({ escola, roomTypeSummary, ocorrenciasEscola }) {
+function buildSchoolPdfReportLegacy({ escola, roomTypeSummary, ocorrenciasEscola }) {
   const now = new Date().toLocaleString('pt-BR')
   const roomRows = roomTypeSummary.length
     ? roomTypeSummary.map((item) => `<tr><td>${escapeHtml(item.label)}</td><td>${item.count}</td></tr>`).join('')
@@ -532,6 +532,138 @@ function buildSchoolPdfReport({ escola, roomTypeSummary, ocorrenciasEscola }) {
       <tbody>${occurrenceRows}</tbody>
     </table>
   </div>
+
+  <script>
+    window.addEventListener('load', () => {
+      window.print();
+    });
+  </script>
+</body>
+</html>`
+}
+
+function buildSchoolPdfReport({ escola, roomTypeSummary, ocorrenciasEscola }) {
+  const now = new Date().toLocaleString('pt-BR')
+  const totalComodos = roomTypeSummary.reduce((total, item) => total + Number(item.count || 0), 0)
+  const abertas = ocorrenciasEscola.filter((item) => item.status !== 'Resolvida').length
+  const criticas = ocorrenciasEscola.filter((item) => item.criticidade === 'Critica' && item.status !== 'Resolvida').length
+  const roomRows = roomTypeSummary.length
+    ? roomTypeSummary.map((item) => `<tr><td>${escapeHtml(item.label)}</td><td class="number">${item.count}</td></tr>`).join('')
+    : '<tr><td colspan="2" class="empty">Nenhum comodo cadastrado.</td></tr>'
+  const occurrenceRows = ocorrenciasEscola.length
+    ? ocorrenciasEscola.map((item) => `
+      <tr>
+        <td><strong>${escapeHtml(item.titulo)}</strong></td>
+        <td>${escapeHtml(item.localizacaoInterna || 'Nao informado')}</td>
+        <td><span class="pill">${escapeHtml(item.criticidade || 'Nao informada')}</span></td>
+        <td><span class="pill muted-pill">${escapeHtml(item.status || 'Nao informado')}</span></td>
+        <td>${escapeHtml(item.dataEnvio || '-')}</td>
+      </tr>
+    `).join('')
+    : '<tr><td colspan="5" class="empty">Nenhuma ocorrencia cadastrada.</td></tr>'
+
+  return `<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>Relatorio ${escapeHtml(escola.nome)}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f1f5f9; color: #0f172a; font-family: Arial, Helvetica, sans-serif; }
+    .page { width: 210mm; min-height: 297mm; margin: 0 auto; background: #ffffff; padding: 20mm 18mm; }
+    .hero { overflow: hidden; border: 1px solid #dbe4f0; border-radius: 14px; box-shadow: 0 14px 36px rgba(15, 23, 42, .08); }
+    .brand-bar { display: flex; align-items: center; justify-content: space-between; gap: 20px; background: #00129c; color: #ffffff; padding: 18px 20px; }
+    .brand-logo { display: block; width: 56px; height: 56px; object-fit: contain; border-radius: 8px; background: #ffffff; padding: 8px; }
+    .brand-title { text-align: left; line-height: 1.35; }
+    .brand-title strong { display: block; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; }
+    .brand-title span { display: block; margin-top: 3px; color: #dbeafe; font-size: 11px; }
+    .school-heading { border-top: 4px solid #001eff; background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%); padding: 20px; }
+    h1 { margin: 0; color: #0f172a; font-size: 24px; line-height: 1.18; letter-spacing: 0; }
+    .subtitle { margin: 8px 0 0; color: #475569; font-size: 12px; font-weight: 700; }
+    .meta-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px; margin-top: 18px; }
+    .meta-item { border-top: 1px solid #dbe4f0; padding-top: 8px; color: #334155; font-size: 11px; }
+    .meta-item span { display: block; margin-bottom: 3px; color: #64748b; font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 18px; }
+    .metric { border: 1px solid #dbe4f0; border-left: 4px solid #001eff; border-radius: 10px; background: #ffffff; padding: 12px; }
+    .metric strong { display: block; color: #0f172a; font-size: 22px; line-height: 1; }
+    .metric span { display: block; margin-top: 6px; color: #64748b; font-size: 10px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+    .section { margin-top: 22px; break-inside: avoid; }
+    .section h2 { margin: 0; color: #0f172a; font-size: 15px; letter-spacing: .02em; }
+    .section-note { margin: 5px 0 0; color: #64748b; font-size: 11px; line-height: 1.5; }
+    table { width: 100%; margin-top: 10px; border: 1px solid #dbe4f0; border-collapse: collapse; border-radius: 10px; overflow: hidden; }
+    th, td { border-bottom: 1px solid #e2e8f0; padding: 9px 10px; text-align: left; vertical-align: top; font-size: 10.5px; line-height: 1.35; }
+    th { background: #f1f5f9; color: #475569; font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+    tr:last-child td { border-bottom: 0; }
+    .number { width: 90px; text-align: right; color: #00129c; font-weight: 800; }
+    .pill { display: inline-block; border-radius: 999px; background: #eef2ff; color: #00129c; padding: 3px 8px; font-size: 9px; font-weight: 800; white-space: nowrap; }
+    .muted-pill { border: 1px solid #e2e8f0; background: #f8fafc; color: #334155; }
+    .empty { padding: 18px; text-align: center; color: #64748b; font-weight: 700; }
+    .footer { display: flex; justify-content: space-between; gap: 16px; margin-top: 26px; border-top: 1px solid #dbe4f0; padding-top: 10px; color: #64748b; font-size: 9px; }
+    @media print {
+      body { background: #ffffff; }
+      .page { width: auto; min-height: auto; margin: 0; padding: 12mm; }
+      .hero { box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <div class="brand-bar">
+        <div class="brand-title">
+          <strong>Relatorio de infraestrutura escolar</strong>
+          <span>Secretaria Municipal de Educacao - Caraguatatuba</span>
+          <span>Gerado em ${escapeHtml(now)}</span>
+        </div>
+        <img class="brand-logo" src="/prefeitura-de-caraguatatuba-seeklogo.svg" alt="Prefeitura de Caraguatatuba" />
+      </div>
+      <div class="school-heading">
+        <h1>${escapeHtml(escola.nome)}</h1>
+        <p class="subtitle">${escapeHtml(escola.bairro || 'Bairro nao informado')} - ${escapeHtml(escola.endereco || 'Endereco nao informado')}</p>
+        <div class="meta-grid">
+          <div class="meta-item"><span>Status</span>${escapeHtml(escola.status || 'Nao informado')}</div>
+          <div class="meta-item"><span>Cadastro</span>${escapeHtml(escola.dataCadastro || 'Nao informado')}</div>
+          <div class="meta-item"><span>Latitude</span>${escapeHtml(formatCoordinate(escola.latitude))}</div>
+          <div class="meta-item"><span>Longitude</span>${escapeHtml(formatCoordinate(escola.longitude))}</div>
+        </div>
+      </div>
+    </header>
+
+    <section class="metrics" aria-label="Indicadores da escola">
+      <div class="metric"><strong>${totalComodos}</strong><span>Ambientes</span></div>
+      <div class="metric"><strong>${ocorrenciasEscola.length}</strong><span>Ocorrencias</span></div>
+      <div class="metric"><strong>${abertas}</strong><span>Abertas</span></div>
+      <div class="metric"><strong>${criticas}</strong><span>Criticas</span></div>
+    </section>
+
+    <section class="section">
+      <h2>Descricao da unidade</h2>
+      <p class="section-note">${escapeHtml(escola.descricao?.trim() || 'Nenhuma descricao cadastrada para esta escola.')}</p>
+    </section>
+
+    <section class="section">
+      <h2>Comodos cadastrados</h2>
+      <p class="section-note">Quantidade de ambientes agrupada por tipo de comodo.</p>
+      <table>
+        <thead><tr><th>Tipo</th><th>Quantidade</th></tr></thead>
+        <tbody>${roomRows}</tbody>
+      </table>
+    </section>
+
+    <section class="section">
+      <h2>Ocorrencias da unidade</h2>
+      <p class="section-note">Lista consolidada das demandas vinculadas a esta escola.</p>
+      <table>
+        <thead><tr><th>Titulo</th><th>Comodo</th><th>Criticidade</th><th>Status</th><th>Envio</th></tr></thead>
+        <tbody>${occurrenceRows}</tbody>
+      </table>
+    </section>
+
+    <footer class="footer">
+      <span>Zela+ - IFSP Exceptions</span>
+      <span>Documento gerado automaticamente para acompanhamento interno.</span>
+    </footer>
+  </main>
 
   <script>
     window.addEventListener('load', () => {

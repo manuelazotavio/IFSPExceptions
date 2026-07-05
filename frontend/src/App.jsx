@@ -31,6 +31,29 @@ function isPublicRoute(pathname) {
   return pathname === '/' || pathname === '/publico'
 }
 
+async function svgUrlParaPngDataUrl(url, width = 240, height = 240) {
+  return new Promise((resolve) => {
+    const image = new Image()
+    image.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const context = canvas.getContext('2d')
+      const scale = Math.min(width / image.naturalWidth, height / image.naturalHeight)
+      const drawWidth = image.naturalWidth * scale
+      const drawHeight = image.naturalHeight * scale
+      const drawX = (width - drawWidth) / 2
+      const drawY = (height - drawHeight) / 2
+      context.fillStyle = '#ffffff'
+      context.fillRect(0, 0, width, height)
+      context.drawImage(image, drawX, drawY, drawWidth, drawHeight)
+      resolve(canvas.toDataURL('image/png'))
+    }
+    image.onerror = () => resolve(null)
+    image.src = url
+  })
+}
+
 export default function App() {
   const [route, setRoute] = useState(normalizeRoute)
   const [user, setUser] = useState(getStoredUser)
@@ -154,6 +177,7 @@ export default function App() {
   async function exportPdf(rows) {
     const { jsPDF } = await import('jspdf')
     const doc = new jsPDF()
+    const logo = await svgUrlParaPngDataUrl('/prefeitura-de-caraguatatuba-seeklogo.svg')
     const pageWidth = doc.internal.pageSize.getWidth()
     const pageHeight = doc.internal.pageSize.getHeight()
     const margin = 14
@@ -165,11 +189,14 @@ export default function App() {
     ]
 
     function drawHeader() {
-      doc.setFillColor(10, 37, 64)
-      doc.rect(0, 0, pageWidth, 28, 'F')
+      doc.setFillColor(0, 18, 156)
+      doc.rect(0, 0, pageWidth, 34, 'F')
+      doc.setFillColor(255, 255, 255)
+      doc.roundedRect(pageWidth - margin - 22, 7, 22, 20, 2, 2, 'F')
+      if (logo) doc.addImage(logo, 'PNG', pageWidth - margin - 19, 9, 16, 16)
       doc.setTextColor(255, 255, 255)
       doc.setFont('helvetica', 'bold')
-      doc.setFontSize(15)
+      doc.setFontSize(13)
       doc.text('Dashboard Geral SEDUC', margin, 12)
       doc.setFont('helvetica', 'normal')
       doc.setFontSize(9)
@@ -197,16 +224,19 @@ export default function App() {
       const pageCount = doc.internal.getNumberOfPages()
       for (let page = 1; page <= pageCount; page += 1) {
         doc.setPage(page)
+        doc.setDrawColor(219, 228, 240)
+        doc.line(margin, pageHeight - 14, pageWidth - margin, pageHeight - 14)
         doc.setFont('helvetica', 'normal')
         doc.setFontSize(8)
         doc.setTextColor(100, 116, 139)
+        doc.text('Zela+ - IFSP Exceptions', margin, pageHeight - 8)
         doc.text(`Página ${page} de ${pageCount}`, pageWidth - margin, pageHeight - 8, { align: 'right' })
       }
       doc.setTextColor(23, 32, 51)
     }
 
     drawHeader()
-    let y = drawTableHeader(36)
+    let y = drawTableHeader(42)
 
     rows.slice(1).forEach(([section, indicator, value], index) => {
       const sectionLines = doc.splitTextToSize(String(section), columns[0].width - 4)
@@ -218,7 +248,7 @@ export default function App() {
       if (y + rowHeight > pageHeight - 16) {
         doc.addPage()
         drawHeader()
-        y = drawTableHeader(36)
+        y = drawTableHeader(42)
       }
 
       if (index % 2 === 0) {

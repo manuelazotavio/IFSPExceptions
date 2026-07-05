@@ -90,6 +90,16 @@ export function Sidebar({ route, onNavigate, user, open = false, onClose, collap
           })}
         </nav>
 
+        <div className={`relative mt-4 border-t border-white/15 pt-4 ${collapsed ? 'lg:flex lg:justify-center' : ''}`}>
+          <div className="flex items-center justify-center rounded-md bg-white/10 px-3 py-3 ring-1 ring-white/15">
+            <img
+              src="/prefeitura-de-caraguatatuba-seeklogo.svg"
+              alt="Prefeitura de Caraguatatuba"
+              className="h-10 w-10 shrink-0 rounded bg-white p-1.5"
+            />
+          </div>
+        </div>
+
         <div className="relative mt-4 border-t border-white/15 pt-4 lg:hidden">
           <div className="flex min-w-0 items-center gap-2 rounded-md bg-white/10 px-3 py-2 text-sm font-semibold text-blue-50">
             <span className="max-w-[9rem] truncate">{nomeExibido}</span>

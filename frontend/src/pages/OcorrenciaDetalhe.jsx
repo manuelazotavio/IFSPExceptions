@@ -32,6 +32,29 @@ async function urlParaDataUrl(url) {
   })
 }
 
+async function svgUrlParaPngDataUrl(url, width = 360, height = 96) {
+  return new Promise((resolve) => {
+    const image = new Image()
+    image.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const context = canvas.getContext('2d')
+      const scale = Math.min(width / image.naturalWidth, height / image.naturalHeight)
+      const drawWidth = image.naturalWidth * scale
+      const drawHeight = image.naturalHeight * scale
+      const drawX = (width - drawWidth) / 2
+      const drawY = (height - drawHeight) / 2
+      context.fillStyle = '#ffffff'
+      context.fillRect(0, 0, width, height)
+      context.drawImage(image, drawX, drawY, drawWidth, drawHeight)
+      resolve(canvas.toDataURL('image/png'))
+    }
+    image.onerror = () => resolve(null)
+    image.src = url
+  })
+}
+
 export function OcorrenciaDetalhe({ id, onNavigate, user }) {
   const [ocorrencia, setOcorrencia] = useState(null)
   const [carregando, setCarregando] = useState(true)
@@ -140,7 +163,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
     }
   }
 
-  async function exportarPdf() {
+  async function exportarPdfLegacy() {
     const { jsPDF } = await import('jspdf')
     const doc = new jsPDF()
     const pageWidth = doc.internal.pageSize.getWidth()
@@ -248,7 +271,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
     doc.save(`ocorrencia-${ocorrencia.protocolo}.pdf`)
   }
 
-  async function exportarHistoricoPdf() {
+  async function exportarHistoricoPdfLegacy() {
     const { jsPDF } = await import('jspdf')
     const doc = new jsPDF()
     const pageWidth = doc.internal.pageSize.getWidth()
@@ -324,6 +347,271 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
       doc.setDrawColor(226, 232, 240)
       doc.line(margin, y + 2, pageWidth - margin, y + 2)
       y += 8
+    })
+
+    drawFooter()
+    doc.save(`historico-ocorrencia-${ocorrencia.protocolo}.pdf`)
+  }
+
+  async function exportarPdf() {
+    const { jsPDF } = await import('jspdf')
+    const doc = new jsPDF()
+    const logo = await svgUrlParaPngDataUrl('/prefeitura-de-caraguatatuba-seeklogo.svg', 240, 240)
+    const pageWidth = doc.internal.pageSize.getWidth()
+    const pageHeight = doc.internal.pageSize.getHeight()
+    const margin = 14
+    const contentWidth = pageWidth - margin * 2
+
+    function drawHeader() {
+      doc.setFillColor(0, 18, 156)
+      doc.rect(0, 0, pageWidth, 34, 'F')
+      doc.setFillColor(255, 255, 255)
+      doc.roundedRect(margin, 7, 22, 20, 2, 2, 'F')
+      if (logo) doc.addImage(logo, 'PNG', margin + 3, 9, 16, 16)
+      doc.setTextColor(255, 255, 255)
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(13)
+      doc.text('Relatorio de ocorrencia', pageWidth - margin, 12, { align: 'right' })
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(8.5)
+      doc.text('Secretaria Municipal de Educacao - Caraguatatuba', pageWidth - margin, 18, { align: 'right' })
+      doc.text(`Protocolo ${ocorrencia.protocolo}`, pageWidth - margin, 24, { align: 'right' })
+      doc.setTextColor(15, 23, 42)
+    }
+
+    function drawFooter() {
+      const pageCount = doc.internal.getNumberOfPages()
+      for (let page = 1; page <= pageCount; page += 1) {
+        doc.setPage(page)
+        doc.setDrawColor(219, 228, 240)
+        doc.line(margin, pageHeight - 14, pageWidth - margin, pageHeight - 14)
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(8)
+        doc.setTextColor(100, 116, 139)
+        doc.text('Zela+ - IFSP Exceptions', margin, pageHeight - 8)
+        doc.text(`Pagina ${page} de ${pageCount}`, pageWidth - margin, pageHeight - 8, { align: 'right' })
+      }
+      doc.setTextColor(15, 23, 42)
+    }
+
+    function ensurePage(y, neededHeight) {
+      if (y + neededHeight <= pageHeight - 20) return y
+      doc.addPage()
+      drawHeader()
+      return 44
+    }
+
+    function drawSectionTitle(title, y) {
+      y = ensurePage(y, 12)
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(12)
+      doc.setTextColor(15, 23, 42)
+      doc.text(title, margin, y)
+      doc.setDrawColor(0, 30, 255)
+      doc.setLineWidth(0.7)
+      doc.line(margin, y + 3, margin + 34, y + 3)
+      return y + 10
+    }
+
+    function drawMetric(label, value, x, y, width) {
+      doc.setDrawColor(219, 228, 240)
+      doc.setFillColor(248, 250, 252)
+      doc.roundedRect(x, y, width, 20, 2, 2, 'FD')
+      doc.setFillColor(0, 30, 255)
+      doc.rect(x, y, 1.5, 20, 'F')
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(13)
+      doc.setTextColor(15, 23, 42)
+      doc.text(String(value || '-'), x + 5, y + 8)
+      doc.setFontSize(7.5)
+      doc.setTextColor(100, 116, 139)
+      doc.text(label.toUpperCase(), x + 5, y + 15)
+    }
+
+    function drawInfoRows(rows, startY) {
+      let y = startY
+      const labelWidth = 36
+      rows.forEach(([label, value]) => {
+        const lines = doc.splitTextToSize(String(value || '-'), contentWidth - labelWidth - 10)
+        const height = Math.max(11, lines.length * 4.5 + 6)
+        y = ensurePage(y, height)
+        doc.setDrawColor(226, 232, 240)
+        doc.setFillColor(255, 255, 255)
+        doc.roundedRect(margin, y, contentWidth, height, 1.8, 1.8, 'FD')
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(8)
+        doc.setTextColor(0, 18, 156)
+        doc.text(label, margin + 4, y + 7)
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(8.5)
+        doc.setTextColor(15, 23, 42)
+        doc.text(lines, margin + labelWidth, y + 7)
+        y += height + 3
+      })
+      return y
+    }
+
+    drawHeader()
+    let y = 45
+
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(18)
+    doc.setTextColor(15, 23, 42)
+    doc.text(doc.splitTextToSize(form.titulo || 'Ocorrencia sem titulo', contentWidth), margin, y)
+    y += 16
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9)
+    doc.setTextColor(71, 85, 105)
+    doc.text(`${escolaSelecionada.nome} - ${escolaSelecionada.bairro}`, margin, y)
+    y += 10
+
+    const metricWidth = (contentWidth - 9) / 4
+    drawMetric('Criticidade', criticidade, margin, y, metricWidth)
+    drawMetric('Status', status, margin + metricWidth + 3, y, metricWidth)
+    drawMetric('Tipo', formatDisplayLabel(form.tipo), margin + (metricWidth + 3) * 2, y, metricWidth)
+    drawMetric('Envio', formatarDataBR(form.dataEnvio), margin + (metricWidth + 3) * 3, y, metricWidth)
+    y += 30
+
+    y = drawSectionTitle('Dados da ocorrencia', y)
+    y = drawInfoRows([
+      ['Descricao', form.descricao],
+      ['Endereco', escolaSelecionada.endereco],
+      ['Localizacao', form.localizacaoInterna ? formatDisplayLabel(form.localizacaoInterna) : 'Nao informada'],
+      ['Aprovacao', formatarDataBR(form.dataAprovacao) || 'Nao informada'],
+      ['Resolucao', formatarDataBR(form.dataResolucao) || 'Nao informada'],
+    ], y)
+
+    if (fotos.length > 0) {
+      y = drawSectionTitle('Fotos anexadas', y + 4)
+      const fotosParaImprimir = await Promise.all(fotos.map(async (foto) => {
+        if (typeof foto === 'string' && foto.startsWith('http')) return urlParaDataUrl(foto).catch(() => foto)
+        return foto
+      }))
+      const photoHeight = 58
+      fotosParaImprimir.forEach((foto, index) => {
+        y = ensurePage(y, photoHeight + 9)
+        if (typeof foto === 'string' && foto.startsWith('data:image')) {
+          doc.addImage(foto, 'JPEG', margin, y, contentWidth, photoHeight)
+        } else {
+          doc.setDrawColor(203, 213, 225)
+          doc.setFillColor(248, 250, 252)
+          doc.roundedRect(margin, y, contentWidth, photoHeight, 2, 2, 'FD')
+          doc.setFont('helvetica', 'bold')
+          doc.setFontSize(9)
+          doc.setTextColor(100, 116, 139)
+          doc.text(`Foto ${index + 1}: ${foto}`, pageWidth / 2, y + photoHeight / 2, { align: 'center' })
+        }
+        y += photoHeight + 7
+      })
+    }
+
+    drawFooter()
+    doc.save(`ocorrencia-${ocorrencia.protocolo}.pdf`)
+  }
+
+  async function exportarHistoricoPdf() {
+    const { jsPDF } = await import('jspdf')
+    const doc = new jsPDF()
+    const logo = await svgUrlParaPngDataUrl('/prefeitura-de-caraguatatuba-seeklogo.svg', 240, 240)
+    const pageWidth = doc.internal.pageSize.getWidth()
+    const pageHeight = doc.internal.pageSize.getHeight()
+    const margin = 14
+    const contentWidth = pageWidth - margin * 2
+
+    function drawHeader() {
+      doc.setFillColor(0, 18, 156)
+      doc.rect(0, 0, pageWidth, 34, 'F')
+      doc.setFillColor(255, 255, 255)
+      doc.roundedRect(margin, 7, 22, 20, 2, 2, 'F')
+      if (logo) doc.addImage(logo, 'PNG', margin + 3, 9, 16, 16)
+      doc.setTextColor(255, 255, 255)
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(13)
+      doc.text('Historico da ocorrencia', pageWidth - margin, 12, { align: 'right' })
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(8.5)
+      doc.text('Secretaria Municipal de Educacao - Caraguatatuba', pageWidth - margin, 18, { align: 'right' })
+      doc.text(`Protocolo ${ocorrencia.protocolo}`, pageWidth - margin, 24, { align: 'right' })
+      doc.setTextColor(15, 23, 42)
+    }
+
+    function drawFooter() {
+      const pageCount = doc.internal.getNumberOfPages()
+      for (let page = 1; page <= pageCount; page += 1) {
+        doc.setPage(page)
+        doc.setDrawColor(219, 228, 240)
+        doc.line(margin, pageHeight - 14, pageWidth - margin, pageHeight - 14)
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(8)
+        doc.setTextColor(100, 116, 139)
+        doc.text('Zela+ - IFSP Exceptions', margin, pageHeight - 8)
+        doc.text(`Pagina ${page} de ${pageCount}`, pageWidth - margin, pageHeight - 8, { align: 'right' })
+      }
+      doc.setTextColor(15, 23, 42)
+    }
+
+    function ensurePage(y, neededHeight) {
+      if (y + neededHeight <= pageHeight - 20) return y
+      doc.addPage()
+      drawHeader()
+      return 44
+    }
+
+    drawHeader()
+    let y = 45
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(18)
+    doc.setTextColor(15, 23, 42)
+    doc.text('Linha do tempo da ocorrencia', margin, y)
+    y += 7
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9)
+    doc.setTextColor(71, 85, 105)
+    doc.text(`${escolaSelecionada.nome} - ${form.titulo}`, margin, y)
+    y += 14
+
+    if (!interacoes.length) {
+      doc.setDrawColor(226, 232, 240)
+      doc.setFillColor(248, 250, 252)
+      doc.roundedRect(margin, y, contentWidth, 20, 2, 2, 'FD')
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(9)
+      doc.setTextColor(100, 116, 139)
+      doc.text('Nenhuma interacao registrada.', pageWidth / 2, y + 12, { align: 'center' })
+    }
+
+    interacoes.forEach((entry, index) => {
+      const cabecalho = entry.origem === 'sistema' ? 'Sistema' : entry.autor
+      const linhasMensagem = entry.mensagem ? doc.splitTextToSize(entry.mensagem, contentWidth - 16) : []
+      const anexos = entry.anexos?.length > 0 ? `Anexos: ${entry.anexos.map(getAnexoNome).join(', ')}` : ''
+      const linhasAnexos = anexos ? doc.splitTextToSize(anexos, contentWidth - 16) : []
+      const height = Math.max(24, 16 + linhasMensagem.length * 4.5 + (linhasAnexos.length ? linhasAnexos.length * 4 + 5 : 0))
+      y = ensurePage(y, height + 7)
+
+      doc.setDrawColor(219, 228, 240)
+      doc.setFillColor(255, 255, 255)
+      doc.roundedRect(margin, y, contentWidth, height, 2, 2, 'FD')
+      doc.setFillColor(index === 0 ? 0 : 0, index === 0 ? 30 : 18, index === 0 ? 255 : 156)
+      doc.circle(margin + 6, y + 7, 2, 'F')
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(9)
+      doc.setTextColor(0, 18, 156)
+      doc.text(`${cabecalho} - ${entry.data}${entry.hora ? ` as ${entry.hora}` : ''}`, margin + 12, y + 8)
+      let textY = y + 15
+      if (linhasMensagem.length) {
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(8.7)
+        doc.setTextColor(15, 23, 42)
+        doc.text(linhasMensagem, margin + 8, textY)
+        textY += linhasMensagem.length * 4.5 + 2
+      }
+      if (linhasAnexos.length) {
+        doc.setFont('helvetica', 'italic')
+        doc.setFontSize(8)
+        doc.setTextColor(100, 116, 139)
+        doc.text(linhasAnexos, margin + 8, textY)
+      }
+      y += height + 7
     })
 
     drawFooter()
