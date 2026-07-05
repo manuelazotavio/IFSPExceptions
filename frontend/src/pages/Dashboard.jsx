@@ -11,7 +11,7 @@ function ThickBarList({ data }) {
       {data.map((item) => (
         <div key={item.label}>
           <div className="mb-1.5 flex justify-between text-sm font-semibold text-slate-600"><span>{item.label}</span><span>{item.value}</span></div>
-          <div className="h-4 rounded-full bg-slate-100"><div className="h-4 rounded-full bg-blue-600" style={{ width: `${(item.value / max) * 100}%` }} /></div>
+          <div className="h-4 rounded-full bg-slate-100"><div className="h-4 rounded-full bg-primary" style={{ width: `${(item.value / max) * 100}%` }} /></div>
         </div>
       ))}
     </div>
@@ -66,11 +66,11 @@ function NeighborhoodColumnChart({ data }) {
                                 {value}
                               </strong>
                             )}
-                      <div
-                        className={`w-full rounded-t-sm shadow-sm transition ${column.color} ${column.hover}`}
-                        style={{ height: `${height}%` }}
-                        title={`${item.label} - ${column.label}: ${value} ocorrências`}
-                      />
+                            <div
+                              className={`w-full rounded-t-sm shadow-sm transition ${column.color} ${column.hover}`}
+                              style={{ height: `${height}%` }}
+                              title={`${item.label} - ${column.label}: ${value} ocorrências`}
+                            />
                           </div>
                         )
                       })}
@@ -173,8 +173,8 @@ export function Dashboard({ onNavigate, user }) {
   return (
     <div className="space-y-6">
       <div className={`grid grid-cols-2 gap-4 md:grid-cols-3 ${isDiretor ? 'xl:grid-cols-5' : 'xl:grid-cols-6'}`}>
-        {!isDiretor && <StatCard label="Escolas" value={metrics.escolas} tone="slate" />}
-        <StatCard label="Aprovadas" value={metrics.aprovadas} tone="blue" />
+        {!isDiretor && <StatCard label="Escolas" value={metrics.escolas} tone="pink" />}
+        <StatCard label="Aprovadas" value={metrics.aprovadas} tone="primary" />
         <StatCard label="Abertas" value={metrics.abertas} tone="red" />
         <StatCard label="Em andamento" value={metrics.andamento} tone="amber" />
         <StatCard label="Resolvidas" value={metrics.resolvidas} tone="green" />
@@ -201,7 +201,7 @@ export function Dashboard({ onNavigate, user }) {
           <Card>
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-800 text-slate-950">Escolas com mais ocorrências</h2>
-              <button onClick={() => onNavigate('/ocorrencias')} className="cursor-pointer text-sm font-bold text-blue-700">Ver lista</button>
+              <button onClick={() => onNavigate('/ocorrencias')} className="cursor-pointer text-sm font-bold text-primary-strong">Ver lista</button>
             </div>
             <div className="space-y-3">
               {escolasRank.slice(0, 5).map((escola) => (
@@ -249,12 +249,14 @@ export function Dashboard({ onNavigate, user }) {
 function StatCard({ label, value, tone = 'slate' }) {
   const tones = {
     slate: 'bg-slate-50 border-slate-200',
-    blue: 'bg-blue-50 border-blue-100',
+    blue: 'bg-primary-50 border-primary-100',
     green: 'bg-emerald-50 border-emerald-100',
     amber: 'bg-amber-50 border-amber-100',
     red: 'bg-red-50 border-red-100',
     critical: 'bg-red-100 border-red-200',
+    pink: 'bg-pink-50 border-pink-100'
   }
+
   return (
     <section className={`rounded-lg border p-5 ${tones[tone] || tones.slate}`}>
       <p className="text-sm font-semibold text-slate-500">{label}</p>
@@ -285,9 +287,8 @@ function SchoolChartSelect({ value, onChange, escolas }) {
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
-        className={`flex h-12 w-full cursor-pointer items-center justify-between rounded-lg border bg-white px-3 text-left transition ${
-          open ? 'border-blue-500 ring-4 ring-blue-50' : 'border-slate-200 hover:border-blue-300'
-        }`}
+        className={`flex h-12 w-full cursor-pointer items-center justify-between rounded-lg border bg-white px-3 text-left transition ${open ? 'border-primary-500 ring-4 ring-primary-50' : 'border-slate-200 hover:border-primary-300'
+          }`}
       >
         <span className="min-w-0">
           <strong className="block truncate text-sm font-800 text-slate-900">{label}</strong>
@@ -306,7 +307,7 @@ function SchoolChartSelect({ value, onChange, escolas }) {
                 onChange={(event) => setSearch(event.target.value)}
                 autoFocus
                 placeholder="Pesquisar escola..."
-                className="h-10 w-full rounded-md border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white"
+                className="h-10 w-full rounded-md border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-primary-500 focus:bg-white"
               />
             </label>
           </div>
@@ -314,9 +315,8 @@ function SchoolChartSelect({ value, onChange, escolas }) {
           <button
             type="button"
             onClick={() => selectValue('')}
-            className={`flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-left text-sm font-bold transition ${
-              value === '' ? 'bg-blue-50 text-blue-700' : 'text-slate-700 hover:bg-slate-50'
-            }`}
+            className={`flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-left text-sm font-bold transition ${value === '' ? 'bg-primary-50 text-primary-strong' : 'text-slate-700 hover:bg-slate-50'
+              }`}
           >
             <span>
               <span className="block">Geral</span>
@@ -330,9 +330,8 @@ function SchoolChartSelect({ value, onChange, escolas }) {
               key={escola.id}
               type="button"
               onClick={() => selectValue(escola.id)}
-              className={`flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-left text-sm font-bold transition ${
-                value === escola.id ? 'bg-blue-50 text-blue-700' : 'text-slate-700 hover:bg-slate-50'
-              }`}
+              className={`flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-left text-sm font-bold transition ${value === escola.id ? 'bg-primary-50 text-primary-strong' : 'text-slate-700 hover:bg-slate-50'
+                }`}
             >
               <span className="min-w-0">
                 <span className="block truncate">{formatLabel(escola.nome)}</span>
@@ -421,9 +420,8 @@ function PieChart({ data }) {
               key={item.label}
               onMouseEnter={() => setHovered(item.label)}
               onMouseLeave={() => setHovered(null)}
-              className={`flex cursor-pointer items-center justify-between gap-4 rounded-md px-2 py-1.5 transition ${
-                isHovered ? 'bg-slate-100' : 'hover:bg-slate-50'
-              } ${hovered && !isHovered ? 'opacity-45' : 'opacity-100'}`}
+              className={`flex cursor-pointer items-center justify-between gap-4 rounded-md px-2 py-1.5 transition ${isHovered ? 'bg-slate-100' : 'hover:bg-slate-50'
+                } ${hovered && !isHovered ? 'opacity-45' : 'opacity-100'}`}
             >
               <span className="flex items-center gap-2 text-sm font-bold text-slate-700">
                 <i className={`h-3 w-3 rounded-full transition-transform ${isHovered ? 'scale-125' : ''}`} style={{ backgroundColor: colors[label] || colors[item.label] || '#64748b' }} />
