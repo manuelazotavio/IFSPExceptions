@@ -1,35 +1,14 @@
+import { z } from 'zod'
 import { EscolaModel } from '../models/EscolaModel.js'
-import { AppError } from '../utils/AppError.js'
+import { parseOrThrow } from '../utils/validate.js'
 
-function validateEscolaPayload(payload) {
-  const errors = {}
-
-  if (!payload.nome?.trim()) errors.nome = 'Informe o nome da escola'
-  if (!payload.bairro?.trim()) errors.bairro = 'Informe o bairro'
-  if (!payload.endereco?.trim()) errors.endereco = 'Informe o endereco'
-
-  const latitude = Number(payload.latitude)
-  if (Number.isNaN(latitude) || latitude < -90 || latitude > 90) {
-    errors.latitude = 'Latitude invalida'
-  }
-
-  const longitude = Number(payload.longitude)
-  if (Number.isNaN(longitude) || longitude < -180 || longitude > 180) {
-    errors.longitude = 'Longitude invalida'
-  }
-
-  if (Object.keys(errors).length > 0) {
-    throw new AppError('Dados invalidos', 422)
-  }
-
-  return {
-    nome: payload.nome.trim(),
-    bairro: payload.bairro.trim(),
-    endereco: payload.endereco.trim(),
-    latitude,
-    longitude,
-  }
-}
+const escolaSchema = z.object({
+  nome: z.string({ message: 'Informe o nome da escola' }).trim().min(1, 'Informe o nome da escola'),
+  bairro: z.string({ message: 'Informe o bairro' }).trim().min(1, 'Informe o bairro'),
+  endereco: z.string({ message: 'Informe o endereco' }).trim().min(1, 'Informe o endereco'),
+  latitude: z.coerce.number({ message: 'Latitude invalida' }).min(-90, 'Latitude invalida').max(90, 'Latitude invalida'),
+  longitude: z.coerce.number({ message: 'Longitude invalida' }).min(-180, 'Longitude invalida').max(180, 'Longitude invalida'),
+})
 
 export class EscolaController {
   static async getAll(_request, response) {
@@ -43,13 +22,13 @@ export class EscolaController {
   }
 
   static async create(request, response) {
-    const payload = validateEscolaPayload(request.body)
+    const payload = parseOrThrow(escolaSchema, request.body)
     const escola = await EscolaModel.create(payload)
     return response.status(201).json(escola)
   }
 
   static async update(request, response) {
-    const payload = validateEscolaPayload(request.body)
+    const payload = parseOrThrow(escolaSchema, request.body)
     const escola = await EscolaModel.update(request.params.id, payload)
     return response.json(escola)
   }

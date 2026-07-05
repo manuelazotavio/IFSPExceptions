@@ -22,7 +22,8 @@ model Escola {
   longitude Float
   criadoEm  DateTime @default(now())
 
-  usuarios User[]
+  usuarios    User[]
+  ocorrencias Ocorrencia[]
 }
 
 model User {
@@ -36,4 +37,41 @@ model User {
 
   escolaId String?
   escola   Escola? @relation(fields: [escolaId], references: [id])
+}
+
+model Ocorrencia {
+  id                 String    @id @default(cuid())
+  protocolo          String    @unique
+  titulo             String
+  descricao          String
+  tipo               String
+  criticidade        String
+  status             String    @default("Aberta")
+  localizacaoInterna String
+  endereco           String
+  dataEnvio          DateTime
+  dataAprovacao      DateTime?
+  dataResolucao      DateTime?
+  aprovadaPelaEscola Boolean   @default(true)
+  criadoPorEmail     String
+  chatPendente       Boolean   @default(false)
+  fotos              String    @default("[]")
+  criadoEm           DateTime  @default(now())
+  atualizadoEm       DateTime  @updatedAt
+
+  escolaId String
+  escola   Escola      @relation(fields: [escolaId], references: [id])
+  interacoes Interacao[]
+}
+
+model Interacao {
+  id       String   @id @default(cuid())
+  origem   String
+  autor    String
+  mensagem String
+  anexos   String   @default("[]")
+  criadoEm DateTime @default(now())
+
+  ocorrenciaId String
+  ocorrencia   Ocorrencia @relation(fields: [ocorrenciaId], references: [id], onDelete: Cascade)
 }
