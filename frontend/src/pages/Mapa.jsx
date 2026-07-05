@@ -1214,7 +1214,7 @@ export function Mapa({ onNavigate }) {
           <ChevronIcon direction={isFiltersExpanded ? 'up' : 'down'} />
         </button>
 
-        <div className={`${isFiltersExpanded ? 'grid' : 'hidden'} mt-2 grid-cols-2 gap-2 rounded-lg border border-slate-200 bg-white p-2 shadow-sm sm:mt-0 sm:flex sm:flex-wrap sm:items-center sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none`}>
+        <div className={`${isFiltersExpanded ? 'grid' : 'hidden'} mt-2 grid-cols-2 gap-2 rounded-lg border border-slate-200 bg-white p-2 shadow-sm sm:mt-0 sm:flex sm:flex-wrap sm:items-end sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none`}>
           <div className="min-w-0 sm:w-32">
             <Select
               value={filters.criticidade}
@@ -1496,14 +1496,14 @@ function MetricPanel({ context, drawerAberto }) {
 
 function MapDateFilter({ label, value, onChange }) {
   return (
-    <label className="min-w-0">
-      <span className="mb-1 block text-[10px] font-bold tracking-wide text-slate-500">{label}</span>
+    <label className="min-w-0 sm:w-36">
+      <span className="mb-1 block text-[10px] font-bold leading-none tracking-wide text-slate-500">{label}</span>
       <input
         type="date"
         aria-label={`Data ${label.toLowerCase()}`}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-10 w-full min-w-0 rounded-md border border-slate-200 bg-white px-2 text-sm text-slate-700 outline-none focus:border-primary-500 sm:w-36 sm:px-3"
+        className="h-10 w-[90%] min-w-0 rounded-md border border-slate-200 bg-white px-2 text-sm text-slate-700 outline-none focus:border-primary-500 sm:w-36 sm:px-3"
       />
     </label>
   )

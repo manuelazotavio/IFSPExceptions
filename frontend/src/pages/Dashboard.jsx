@@ -240,23 +240,23 @@ export function Dashboard({ onNavigate, user }) {
               options={!isDiretor ? bairrosDisponiveis.map((bairro) => ({ value: bairro, label: formatLabel(bairro) })) : []}
             />
           </label>
-          <label className="block">
-            <span className="mb-1 block text-xs font-bold text-slate-500">Data inicial</span>
+          <label className="block w-full">
+            <span className="mx-auto mb-1 block w-[90%] text-xs font-bold text-slate-500 min-[520px]:mx-0 min-[520px]:w-full">Data inicial</span>
             <input
               type="date"
               value={filtros.dataInicial}
               onChange={(event) => setFiltros((prev) => ({ ...prev, dataInicial: event.target.value }))}
-              className="h-10 w-[90%] rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
+              className="mx-auto block h-10 w-[90%] rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500 min-[520px]:mx-0 min-[520px]:w-full"
             />
           </label>
-          <label className="block">
-            <span className="mb-1 block text-xs font-bold text-slate-500">Data final</span>
+          <label className="block w-full">
+            <span className="mx-auto mb-1 block w-[90%] text-xs font-bold text-slate-500 min-[520px]:mx-0 min-[520px]:w-full">Data final</span>
             <input
               type="date"
               value={filtros.dataFinal}
               onChange={(event) => setFiltros((prev) => ({ ...prev, dataFinal: event.target.value }))}
-              className="h-10 w-[90%] rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
-            />
+              className="mx-auto block h-10 w-[90%] rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500 min-[520px]:mx-0 min-[520px]:w-full"
+              />
           </label>
         </div>
       </Card>
