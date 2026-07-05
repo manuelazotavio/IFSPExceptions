@@ -7,6 +7,7 @@ import { Icon } from '../components/Icons.jsx'
 import { atualizarOcorrencia, criarOcorrencia, listarOcorrencias, uploadFotosOcorrencia } from '../services/api.js'
 import { formatDisplayLabel } from '../utils/labels.js'
 import { loadSchoolCatalog } from '../utils/schools.js'
+import { getComodoChave, getComodoRotulo, getSchoolRooms } from '../utils/comodos.js'
 
 const CAMPOS_VAZIOS = { escolaId: '', titulo: '', tipo: '', criticidade: '', localizacaoInterna: '', descricao: '' }
 const ITENS_POR_PAGINA = 10
@@ -37,7 +38,6 @@ export function Ocorrencias({ onNavigate, user }) {
   const [erroCadastro, setErroCadastro] = useState('')
   const [salvandoOcorrencia, setSalvandoOcorrencia] = useState(false)
   const [modalAberto, setModalAberto] = useState(false)
-  const [protocoloCriado, setProtocoloCriado] = useState('')
   const [toast, setToast] = useState(null)
   const [novaOcorrencia, setNovaOcorrencia] = useState(CAMPOS_VAZIOS)
   const setCampo = (key, value) => setNovaOcorrencia((prev) => ({ ...prev, [key]: value }))
@@ -121,7 +121,7 @@ export function Ocorrencias({ onNavigate, user }) {
     [escolas, novaOcorrencia.escolaId],
   )
   const comodosDaEscola = useMemo(
-    () => Array.isArray(escolaSelecionada?.comodos) ? escolaSelecionada.comodos : [],
+    () => getSchoolRooms(escolaSelecionada),
     [escolaSelecionada],
   )
   const alterarEscolaNovaOcorrencia = (escolaId) => {
@@ -174,12 +174,12 @@ export function Ocorrencias({ onNavigate, user }) {
       setNovaOcorrencia(CAMPOS_VAZIOS)
       setNovasFotos([])
       setModalAberto(false)
-      setProtocoloCriado(ocorrenciaCriada.protocolo || '')
       setToast({
         type: 'success',
         title: 'Ocorrência criada com sucesso',
         message: `Protocolo ${ocorrenciaCriada.protocolo || 'gerado'}`,
       })
+      onNavigate(`/ocorrencias/${ocorrenciaCriada.id}`)
     } catch (error) {
       setErroCadastro(error.message)
       setToast({
@@ -491,38 +491,8 @@ export function Ocorrencias({ onNavigate, user }) {
           </div>
         </div>
       </Modal>
-      <Modal open={Boolean(protocoloCriado)} onClose={() => setProtocoloCriado('')} title="Ocorrência criada">
-        <div className="space-y-5">
-          <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-4">
-            <p className="text-sm font-bold text-emerald-700">Protocolo gerado</p>
-            <strong className="mt-2 block text-3xl font-800 text-emerald-900">{protocoloCriado}</strong>
-          </div>
-          <p className="text-sm font-semibold text-slate-600">
-            A ocorrência foi registrada com sucesso e já está disponível na listagem.
-          </p>
-          <div className="flex justify-end">
-            <button className="cursor-pointer"
-              type="button"
-              onClick={() => setProtocoloCriado('')}
-              className="cursor-pointer rounded-md bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-strong"
-            >
-              Entendi
-            </button>
-          </div>
-        </div>
-      </Modal>
     </div>
   )
-}
-
-function getComodoChave(comodo) {
-  if (!comodo || typeof comodo === 'string') return String(comodo || '')
-  return comodo.codigo || comodo.nome || ''
-}
-
-function getComodoRotulo(comodo) {
-  if (!comodo || typeof comodo === 'string') return String(comodo || '')
-  return comodo.codigo ? `${comodo.nome} - ${comodo.codigo}` : comodo.nome
 }
 
 function KanbanOcorrencias({ lista, onNavigate, onStatusChange }) {
