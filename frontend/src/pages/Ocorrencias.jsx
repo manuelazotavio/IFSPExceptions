@@ -556,7 +556,7 @@ function KanbanOcorrencias({ lista, statusColunas, onNavigate, onStatusChange })
   }
 
   return (
-    <div className="flex gap-3 overflow-x-auto pb-2">
+    <div className="flex flex-wrap gap-3 pb-2">
       {statusColunas.map((status) => {
         const itens = lista.filter((item) => item.status === status)
 
