@@ -22,7 +22,7 @@ export function Pagination({ page, totalPages, onPageChange, totalItems, pageSiz
         <p className="text-xs font-semibold text-slate-500">Mostrando {inicio}-{fim} de {totalItems}</p>
       )}
       <div className="ml-auto flex items-center gap-1">
-        <button
+        <button className="cursor-pointer"
           onClick={() => onPageChange(page - 1)}
           disabled={page === 1}
           aria-label="Pagina anterior"
@@ -40,7 +40,7 @@ export function Pagination({ page, totalPages, onPageChange, totalItems, pageSiz
             item === '...'
               ? <span key={`dots-${index}`} className="px-1 text-sm font-bold text-slate-400">...</span>
               : (
-                <button
+                <button className="cursor-pointer"
                   key={item}
                   onClick={() => onPageChange(item)}
                   aria-current={item === page ? 'page' : undefined}
@@ -52,10 +52,10 @@ export function Pagination({ page, totalPages, onPageChange, totalItems, pageSiz
           ))}
         </div>
 
-        <button
+        <button className="cursor-pointer"
           onClick={() => onPageChange(page + 1)}
           disabled={page === totalPages}
-          aria-label="Proxima pagina"
+          aria-label="Próxima página"
           className="h-8 w-8 shrink-0 rounded-md border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
         >
           &rsaquo;

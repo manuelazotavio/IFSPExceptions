@@ -281,7 +281,7 @@ export function Categorias() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-end">
-        <button
+        <button className="cursor-pointer"
           type="button"
           onClick={() => setModalAberto(true)}
           className="cursor-pointer rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-primary-strong"
@@ -293,7 +293,7 @@ export function Categorias() {
         <table className="w-full min-w-[600px] border-collapse rounded-2 text-sm">
           <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-extrabold tracking-wide">
             <tr className="divide-x divide-slate-200">
-              {['Nome', 'Ocorrencias', 'Status', ''].map((head) => (
+              {['Nome', 'Ocorrências', 'Status', ''].map((head) => (
                 <th key={head} className="px-4 py-3">
                   {head}
                 </th>
@@ -307,7 +307,7 @@ export function Categorias() {
                 <td className="px-4 py-3">{contagem[categoria] || 0}</td>
                 <td className="px-4 py-3"><Badge>Global</Badge></td>
                 <td className="px-4 py-3 text-right">
-                  <button type="button" onClick={() => removerCategoria(categoria)} className="cursor-pointer text-sm font-bold text-red-600 hover:underline">
+                  <button className="cursor-pointer" type="button" onClick={() => removerCategoria(categoria)} className="cursor-pointer text-sm font-bold text-red-600 hover:underline">
                     Remover
                   </button>
                 </td>
@@ -335,7 +335,7 @@ export function Categorias() {
             />
           </label>
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={() => setModalAberto(false)} className="cursor-pointer rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">
+            <button className="cursor-pointer" type="button" onClick={() => setModalAberto(false)} className="cursor-pointer rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">
               Cancelar
             </button>
             <button
@@ -354,5 +354,5 @@ export function Categorias() {
 }
 
 export function Configuracoes() {
-  return <div className="grid gap-5 xl:grid-cols-2"><Card><h2 className="text-lg font-800">Preferencias gerais</h2><div className="mt-4 space-y-3 text-sm font-semibold text-slate-600"><label className="flex items-center gap-2"><input type="checkbox" defaultChecked /> Notificar novas ocorrencias criticas</label><label className="flex items-center gap-2"><input type="checkbox" defaultChecked /> Destacar escolas com pendencias</label><label className="flex items-center gap-2"><input type="checkbox" /> Receber resumo diario mockado</label></div></Card><Card><h2 className="text-lg font-800">Mapa e auditoria</h2><p className="mt-3 text-sm text-slate-500">Configuracoes mockadas para visualizacao de bairros, marcadores e logs administrativos.</p><div className="mt-4 rounded-md bg-slate-50 p-4 text-sm text-slate-600">Ultima sincronizacao visual: 04/07/2026 13:40</div></Card></div>
+  return <div className="grid gap-5 xl:grid-cols-2"><Card><h2 className="text-lg font-800">Preferências gerais</h2><div className="mt-4 space-y-3 text-sm font-semibold text-slate-600"><label className="flex items-center gap-2"><input type="checkbox" defaultChecked /> Notificar novas ocorrências críticas</label><label className="flex items-center gap-2"><input type="checkbox" defaultChecked /> Destacar escolas com pendências</label><label className="flex items-center gap-2"><input type="checkbox" /> Receber resumo diário mockado</label></div></Card><Card><h2 className="text-lg font-800">Mapa e auditoria</h2><p className="mt-3 text-sm text-slate-500">Configurações mockadas para visualização de bairros, marcadores e logs administrativos.</p><div className="mt-4 rounded-md bg-slate-50 p-4 text-sm text-slate-600">Última sincronização visual: 04/07/2026 13:40</div></Card></div>
 }

@@ -26,6 +26,7 @@ const roleLabels = {
 export function Layout({ route, onNavigate, onExport, user, onLogout, children }) {
   const [exportOpen, setExportOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const isExterno = user?.role === 'EXTERNO'
   const isDiretor = user?.role === 'DIRETOR'
   const [notificacoes, setNotificacoes] = useState([])
@@ -72,7 +73,7 @@ export function Layout({ route, onNavigate, onExport, user, onLogout, children }
   const nomeExibido = user?.role === 'SEDUC' ? 'João Beserra' : user?.nome
   const roleLabel = roleLabels[user?.role] || user?.role
   const title = isExterno
-    ? (route.startsWith('/ocorrencias/') ? 'Detalhe da ocorrência' : 'Minhas ocorrencias')
+    ? (route.startsWith('/ocorrencias/') ? 'Detalhe da ocorrência' : 'Minhas ocorrências')
     : titles[route]
       || (route.startsWith('/ocorrencias/') ? 'Detalhe da ocorrência' : '')
       || (route.startsWith('/escolas/') ? 'Detalhe da escola' : '')
@@ -91,18 +92,20 @@ export function Layout({ route, onNavigate, onExport, user, onLogout, children }
         user={user}
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        collapsed={sidebarCollapsed}
+        onToggleCollapsed={() => setSidebarCollapsed((current) => !current)}
         nomeExibido={nomeExibido}
         roleLabel={roleLabel}
         onLogout={onLogout}
       />
-      <div className="lg:pl-64">
+      <div className={`transition-[padding] duration-200 ${sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}`}>
         <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-5 pt-4 pb-0 backdrop-blur sm:pb-4 lg:px-8">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="flex items-start justify-between gap-2 sm:items-center">
               <div className="flex items-center gap-3">
                 <img src="/geo/logo_fundo_branco.svg" alt="Escola em Dia" className="hidden h-8 w-auto sm:block lg:hidden" />
                 <div className="relative flex flex-col sm:flex-row sm:items-center sm:gap-2">
-                  <button
+                  <button className="cursor-pointer"
                     type="button"
                     onClick={() => setSidebarOpen(true)}
                     aria-label="Abrir menu"
@@ -117,7 +120,7 @@ export function Layout({ route, onNavigate, onExport, user, onLogout, children }
               <div className="flex items-center gap-2 md:hidden">
                 {!isExterno && route === '/dashboard' && (
                   <div className="relative">
-                    <button
+                    <button className="cursor-pointer"
                       type="button"
                       onClick={() => setExportOpen((current) => !current)}
                       className="cursor-pointer rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
@@ -127,7 +130,7 @@ export function Layout({ route, onNavigate, onExport, user, onLogout, children }
                     {exportOpen && (
                       <div className="absolute right-0 z-30 mt-2 w-40 rounded-md border border-slate-200 bg-white p-1 shadow-lg">
                         {['csv', 'pdf', 'xlsx'].map((format) => (
-                          <button
+                          <button className="cursor-pointer"
                             key={format}
                             type="button"
                             onClick={() => handleExport(format)}
@@ -146,7 +149,7 @@ export function Layout({ route, onNavigate, onExport, user, onLogout, children }
             <div className="flex flex-wrap items-center gap-3">
               {!isExterno && route === '/dashboard' && (
                 <div className="relative hidden md:block">
-                  <button
+                  <button className="cursor-pointer"
                     type="button"
                     onClick={() => setExportOpen((current) => !current)}
                     className="cursor-pointer rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
@@ -156,7 +159,7 @@ export function Layout({ route, onNavigate, onExport, user, onLogout, children }
                   {exportOpen && (
                     <div className="absolute right-0 z-30 mt-2 w-40 rounded-md border border-slate-200 bg-white p-1 shadow-lg">
                       {['csv', 'pdf', 'xlsx'].map((format) => (
-                        <button
+                        <button className="cursor-pointer"
                           key={format}
                           type="button"
                           onClick={() => handleExport(format)}
