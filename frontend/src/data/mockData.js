@@ -236,7 +236,7 @@ const issueTemplates = [
 const categoriasBase = ['Eletrica', 'Hidraulica', 'Estrutural', 'Seguranca', 'Acessibilidade', 'Equipamento', 'Mobiliario', 'Limpeza', 'Tecnologia', 'Outros']
 const nomesSolicitantes = ['Fernanda Souza', 'Ricardo Almeida', 'Juliana Costa', 'Marcos Pereira', 'Patricia Lima', 'Anderson Santos']
 
-export const statusValues = ['Aberta', 'Em analise', 'Em andamento', 'Aguardando orcamento', 'Aguardando visita tecnica', 'Resolvida']
+export const statusValues = ['Aguardando aprovacao', 'Aberta', 'Em analise', 'Em andamento', 'Aguardando visita tecnica', 'Resolvida']
 export const criticidadeValues = ['Baixa', 'Media', 'Alta', 'Critica']
 export const locaisInternos = ['Biblioteca', 'Laboratorio', 'Patio', 'Patio coberto', 'Area externa', 'Entrada', 'Entrada lateral', 'Corredor', 'Refeitorio', 'Cozinha', 'Secretaria', 'Diretoria', 'Portaria', 'Almoxarifado', 'Cobertura', 'Banheiro infantil', 'Sala dos professores', 'Sala multifuncional', 'Sala 1', 'Sala 2', 'Sala 3', 'Sala 4', 'Sala 5', 'Bloco A', 'Bloco B']
 
