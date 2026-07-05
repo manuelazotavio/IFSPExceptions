@@ -11,7 +11,6 @@ import {
   MAP_CRITICIDADE_OPTIONS,
   MAP_STATUS_OPTIONS,
   includesNormalized,
-  matchesSchoolSearch,
   mergeSchoolsWithOccurrences,
   normalizeOccurrenceCriticidadeKey,
   normalizeOccurrenceStatusKey,
@@ -193,11 +192,11 @@ function truncateMapText(value, maxLength = 30) {
 }
 
 function createSchoolPointIcon({ color, isSelected, isDimmed }) {
-  const size = isSelected ? 9 : 6
-  const borderWidth = isSelected ? 1 : 0.6
+  const size = isSelected ? 20 : 15
+  const borderWidth = isSelected ? 3 : 2.4
   const opacity = isDimmed ? 0.22 : 0.96
-  const glowSize = isSelected ? 8 : 5
-  const outerGlow = isSelected ? 12 : 8
+  const glowSize = isSelected ? 16 : 11
+  const outerGlow = isSelected ? 24 : 17
 
   return L.divIcon({
     className: 'school-point-icon',
@@ -217,10 +216,10 @@ function createSchoolPointIcon({ color, isSelected, isDimmed }) {
         transition:transform .18s ease, opacity .18s ease, box-shadow .18s ease;
       "></div>
     `,
-    iconSize: [14, 14],
-    iconAnchor: [7, 7],
-    popupAnchor: [0, -6],
-    tooltipAnchor: [0, -9],
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
+    popupAnchor: [0, -13],
+    tooltipAnchor: [0, -16],
   })
 }
 
@@ -238,7 +237,6 @@ function createBairroLabelIcon({ name, color, fontSize, maxWidth, isSelected, is
         font-size:${fontSize}px;
         font-weight:${isSelected ? 900 : 800};
         letter-spacing:${isSelected ? '0.08em' : '0.05em'};
-        text-transform:uppercase;
         color:${color};
         opacity:${opacity};
         text-shadow:
@@ -445,9 +443,6 @@ export function Mapa({ onNavigate }) {
   const [erroMapa, setErroMapa] = useState('')
   const [escolaSelecionada, setEscolaSelecionada] = useState('')
   const [modalContext, setModalContext] = useState(null)
-  const [searchEscola, setSearchEscola] = useState('')
-  const [appliedSearch, setAppliedSearch] = useState('')
-  const [isSearchMenuOpen, setIsSearchMenuOpen] = useState(false)
   const [mapFocusTarget, setMapFocusTarget] = useState(null)
   const [caraguatatubaBoundary, setCaraguatatubaBoundary] = useState(null)
   const [bairrosGeoJson, setBairrosGeoJson] = useState(null)
@@ -458,7 +453,6 @@ export function Mapa({ onNavigate }) {
   const [colorScale, setColorScale] = useState(() => readStoredColorScale())
   const [isColorScaleExpanded, setIsColorScaleExpanded] = useState(false)
   const warnedSchoolIdsRef = useRef(new Set())
-  const searchContainerRef = useRef(null)
   const [mapStyleKey, setMapStyleKey] = useState(() => {
     if (typeof window === 'undefined') return 'cartoLight'
 
@@ -592,19 +586,6 @@ export function Mapa({ onNavigate }) {
     }
   }, [modalContext, showBairrosLayer])
 
-  useEffect(() => {
-    if (!isSearchMenuOpen) return undefined
-
-    function handleClickOutside(event) {
-      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
-        setIsSearchMenuOpen(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [isSearchMenuOpen])
-
   const filteredOccurrences = useMemo(
     () => occurrenceCatalog.filter((occurrence) => matchesOccurrenceFilters(occurrence, filters)),
     [filters, occurrenceCatalog],
@@ -628,10 +609,9 @@ export function Mapa({ onNavigate }) {
   const mapSchools = useMemo(
     () => allMapSchools.filter((item) => {
       if (filters.escolaId && item.escolaId !== filters.escolaId) return false
-      if (appliedSearch && !matchesSchoolSearch(item, appliedSearch)) return false
       return true
     }),
-    [allMapSchools, appliedSearch, filters.escolaId],
+    [allMapSchools, filters.escolaId],
   )
 
   const allSchoolById = useMemo(
@@ -711,18 +691,6 @@ export function Mapa({ onNavigate }) {
       label: `${school.escolaNome}${school.bairro ? ` - ${school.bairro}` : ''}`,
     }))
   ), [mergedSchoolsFull])
-
-  const escolasDisponiveis = useMemo(() => (
-    mergedSchoolsFull
-      .slice()
-      .sort((left, right) => left.escolaNome.localeCompare(right.escolaNome, 'pt-BR'))
-  ), [mergedSchoolsFull])
-
-  const searchSuggestions = useMemo(() => (
-    escolasDisponiveis
-      .filter((item) => (searchEscola ? matchesSchoolSearch(item, searchEscola) : false))
-      .slice(0, 8)
-  ), [escolasDisponiveis, searchEscola])
 
   const avisoGlobal = useMemo(() => {
     if (!erroMapa) return null
@@ -849,6 +817,16 @@ export function Mapa({ onNavigate }) {
     setFilters((current) => ({ ...current, [key]: value }))
   }
 
+  function handleEscolaFilterChange(value) {
+    setFilter('escolaId', value)
+
+    if (value) {
+      openSchoolDrawer(value, { zoom: 16 })
+    } else {
+      closeDrawer()
+    }
+  }
+
   function clearSchoolContext() {
     setEscolaSelecionada('')
   }
@@ -927,37 +905,6 @@ export function Mapa({ onNavigate }) {
     onNavigate?.(`/escolas/${encodeURIComponent(escolaSelecionada)}`)
   }
 
-  function focusSchool(escola) {
-    if (!escola) return
-
-    setSearchEscola(escola.escolaNome)
-    setAppliedSearch(escola.escolaNome)
-    setIsSearchMenuOpen(false)
-    openSchoolDrawer(escola.escolaId, { zoom: 16 })
-  }
-
-  function handleSearchEscola() {
-    const query = searchEscola.trim()
-    setAppliedSearch(query)
-    setIsSearchMenuOpen(false)
-
-    if (!query) {
-      setMapFocusTarget(null)
-      return
-    }
-
-    const matches = escolasDisponiveis.filter((item) => matchesSchoolSearch(item, query))
-    if (matches.length === 1) {
-      focusSchool(matches[0])
-    }
-  }
-
-  function clearSearchEscola() {
-    setSearchEscola('')
-    setAppliedSearch('')
-    setIsSearchMenuOpen(false)
-  }
-
   return (
     <div className="space-y-6">
       {avisoGlobal ? (
@@ -968,81 +915,14 @@ export function Mapa({ onNavigate }) {
       ) : null}
 
       <Card className="relative z-[3000] overflow-visible">
-        <div className="grid gap-3 md:grid-cols-4 xl:grid-cols-7">
-          <label className="block md:col-span-2">
-            <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Buscar escola</span>
-            <div ref={searchContainerRef} className="relative">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={searchEscola}
-                  onChange={(event) => {
-                    setSearchEscola(event.target.value)
-                    setIsSearchMenuOpen(true)
-                  }}
-                  onFocus={() => setIsSearchMenuOpen(Boolean(searchSuggestions.length))}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                      event.preventDefault()
-                      handleSearchEscola()
-                    }
-
-                    if (event.key === 'Escape') {
-                      event.preventDefault()
-                      setIsSearchMenuOpen(false)
-                    }
-                  }}
-                  placeholder="Nome, bairro, endereco ou CEP"
-                  className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500"
-                />
-                {searchEscola ? (
-                  <button
-                    type="button"
-                    onClick={clearSearchEscola}
-                    className="cursor-pointer h-10 shrink-0 rounded-md border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 hover:bg-slate-50"
-                  >
-                    Limpar
-                  </button>
-                ) : null}
-                <button
-                  type="button"
-                  onClick={handleSearchEscola}
-                  className="cursor-pointer h-10 shrink-0 rounded-md bg-primary px-3 text-sm font-bold text-white hover:bg-primary-strong"
-                >
-                  Buscar
-                </button>
-              </div>
-              {isSearchMenuOpen && searchSuggestions.length > 0 ? (
-                <div className="absolute left-0 right-0 z-[5000] mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
-                  {searchSuggestions.map((item) => (
-                    <button
-                      key={item.escolaId}
-                      type="button"
-                      onClick={() => focusSchool(item)}
-                      className="flex w-full cursor-pointer flex-col items-start gap-1 border-b border-slate-100 px-4 py-3 text-left last:border-b-0 hover:bg-slate-50"
-                    >
-                      <span className="text-sm font-bold text-slate-800">{item.escolaNome}</span>
-                      <span className="text-xs font-semibold text-slate-500">
-                        {[item.bairro, item.endereco].filter(Boolean).join(' - ')}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-            {appliedSearch ? (
-              <p className="mt-2 text-[11px] font-semibold text-slate-500">
-                Filtro textual ativo: {appliedSearch}
-              </p>
-            ) : null}
-          </label>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <FilterSelect label="Criticidade" value={filters.criticidade} onChange={(value) => setFilter('criticidade', value)} options={criticidadeOptions} />
           <FilterSelect label="Status" value={filters.status} onChange={(value) => setFilter('status', value)} options={statusOptions} />
           <label className="block">
-            <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Escola</span>
+            <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Escola</span>
             <Select
               value={filters.escolaId}
-              onChange={(value) => setFilter('escolaId', value)}
+              onChange={handleEscolaFilterChange}
               placeholder="Todas"
               options={[{ value: '', label: 'Todas' }, ...schoolOptions]}
             />
@@ -1131,7 +1011,7 @@ export function Mapa({ onNavigate }) {
           />
 
           <div className={`absolute bottom-4 z-[650] rounded-lg border border-slate-200 bg-white/95 px-3 py-2 shadow-md backdrop-blur ${drawerAberto ? 'right-[410px]' : 'right-4'}`}>
-            <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-500">
+            <span className="block text-[10px] font-bold tracking-wide text-slate-500">
               Estilo do mapa
             </span>
             <Select
@@ -1163,7 +1043,7 @@ export function Mapa({ onNavigate }) {
             </div>
             {selectedBairroStats ? (
               <div className="mt-2 border-t border-slate-200 pt-2">
-                <p className="truncate text-[10px] font-bold uppercase tracking-wide text-slate-500">
+                <p className="truncate text-[10px] font-bold tracking-wide text-slate-500">
                   Bairro: {selectedBairroStats.nome}
                 </p>
                 <p className="mt-1 text-[11px] font-semibold text-slate-500">
@@ -1211,7 +1091,7 @@ export function Mapa({ onNavigate }) {
 function MetricPanel({ context }) {
   return (
     <div className="absolute left-4 top-4 z-[650] w-[260px] rounded-xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur">
-      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
+      <p className="text-[10px] font-bold tracking-[0.18em] text-slate-500">
         {context.title}
       </p>
       <p className="mt-1 text-xs font-semibold text-slate-500">
@@ -1229,7 +1109,7 @@ function MetricPanel({ context }) {
 function MetricCard({ item }) {
   return (
     <div className="rounded-lg bg-slate-50 px-3 py-2">
-      <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-500">{item.label}</span>
+      <span className="block text-[10px] font-bold tracking-wide text-slate-500">{item.label}</span>
       <strong className="mt-1 block text-base font-800 text-slate-950">{item.value}</strong>
       <span className="mt-1 block text-[10px] font-semibold text-slate-400">{item.helper}</span>
     </div>
@@ -1240,7 +1120,7 @@ function MapColorScaleControl({ colorScale, isExpanded, legendGradient, legendRa
   return (
     <div className={`absolute bottom-4 left-20 z-[650] border border-slate-200 bg-white/95 shadow-md backdrop-blur transition-all ${isExpanded ? 'w-[280px] rounded-xl p-3 shadow-lg' : 'w-[210px] rounded-lg px-3 py-2'}`}>
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[10px] font-bold uppercase tracking-wide text-slate-600">
+        <p className="text-[10px] font-bold tracking-wide text-slate-600">
           Solicitacoes pendentes
         </p>
         <button
@@ -1288,7 +1168,7 @@ function ChevronIcon({ direction }) {
 function ColorScaleField({ label, value, onChange }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-[10px] font-bold uppercase text-slate-500">{label}</span>
+      <span className="mb-1 block text-[10px] font-bold text-slate-500">{label}</span>
       <input
         type="color"
         value={value}
@@ -1302,7 +1182,7 @@ function ColorScaleField({ label, value, onChange }) {
 function DateFilter({ label, value, onChange }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">{label}</span>
+      <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">{label}</span>
       <input type="date" value={value} onChange={(event) => onChange(event.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500" />
     </label>
   )
@@ -1389,16 +1269,6 @@ function MapContextDrawer({
         <div className="flex-1 space-y-5 overflow-y-auto p-4">
           {isBairroMode ? (
             <>
-              <DrawerMetricsGrid
-                items={[
-                  { label: 'Escolas', value: bairroStats?.totalEscolas || 0 },
-                  { label: 'Ocorrencias', value: bairroStats?.totalSolicitacoes || 0 },
-                  { label: 'Criticas', value: bairroStats?.criticas || 0 },
-                  { label: 'Atencao', value: bairroStats?.atencao || 0 },
-                  { label: 'Baixas', value: bairroStats?.baixas || 0 },
-                ]}
-              />
-
               {Number(bairroStats?.totalEscolas || 0) === 0 ? (
                 <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-semibold text-slate-500">
                   Nenhuma escola cadastrada neste bairro no contexto atual.
@@ -1426,7 +1296,7 @@ function MapContextDrawer({
               {detalheEscola ? (
                 <div>
                   <div className="mb-3 flex items-center justify-between gap-3">
-                    <h4 className="text-sm font-800 uppercase tracking-wide text-slate-500">Solicitacoes pendentes</h4>
+                    <h4 className="text-sm font-800 tracking-wide text-slate-500">Solicitacoes pendentes</h4>
                     <span className="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-bold text-primary-strong">
                       {ocorrenciasEscola.length}
                     </span>
@@ -1455,19 +1325,6 @@ function MapContextDrawer({
   )
 }
 
-function DrawerMetricsGrid({ items }) {
-  return (
-    <div className="grid grid-cols-2 gap-2">
-      {items.map((item) => (
-        <div key={item.label} className="rounded-lg bg-slate-50 px-3 py-2">
-          <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-500">{item.label}</span>
-          <strong className="mt-1 block text-sm font-800 text-slate-950">{item.value}</strong>
-        </div>
-      ))}
-    </div>
-  )
-}
-
 function OcorrenciaCard({ ocorrencia, schoolName = '' }) {
   return (
     <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -1475,7 +1332,7 @@ function OcorrenciaCard({ ocorrencia, schoolName = '' }) {
         <div className="min-w-0">
           <h5 className="font-bold text-slate-900">{ocorrencia.titulo}</h5>
           {schoolName ? (
-            <p className="mt-1 truncate text-[11px] font-bold uppercase tracking-wide text-slate-500">
+            <p className="mt-1 truncate text-[11px] font-bold tracking-wide text-slate-500">
               {schoolName}
             </p>
           ) : null}
