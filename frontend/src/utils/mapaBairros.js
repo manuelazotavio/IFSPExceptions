@@ -1,3 +1,5 @@
+import { isActiveOccurrence } from './occurrenceStatus.js'
+
 export const defaultColorScale = {
   start: '#16a34a',
   middle: '#f59e0b',
@@ -39,13 +41,7 @@ export function schoolToGeoJsonPoint(school) {
 }
 
 export function isPendingOccurrence(status) {
-  const normalized = String(status || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim()
-    .toUpperCase()
-
-  return ['ABERTA', 'PENDENTE', 'EM_ANDAMENTO', 'EM ANALISE', 'EM_ANALISE'].includes(normalized)
+  return isActiveOccurrence({ status })
 }
 
 export function calculateSchoolPendingScore(item) {

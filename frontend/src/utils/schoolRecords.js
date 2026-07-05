@@ -1,27 +1,19 @@
+import {
+  getOccurrenceStatusLabel,
+  normalizeOccurrenceStatusKey,
+} from './occurrenceStatus.js'
+export { getOccurrenceStatusLabel, MAP_STATUS_OPTIONS, normalizeOccurrenceStatusKey } from './occurrenceStatus.js'
+
 const CRITICIDADE_LABELS = {
   baixa: 'Baixa',
   atencao: 'Atenção',
   critica: 'Crítica',
 }
 
-const STATUS_LABELS = {
-  aberta: 'Aberta',
-  em_analise: 'Em análise',
-  em_execucao: 'Em execução',
-  resolvida: 'Resolvida',
-}
-
 export const MAP_CRITICIDADE_OPTIONS = [
   { value: 'baixa', label: CRITICIDADE_LABELS.baixa },
   { value: 'atencao', label: CRITICIDADE_LABELS.atencao },
   { value: 'critica', label: CRITICIDADE_LABELS.critica },
-]
-
-export const MAP_STATUS_OPTIONS = [
-  { value: 'aberta', label: STATUS_LABELS.aberta },
-  { value: 'em_analise', label: STATUS_LABELS.em_analise },
-  { value: 'em_execucao', label: STATUS_LABELS.em_execucao },
-  { value: 'resolvida', label: STATUS_LABELS.resolvida },
 ]
 
 export function normalizeText(value) {
@@ -156,32 +148,8 @@ export function normalizeOccurrenceCriticidadeKey(value) {
   return 'baixa'
 }
 
-export function normalizeOccurrenceStatusKey(value) {
-  const normalized = normalizeText(value).replace(/[^a-z0-9]+/g, '_')
-
-  if (!normalized) return 'aberta'
-  if (normalized === 'resolvida' || normalized === 'concluida' || normalized === 'fechada') return 'resolvida'
-  if (normalized === 'em_analise' || normalized === 'analise') return 'em_analise'
-
-  if ([
-    'em_execucao',
-    'em_andamento',
-    'andamento',
-    'aguardando_orcamento',
-    'aguardando_visita_tecnica',
-  ].includes(normalized)) {
-    return 'em_execucao'
-  }
-
-  return 'aberta'
-}
-
 export function getOccurrenceCriticidadeLabel(value) {
   return CRITICIDADE_LABELS[normalizeOccurrenceCriticidadeKey(value)] || CRITICIDADE_LABELS.baixa
-}
-
-export function getOccurrenceStatusLabel(value) {
-  return STATUS_LABELS[normalizeOccurrenceStatusKey(value)] || STATUS_LABELS.aberta
 }
 
 function resolveSchoolForOccurrence(record, lookup) {

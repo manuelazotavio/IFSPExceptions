@@ -9,12 +9,15 @@ import { getEscolaOcorrenciasFallback, loadMapOccurrences } from '../services/ma
 import { getAllSchools, loadSchoolCatalog } from '../utils/schools.js'
 import {
   MAP_CRITICIDADE_OPTIONS,
-  MAP_STATUS_OPTIONS,
-  includesNormalized,
   mergeSchoolsWithOccurrences,
   normalizeOccurrenceCriticidadeKey,
-  normalizeOccurrenceStatusKey,
 } from '../utils/schoolRecords.js'
+import {
+  filterOccurrencesForMap,
+  isResolvedOccurrence,
+  isResolvedStatusFilter,
+  MAP_STATUS_OPTIONS,
+} from '../utils/occurrenceStatus.js'
 import {
   buildBairroStats,
   buildFeatureEntries,
@@ -33,6 +36,11 @@ const statusOptions = MAP_STATUS_OPTIONS
 const mapStyleStorageKey = 'seduc-map-style'
 const colorScaleStorageKey = 'seduc-map-color-scale'
 const schoolLabelZoom = 15
+const resolvedHistoryColorScale = {
+  start: '#94a3b8',
+  middle: '#94a3b8',
+  end: '#94a3b8',
+}
 const BAIRROS_GEOJSON_URLS = [
   '/geo/caraguatatuba-bairros-atualizado-v2.geojson',
   '/geo/caraguatatuba-bairros.geojson',
@@ -257,7 +265,6 @@ function normalizeCriticidade(value) {
 
 function matchesOccurrenceFilters(occurrence, filters) {
   if (filters.escolaId && occurrence.escolaId !== filters.escolaId) return false
-  if (filters.status && normalizeOccurrenceStatusKey(occurrence.status) !== normalizeOccurrenceStatusKey(filters.status)) return false
   if (filters.criticidade && normalizeCriticidade(occurrence.criticidade) !== normalizeCriticidade(filters.criticidade)) return false
   if (filters.dataInicial && (occurrence.dataAbertura || occurrence.dataEnvio || '') < filters.dataInicial) return false
   if (filters.dataFinal && (occurrence.dataAbertura || occurrence.dataEnvio || '') > filters.dataFinal) return false
@@ -289,27 +296,63 @@ function sortOcorrenciasByUrgencia(left, right) {
   return 0
 }
 
-function buildMetricItems({ metrics }) {
+function getOccurrenceCopy(historyMode) {
+  return historyMode
+    ? {
+        colorScaleLabel: 'Ocorrências resolvidas',
+        drawerSectionTitle: 'Ocorrências resolvidas',
+        emptyBairroMessage: 'Nenhuma ocorrência resolvida encontrada para as escolas deste bairro com os filtros atuais.',
+        emptyEscolaMessage: 'Nenhuma ocorrência resolvida encontrada para esta escola.',
+        markerSummarySingular: 'ocorrência resolvida',
+        markerSummaryPlural: 'ocorrências resolvidas',
+      }
+    : {
+        colorScaleLabel: 'Solicitações pendentes',
+        drawerSectionTitle: 'Solicitações pendentes',
+        emptyBairroMessage: 'Nenhuma solicitação encontrada para as escolas deste bairro com os filtros atuais.',
+        emptyEscolaMessage: 'Nenhuma ocorrência encontrada para esta escola.',
+        markerSummarySingular: 'ocorrência ativa',
+        markerSummaryPlural: 'ocorrências ativas',
+      }
+}
+
+function formatOccurrenceQuantity(total, singularLabel, pluralLabel) {
+  const amount = Number(total || 0)
+  return `${amount} ${amount === 1 ? singularLabel : pluralLabel}`
+}
+
+function buildMetricItems({ metrics, historyMode, schoolCount }) {
+  if (historyMode) {
+    return [
+      {
+        label: 'Resolvidas',
+        value: Number(metrics.totalOcorrencias || 0),
+      },
+      {
+        label: 'Escolas',
+        value: Number(schoolCount || 0),
+      },
+    ]
+  }
+
   return [
     {
-      label: 'Ocorrências',
+      label: 'Ocorrências ativas',
       value: Number(metrics.totalOcorrencias || 0),
     },
     {
-      label: 'Críticas',
+      label: 'Críticas ativas',
       value: Number(metrics.criticas || 0),
     },
   ]
 }
 
 function getContextMetrics({
+  historyMode,
   escola,
   selectedBairroStats,
   summaryMetrics,
-  schoolScoreRange,
-  bairroScoreRange,
   visibleSchoolCount,
-  totalSchoolCount,
 }) {
   if (escola) {
     const metrics = {
@@ -325,9 +368,8 @@ function getContextMetrics({
       message: escola.bairro ? `Leitura focada em ${escola.bairro}.` : 'Leitura focada na unidade selecionada.',
       items: buildMetricItems({
         metrics,
-        maxIntensity: schoolScoreRange.maximum,
         schoolCount: 1,
-        totalSchools: totalSchoolCount,
+        historyMode,
       }),
     }
   }
@@ -348,9 +390,8 @@ function getContextMetrics({
         : 'Nenhuma escola cadastrada neste bairro.',
       items: buildMetricItems({
         metrics,
-        maxIntensity: bairroScoreRange.maximum,
         schoolCount: selectedBairroStats.totalEscolas,
-        totalSchools: totalSchoolCount,
+        historyMode,
       }),
     }
   }
@@ -360,9 +401,8 @@ function getContextMetrics({
     message: `${visibleSchoolCount} escola${visibleSchoolCount === 1 ? '' : 's'} visíveis no contexto atual.`,
     items: buildMetricItems({
       metrics: summaryMetrics,
-      maxIntensity: summaryMetrics.intensidade || 0,
       schoolCount: visibleSchoolCount,
-      totalSchools: totalSchoolCount,
+      historyMode,
     }),
   }
 }
@@ -581,9 +621,18 @@ export function Mapa({ onNavigate }) {
     }
   }, [modalContext, showBairrosLayer])
 
+  const historyMode = isResolvedStatusFilter(filters.status)
+  const occurrenceCopy = useMemo(() => getOccurrenceCopy(historyMode), [historyMode])
+  const effectiveColorScale = historyMode ? resolvedHistoryColorScale : colorScale
+
+  const statusScopedOccurrences = useMemo(
+    () => filterOccurrencesForMap(occurrenceCatalog, filters.status),
+    [filters.status, occurrenceCatalog],
+  )
+
   const filteredOccurrences = useMemo(
-    () => occurrenceCatalog.filter((occurrence) => matchesOccurrenceFilters(occurrence, filters)),
-    [filters, occurrenceCatalog],
+    () => statusScopedOccurrences.filter((occurrence) => matchesOccurrenceFilters(occurrence, filters)),
+    [filters, statusScopedOccurrences],
   )
 
   const mergedSchoolsFull = useMemo(
@@ -714,15 +763,17 @@ export function Mapa({ onNavigate }) {
 
   const schoolScoreRange = useMemo(() => ({
     minimum: 0,
-    maximum: Math.max(0, ...schoolMarkers.map((item) => Number(item.score || 0))),
-  }), [schoolMarkers])
+    maximum: Math.max(0, ...schoolMarkers.map((item) => Number(historyMode ? item.totalOcorrencias : item.score) || 0)),
+  }), [historyMode, schoolMarkers])
 
   const markerIconsById = useMemo(() => (
     Object.fromEntries(
       schoolMarkers.map((item) => [
         item.escolaId,
         createSchoolPointIcon({
-          color: getScaledColor(item.score, colorScale, schoolScoreRange.maximum),
+          color: historyMode
+            ? effectiveColorScale.middle
+            : getScaledColor(item.score, effectiveColorScale, schoolScoreRange.maximum),
           isSelected: escolaSelecionada === item.escolaId,
           isDimmed: Boolean(
             showBairrosLayer
@@ -732,23 +783,25 @@ export function Mapa({ onNavigate }) {
         }),
       ]),
     )
-  ), [colorScale, escolaSelecionada, schoolMarkers, schoolScoreRange.maximum, selectedBairro, showBairrosLayer])
+  ), [effectiveColorScale, escolaSelecionada, historyMode, schoolMarkers, schoolScoreRange.maximum, selectedBairro, showBairrosLayer])
 
   const bairroStatsResult = useMemo(
     () => buildBairroStats({
       featureEntries,
       schools: mapSchools,
       schoolBairroIndex,
-      colorScale,
+      colorScale: effectiveColorScale,
     }),
-    [colorScale, featureEntries, mapSchools, schoolBairroIndex],
+    [effectiveColorScale, featureEntries, mapSchools, schoolBairroIndex],
   )
 
   const bairroStats = bairroStatsResult.bairroStats
-  const bairroScoreRange = {
+  const bairroScoreRange = useMemo(() => ({
     minimum: 0,
-    maximum: bairroStatsResult.maxScore,
-  }
+    maximum: historyMode
+      ? Math.max(0, ...Object.values(bairroStats).map((item) => Number(item.totalSolicitacoes || 0)))
+      : bairroStatsResult.maxScore,
+  }), [bairroStats, bairroStatsResult.maxScore, historyMode])
 
   useEffect(() => {
     if (!selectedBairro) return
@@ -779,19 +832,17 @@ export function Mapa({ onNavigate }) {
 
   const metricContext = useMemo(() => (
     getContextMetrics({
+      historyMode,
       escola: currentSchoolContext,
       selectedBairroStats,
       summaryMetrics,
-      schoolScoreRange,
-      bairroScoreRange,
       visibleSchoolCount: mapSchools.length,
-      totalSchoolCount: allMapSchools.length || mapSchools.length || 1,
     })
-  ), [allMapSchools.length, bairroScoreRange, currentSchoolContext, mapSchools.length, schoolScoreRange, selectedBairroStats, summaryMetrics])
+  ), [currentSchoolContext, historyMode, mapSchools.length, selectedBairroStats, summaryMetrics])
 
   const selectedMapStyle = mapStyles[mapStyleKey] || mapStyles.cartoLight
   const legendRange = showBairrosLayer ? bairroScoreRange : schoolScoreRange
-  const legendGradient = `linear-gradient(90deg, ${colorScale.start} 0%, ${colorScale.middle} 50%, ${colorScale.end} 100%)`
+  const legendGradient = `linear-gradient(90deg, ${effectiveColorScale.start} 0%, ${effectiveColorScale.middle} 50%, ${effectiveColorScale.end} 100%)`
 
   const bairroDrawerStats = modalContext?.type === 'bairro'
     ? bairroStats[modalContext.bairroKey] || null
@@ -911,15 +962,16 @@ export function Mapa({ onNavigate }) {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="flex h-full min-h-0 flex-col gap-3 overflow-hidden">
       {avisoGlobal ? (
-        <Card className="border-amber-200 bg-amber-50/80">
+        <Card className="shrink-0 border-amber-200 bg-amber-50/80">
           <p className="text-sm font-bold text-amber-900">{avisoGlobal.title}</p>
           <p className="mt-1 text-xs font-semibold text-amber-800/80">{avisoGlobal.detail}</p>
         </Card>
       ) : null}
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="shrink-0">
+        <div className="flex flex-wrap items-center gap-2">
         <div className="w-32">
           <Select
             value={filters.criticidade}
@@ -932,8 +984,8 @@ export function Mapa({ onNavigate }) {
           <Select
             value={filters.status}
             onChange={(value) => setFilter('status', value)}
-            placeholder="Status"
-            options={[{ value: '', label: 'Status' }, ...statusOptions]}
+            placeholder="Todos"
+            options={[{ value: '', label: 'Todos' }, ...statusOptions]}
           />
         </div>
         <div className="w-48">
@@ -958,11 +1010,11 @@ export function Mapa({ onNavigate }) {
           onChange={(event) => setFilter('dataFinal', event.target.value)}
           className="h-10 w-36 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500"
         />
+        </div>
       </div>
 
-      <Card className="relative z-0 overflow-hidden p-0">
-
-        <div className="relative h-[88vh] min-h-105 sm:h-[calc(100vh-8rem)] sm:min-h-100">
+      <Card className="relative z-0 flex flex-1 min-h-0 overflow-hidden p-0">
+        <div className="relative flex-1 min-h-0 overflow-hidden">
           <MetricPanel context={metricContext} drawerAberto={drawerAberto} />
 
           <MapContainer center={mapCenter} zoom={13} scrollWheelZoom zoomControl={false} className="h-full w-full z-0">
@@ -1021,7 +1073,11 @@ export function Mapa({ onNavigate }) {
                     ) : (
                       <div className="space-y-1">
                         <strong>{item.escolaNome}</strong>
-                        <p>{item.totalOcorrencias} ocorrências</p>
+                        <p>{formatOccurrenceQuantity(
+                          item.totalOcorrencias,
+                          occurrenceCopy.markerSummarySingular,
+                          occurrenceCopy.markerSummaryPlural,
+                        )}</p>
                       </div>
                     )}
                   </Tooltip>
@@ -1032,9 +1088,11 @@ export function Mapa({ onNavigate }) {
 
           <MapColorScaleControl
             colorScale={colorScale}
+            isHistoryMode={historyMode}
             isExpanded={isColorScaleExpanded}
             legendGradient={legendGradient}
             legendRange={legendRange}
+            label={occurrenceCopy.colorScaleLabel}
             onChangeScale={setColorScale}
             onToggle={() => setIsColorScaleExpanded((current) => !current)}
           />
@@ -1090,7 +1148,11 @@ export function Mapa({ onNavigate }) {
                   </p>
                   <p className="mt-1 text-[11px] font-semibold text-slate-500">
                     {selectedBairroStats.totalEscolas > 0
-                      ? `${selectedBairroStats.totalEscolas} escola${selectedBairroStats.totalEscolas > 1 ? 's' : ''} com ${selectedBairroStats.totalSolicitacoes} ocorrência${selectedBairroStats.totalSolicitacoes === 1 ? '' : 's'}.`
+                      ? `${selectedBairroStats.totalEscolas} escola${selectedBairroStats.totalEscolas > 1 ? 's' : ''} com ${formatOccurrenceQuantity(
+                        selectedBairroStats.totalSolicitacoes,
+                        occurrenceCopy.markerSummarySingular,
+                        occurrenceCopy.markerSummaryPlural,
+                      )}.`
                       : 'Sem escolas associadas no cadastro atual.'}
                   </p>
                   <button
@@ -1120,7 +1182,9 @@ export function Mapa({ onNavigate }) {
             bairroStats={bairroDrawerStats}
             context={modalContext}
             detalheEscola={detalheEscola || escolaSelecionadaResumo}
+            historyMode={historyMode}
             loadingDetalhe={loadingDetalhe}
+            occurrenceCopy={occurrenceCopy}
             ocorrenciasEscola={ocorrenciasEscola}
             onClose={closeDrawer}
             onOpenSchoolRegistry={openSchoolRegistry}
@@ -1161,12 +1225,12 @@ function MetricCard({ item }) {
   )
 }
 
-function MapColorScaleControl({ colorScale, isExpanded, legendGradient, legendRange, onChangeScale, onToggle }) {
+function MapColorScaleControl({ colorScale, isExpanded, isHistoryMode, label, legendGradient, legendRange, onChangeScale, onToggle }) {
   return (
     <div className={`absolute bottom-4 left-20 z-[650] hidden border border-slate-200 bg-white/95 shadow-md backdrop-blur transition-all sm:block ${isExpanded ? 'w-[280px] rounded-xl p-3 shadow-lg' : 'w-[210px] rounded-lg px-3 py-2'}`}>
       <div className="flex items-center justify-between gap-2">
         <p className="text-[10px] font-bold tracking-wide text-slate-600">
-          Solicitações pendentes
+          {label}
         </p>
         <button
           type="button"
@@ -1179,12 +1243,17 @@ function MapColorScaleControl({ colorScale, isExpanded, legendGradient, legendRa
       </div>
 
       <div className={`${isExpanded ? 'block' : 'hidden'} sm:block`}>
-        {isExpanded ? (
+        {isExpanded && !isHistoryMode ? (
           <div className="mt-3 grid grid-cols-3 gap-2">
             <ColorScaleField label="Início" value={colorScale.start} onChange={(value) => onChangeScale((current) => ({ ...current, start: value }))} />
             <ColorScaleField label="Meio" value={colorScale.middle} onChange={(value) => onChangeScale((current) => ({ ...current, middle: value }))} />
             <ColorScaleField label="Fim" value={colorScale.end} onChange={(value) => onChangeScale((current) => ({ ...current, end: value }))} />
           </div>
+        ) : null}
+        {isExpanded && isHistoryMode ? (
+          <p className="mt-3 text-[11px] font-semibold text-slate-500">
+            O histórico resolvido usa estilo neutro e não entra na intensidade do mapa.
+          </p>
         ) : null}
 
         <div className={`${isExpanded ? 'mt-3' : 'mt-2'} h-3 rounded-full`} style={{ backgroundImage: legendGradient }} />
@@ -1267,7 +1336,9 @@ function MapContextDrawer({
   bairroStats,
   context,
   detalheEscola,
+  historyMode,
   loadingDetalhe,
+  occurrenceCopy,
   ocorrenciasEscola,
   onClose,
   onOpenOcorrencia,
@@ -1297,7 +1368,9 @@ function MapContextDrawer({
             ) : (
               <div className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2">
                 <span className="block truncate text-sm font-bold text-slate-800">{drawerTitle}</span>
-                <span className="mt-1 block text-[11px] font-semibold text-slate-500">Solicitações das escolas do bairro</span>
+                <span className="mt-1 block text-[11px] font-semibold text-slate-500">
+                  {historyMode ? 'Histórico das escolas do bairro' : 'Solicitações das escolas do bairro'}
+                </span>
               </div>
             )}
             <button type="button" onClick={onClose} className="shrink-0 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
@@ -1315,7 +1388,7 @@ function MapContextDrawer({
                 </div>
               ) : bairroOcorrencias.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-semibold text-slate-500">
-                  Nenhuma solicitação encontrada para as escolas deste bairro com os filtros atuais.
+                  {occurrenceCopy.emptyBairroMessage}
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -1341,8 +1414,8 @@ function MapContextDrawer({
               {detalheEscola ? (
                 <div>
                   <div className="mb-3 flex items-center justify-between gap-3">
-                    <h4 className="text-sm font-800 tracking-wide text-slate-500">Solicitações pendentes</h4>
-                    <span className="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-bold text-primary-strong">
+                    <h4 className="text-sm font-800 tracking-wide text-slate-500">{occurrenceCopy.drawerSectionTitle}</h4>
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${historyMode ? 'bg-slate-100 text-slate-700' : 'bg-primary-50 text-primary-strong'}`}>
                       {ocorrenciasEscola.length}
                     </span>
                   </div>
@@ -1356,7 +1429,7 @@ function MapContextDrawer({
                       />
                     )) : (
                       <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-semibold text-slate-500">
-                        Nenhuma ocorrência encontrada para esta escola.
+                        {occurrenceCopy.emptyEscolaMessage}
                       </div>
                     )}
                   </div>
@@ -1381,6 +1454,14 @@ const criticidadeTextStyles = {
 }
 
 function OcorrenciaCriticidadeTag({ ocorrencia }) {
+  if (isResolvedOccurrence(ocorrencia)) {
+    return (
+      <span className="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">
+        Histórico resolvido
+      </span>
+    )
+  }
+
   const key = normalizeOccurrenceCriticidadeKey(ocorrencia.criticidade)
   const label = ocorrencia.criticidadeLabel || ocorrencia.criticidade
 
@@ -1559,11 +1640,41 @@ function MapResizeController({ drawerAberto }) {
   const map = useMap()
 
   useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      map.invalidateSize()
-    }, 180)
+    let frameId = 0
 
-    return () => window.clearTimeout(timeout)
+    const invalidateMapSize = () => {
+      if (frameId) {
+        window.cancelAnimationFrame(frameId)
+      }
+
+      frameId = window.requestAnimationFrame(() => {
+        map.invalidateSize()
+      })
+    }
+
+    const handleWindowResize = () => {
+      invalidateMapSize()
+    }
+
+    invalidateMapSize()
+    window.addEventListener('resize', handleWindowResize)
+
+    const mapContainer = map.getContainer()
+    const resizeObserver = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(() => {
+          invalidateMapSize()
+        })
+      : null
+
+    resizeObserver?.observe(mapContainer)
+
+    return () => {
+      if (frameId) {
+        window.cancelAnimationFrame(frameId)
+      }
+      window.removeEventListener('resize', handleWindowResize)
+      resizeObserver?.disconnect()
+    }
   }, [drawerAberto, map])
 
   return null
