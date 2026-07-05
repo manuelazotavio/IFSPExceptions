@@ -9,6 +9,15 @@ function estaCriticaEmAberto(ocorrencia) {
   return ocorrencia.criticidade === 'Critica' && ocorrencia.status !== 'Resolvida'
 }
 
+function assertOcorrenciaAccess(user, ocorrencia) {
+  if (user.role === 'DIRETOR' && ocorrencia.escolaId !== user.escolaId) {
+    throw new AppError('Voce nao tem permissao para esta ocorrencia', 403)
+  }
+  if (user.role === 'EXTERNO' && ocorrencia.criadoPorEmail !== user.email) {
+    throw new AppError('Voce nao tem permissao para esta ocorrencia', 403)
+  }
+}
+
 const CRITICIDADES = ['Baixa', 'Media', 'Alta', 'Critica']
 const STATUS_VALUES = ['Aberta', 'Em analise', 'Em andamento', 'Aguardando orcamento', 'Aguardando visita tecnica', 'Resolvida']
 
@@ -18,7 +27,7 @@ const criarOcorrenciaSchema = z.object({
   descricao: z.string().trim().default(''),
   tipo: z.string({ message: 'Informe o tipo' }).trim().min(1, 'Informe o tipo'),
   criticidade: z.enum(CRITICIDADES, { message: 'Criticidade invalida' }),
-  localizacaoInterna: z.string({ message: 'Informe a localizacao' }).trim().min(1, 'Informe a localizacao'),
+  localizacaoInterna: z.string().trim().default(''),
   endereco: z.string().trim().optional(),
   dataEnvio: z.string({ message: 'Informe a data de envio' }).trim().min(1, 'Informe a data de envio'),
   criadoPorEmail: z.string({ message: 'Email invalido' }).trim().toLowerCase().email('Email invalido'),
@@ -33,7 +42,7 @@ const atualizarOcorrenciaSchema = z.object({
   tipo: z.string().trim().min(1, 'Informe o tipo').optional(),
   criticidade: z.enum(CRITICIDADES, { message: 'Criticidade invalida' }).optional(),
   status: z.enum(STATUS_VALUES, { message: 'Status invalido' }).optional(),
-  localizacaoInterna: z.string().trim().min(1, 'Informe a localizacao').optional(),
+  localizacaoInterna: z.string().trim().optional(),
   endereco: z.string().trim().optional(),
   dataEnvio: z.string().trim().min(1).optional(),
   dataAprovacao: z.string().nullable().optional(),
@@ -52,18 +61,41 @@ const interacaoSchema = z.object({
 
 export class OcorrenciaController {
   static async getAll(request, response) {
-    const { escolaId, criadoPorEmail } = request.query
-    const lista = await OcorrenciaModel.findAll({ escolaId, criadoPorEmail })
+    const filters = {
+      escolaId: request.query.escolaId,
+      criadoPorEmail: request.query.criadoPorEmail,
+    }
+
+    if (request.user?.role === 'DIRETOR') {
+      filters.escolaId = request.user.escolaId
+      filters.criadoPorEmail = undefined
+    }
+
+    if (request.user?.role === 'EXTERNO') {
+      filters.escolaId = undefined
+      filters.criadoPorEmail = request.user.email
+    }
+
+    const lista = await OcorrenciaModel.findAll(filters)
     return response.json(lista)
   }
 
   static async get(request, response) {
     const ocorrencia = await OcorrenciaModel.findById(request.params.id)
+    if (request.user) assertOcorrenciaAccess(request.user, ocorrencia)
     return response.json(ocorrencia)
   }
 
   static async create(request, response) {
     const payload = parseOrThrow(criarOcorrenciaSchema, request.body)
+
+    if (request.user.role === 'DIRETOR' && payload.escolaId !== request.user.escolaId) {
+      throw new AppError('Voce so pode registrar ocorrencias da sua escola', 403)
+    }
+    if (request.user.role === 'EXTERNO') {
+      payload.criadoPorEmail = request.user.email
+    }
+
     const ocorrencia = await OcorrenciaModel.create(payload)
     await LogAuditoriaModel.registrar({
       acao: 'CRIAR',
@@ -92,6 +124,14 @@ export class OcorrenciaController {
   static async update(request, response) {
     const payload = parseOrThrow(atualizarOcorrenciaSchema, request.body)
     const anterior = await OcorrenciaModel.findById(request.params.id)
+    assertOcorrenciaAccess(request.user, anterior)
+    if (request.user.role === 'EXTERNO') {
+      throw new AppError('Usuarios externos podem apenas comentar na ocorrencia', 403)
+    }
+    if (request.user.role === 'DIRETOR' && payload.escolaId !== undefined && payload.escolaId !== request.user.escolaId) {
+      throw new AppError('Voce so pode mover ocorrencias para a sua escola', 403)
+    }
+
     let ocorrencia = await OcorrenciaModel.update(request.params.id, payload)
     await LogAuditoriaModel.registrar({
       acao: 'ATUALIZAR',
@@ -130,6 +170,12 @@ export class OcorrenciaController {
     const arquivos = request.files || []
     if (arquivos.length === 0) throw new AppError('Envie ao menos uma foto', 422)
 
+    const atual = await OcorrenciaModel.findById(request.params.id)
+    assertOcorrenciaAccess(request.user, atual)
+    if (request.user.role === 'EXTERNO') {
+      throw new AppError('Usuarios externos podem apenas comentar na ocorrencia', 403)
+    }
+
     const baseUrl = `${request.protocol}://${request.get('host')}`
     const urls = arquivos.map((file) => `${baseUrl}/uploads/ocorrencias/${request.params.id}/${file.filename}`)
 
@@ -147,6 +193,9 @@ export class OcorrenciaController {
 
   static async addInteracao(request, response) {
     const payload = parseOrThrow(interacaoSchema, request.body)
+    const atual = await OcorrenciaModel.findById(request.params.id)
+    assertOcorrenciaAccess(request.user, atual)
+
     const ocorrencia = await OcorrenciaModel.addInteracao(request.params.id, payload)
     await LogAuditoriaModel.registrar({
       acao: 'CRIAR',
@@ -172,6 +221,10 @@ export class OcorrenciaController {
 
   static async delete(request, response) {
     const ocorrencia = await OcorrenciaModel.findById(request.params.id)
+    assertOcorrenciaAccess(request.user, ocorrencia)
+    if (request.user.role === 'EXTERNO') {
+      throw new AppError('Usuarios externos podem apenas comentar na ocorrencia', 403)
+    }
     await OcorrenciaModel.delete(request.params.id)
     await LogAuditoriaModel.registrar({
       acao: 'REMOVER',

@@ -108,6 +108,10 @@ export function Ocorrencias({ onNavigate, user }) {
     return () => media.removeEventListener('change', handleChange)
   }, [])
 
+  useEffect(() => {
+    if (isExterno && visualizacao !== 'listagem') setVisualizacao('listagem')
+  }, [isExterno, visualizacao])
+
   const previewsFotos = useMemo(() => novasFotos.map((file) => URL.createObjectURL(file)), [novasFotos])
   const handleFotoInputClick = () => fotoInputRef.current?.click()
   const handleFotoChange = (e) => {
@@ -127,6 +131,12 @@ export function Ocorrencias({ onNavigate, user }) {
   const alterarEscolaNovaOcorrencia = (escolaId) => {
     setNovaOcorrencia((prev) => ({ ...prev, escolaId, localizacaoInterna: '' }))
   }
+  const opcoesVisualizacao = isExterno
+    ? [['listagem', 'Listagem']]
+    : [
+        ['listagem', 'Listagem'],
+        ['kanban', 'Kanban'],
+      ]
 
   const lista = useMemo(() => sortOcorrencias(ocorrencias).filter((item) => {
     if (filters.bairro && item.bairro !== filters.bairro) return false
@@ -140,7 +150,7 @@ export function Ocorrencias({ onNavigate, user }) {
   const totalPaginas = Math.max(1, Math.ceil(lista.length / ITENS_POR_PAGINA))
   const listaPaginada = lista.slice((pagina - 1) * ITENS_POR_PAGINA, pagina * ITENS_POR_PAGINA)
 
-  const formularioValido = novaOcorrencia.escolaId && novaOcorrencia.titulo && novaOcorrencia.tipo && novaOcorrencia.criticidade && novaOcorrencia.localizacaoInterna && novaOcorrencia.descricao && novasFotos.length > 0
+  const formularioValido = novaOcorrencia.escolaId && novaOcorrencia.titulo && novaOcorrencia.tipo && novaOcorrencia.criticidade && novaOcorrencia.descricao && novasFotos.length > 0
 
   const cancelarNovaOcorrencia = () => {
     setNovaOcorrencia(CAMPOS_VAZIOS)
@@ -224,7 +234,7 @@ export function Ocorrencias({ onNavigate, user }) {
 
   const exportarCsv = () => {
     const cabecalho = ['Protocolo', 'Escola', 'Bairro', 'Tipo', 'Criticidade', 'Status', 'Localização', 'Envio']
-    const linhas = lista.map((item) => [item.protocolo, item.escola, formatDisplayLabel(item.bairro), formatDisplayLabel(item.tipo), formatDisplayLabel(item.criticidade), formatDisplayLabel(item.status), formatDisplayLabel(item.localizacaoInterna), item.dataEnvio])
+    const linhas = lista.map((item) => [item.protocolo, item.escola, formatDisplayLabel(item.bairro), formatDisplayLabel(item.tipo), formatDisplayLabel(item.criticidade), formatDisplayLabel(item.status), item.localizacaoInterna ? formatDisplayLabel(item.localizacaoInterna) : 'Não informada', item.dataEnvio])
     const csv = [cabecalho, ...linhas].map((linha) => linha.map((valor) => `"${String(valor).replace(/"/g, '""')}"`).join(',')).join('\n')
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }))
     const link = document.createElement('a')
@@ -281,21 +291,20 @@ export function Ocorrencias({ onNavigate, user }) {
       {carregando && (
         <p className="text-sm font-semibold text-slate-500">Carregando ocorrências...</p>
       )}
-      <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
-        {[
-          ['listagem', 'Listagem'],
-          ['kanban', 'Kanban'],
-        ].map(([valor, label]) => (
-          <button className="cursor-pointer"
-            key={valor}
-            type="button"
-            onClick={() => setVisualizacao(valor)}
-            className={`w-full cursor-pointer rounded-md px-4 py-2 text-sm font-bold transition-colors ${valor === 'kanban' ? 'hidden sm:block' : ''} ${visualizacao === valor ? 'bg-blue-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      {!isExterno ? (
+        <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
+          {opcoesVisualizacao.map(([valor, label]) => (
+            <button
+              key={valor}
+              type="button"
+              onClick={() => setVisualizacao(valor)}
+              className={`w-full cursor-pointer rounded-md px-4 py-2 text-sm font-bold transition-colors ${valor === 'kanban' ? 'hidden sm:block' : ''} ${visualizacao === valor ? 'bg-blue-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      ) : null}
       <div className={`${visualizacao === 'listagem' ? '' : 'hidden'} overflow-hidden rounded-xl border border-slate-200 shadow-sm sm:hidden`}>
         <div className="border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-extrabold tracking-wide text-slate-700">
           Protocolo
@@ -338,7 +347,7 @@ export function Ocorrencias({ onNavigate, user }) {
                     </div>
                     <div>
                       <span className="block text-xs font-bold tracking-wide text-slate-500">Localização:</span>
-                      <span className="block text-slate-700">{formatDisplayLabel(item.localizacaoInterna)}</span>
+                      <span className="block text-slate-700">{item.localizacaoInterna ? formatDisplayLabel(item.localizacaoInterna) : 'Não informada'}</span>
                     </div>
                     <div>
                       <span className="block text-xs font-bold tracking-wide text-slate-500">Dias em aberto:</span>
@@ -387,7 +396,7 @@ export function Ocorrencias({ onNavigate, user }) {
                 <td className="px-4 py-3 text-slate-600">{formatDisplayLabel(item.tipo)}</td>
                 <td className="px-4 py-3">{formatDisplayLabel(item.criticidade)}</td>
                 <td className="px-4 py-3">{formatDisplayLabel(item.status)}</td>
-                <td className="px-4 py-3 text-slate-600">{formatDisplayLabel(item.localizacaoInterna)}</td>
+                <td className="px-4 py-3 text-slate-600">{item.localizacaoInterna ? formatDisplayLabel(item.localizacaoInterna) : 'Não informada'}</td>
                 <td className="px-4 py-3 text-slate-600">{diasEmAberto(item.dataEnvio)}</td>
               </tr>
             ))}
@@ -397,7 +406,7 @@ export function Ocorrencias({ onNavigate, user }) {
       {visualizacao === 'listagem' && (
         <Pagination page={pagina} totalPages={totalPaginas} onPageChange={setPagina} totalItems={lista.length} pageSize={ITENS_POR_PAGINA} />
       )}
-      {visualizacao === 'kanban' && (
+      {visualizacao === 'kanban' && !isExterno && (
         <KanbanOcorrencias lista={lista} onNavigate={onNavigate} onStatusChange={alterarStatusKanban} />
       )}
       <Modal open={modalAberto} onClose={() => setModalAberto(false)} title="Nova ocorrência">
@@ -425,7 +434,7 @@ export function Ocorrencias({ onNavigate, user }) {
             </label>
           </div>
           <label className="block">
-            <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Localização interna <span className="text-red-500">*</span></span>
+            <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Localização interna</span>
             <Select
               value={novaOcorrencia.localizacaoInterna}
               onChange={(value) => setCampo('localizacaoInterna', value)}

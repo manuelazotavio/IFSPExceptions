@@ -42,6 +42,18 @@ const ocorrenciasSeed = [
   ['esc-008', 'Mesa quebrada', 'Mobiliario', 'Media', 'Aguardando orcamento', 'Diretoria', '2026-05-12', true],
   ['esc-005', 'Ocorrencia publica pendente', 'Outros', 'Alta', 'Aberta', 'Portaria', '2026-05-13', false],
 ]
+
+const usuariosExternosSeed = [
+  { email: 'externo@escola.gov.br', nome: 'Usuario Externo', escolaId: 'esc-001' },
+  { email: 'externo.esc-001@escola.gov.br', nome: 'Fernanda Souza', escolaId: 'esc-001' },
+  { email: 'externo.esc-002@escola.gov.br', nome: 'Ricardo Almeida', escolaId: 'esc-002' },
+  { email: 'externo.esc-003@escola.gov.br', nome: 'Juliana Costa', escolaId: 'esc-003' },
+  { email: 'externo.esc-004@escola.gov.br', nome: 'Marcos Pereira', escolaId: 'esc-004' },
+  { email: 'externo.esc-005@escola.gov.br', nome: 'Patricia Lima', escolaId: 'esc-005' },
+  { email: 'externo.esc-006@escola.gov.br', nome: 'Anderson Santos', escolaId: 'esc-006' },
+  { email: 'externo.esc-007@escola.gov.br', nome: 'Camila Rocha', escolaId: 'esc-007' },
+  { email: 'externo.esc-008@escola.gov.br', nome: 'Diego Martins', escolaId: 'esc-008' },
+]
 function addDays(dateStr, days) {
   const date = new Date(`${dateStr}T00:00:00`)
   date.setDate(date.getDate() + days)
@@ -67,7 +79,7 @@ async function main() {
   const usuarios = [
     { email: 'seduc@escola.gov.br', nome: 'João Beserra', role: 'SEDUC', escolaId: null },
     { email: 'diretor@escola.gov.br', nome: 'Diretora Alberto Souza', role: 'DIRETOR', escolaId: 'esc-001' },
-    { email: 'externo@escola.gov.br', nome: 'Usuario Externo', role: 'EXTERNO', escolaId: 'esc-001' },
+    ...usuariosExternosSeed.map((usuario) => ({ ...usuario, role: 'EXTERNO' })),
   ]
 
   for (const usuario of usuarios) {
@@ -85,6 +97,9 @@ async function main() {
 
   for (const [index, [escolaId, titulo, tipo, criticidade, status, localizacaoInterna, dataEnvio, aprovadaPelaEscola]] of ocorrenciasSeed.entries()) {
     const escola = escolasSeed.find((item) => item.id === escolaId)
+    const criador = index % 4 === 0
+      ? usuariosExternosSeed[0]
+      : usuariosExternosSeed.find((usuario) => usuario.escolaId === escolaId) || usuariosExternosSeed[0]
     const dataResolucao = status === 'Resolvida' ? addDays(dataEnvio, 8) : null
 
     const interacoes = [
@@ -114,7 +129,8 @@ async function main() {
         dataAprovacao: new Date(addDays(dataEnvio, 4)),
         dataResolucao: dataResolucao ? new Date(dataResolucao) : null,
         aprovadaPelaEscola,
-        criadoPorEmail: index % 4 === 0 ? 'externo@escola.gov.br' : `externo.${escolaId}@escola.gov.br`,
+        criadoPorEmail: criador.email,
+        criadoPorNome: criador.nome,
         chatPendente: index % 3 === 0,
         fotos: JSON.stringify(['Foto da area', 'Detalhe do problema', 'Contexto da sala']),
         interacoes: { create: interacoes.map((item) => ({ ...item, anexos: '[]' })) },

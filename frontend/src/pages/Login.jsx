@@ -12,8 +12,8 @@ export function Login({ onLogin, onNavigate }) {
     setError('')
     setLoading(true)
     try {
-      const { user } = await login(email, senha)
-      onLogin(user)
+      const { user, token } = await login(email, senha)
+      onLogin(user, token)
     } catch (err) {
       setError(err.message)
     } finally {

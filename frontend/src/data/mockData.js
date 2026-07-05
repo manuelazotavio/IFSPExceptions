@@ -39,7 +39,17 @@ const base = [
   ['occ-025', 'esc-005', 'Ocorrencia publica pendente', 'Outros', 'Alta', 'Aberta', 'Portaria', '2026-05-13', false],
 ]
 
-const nomesSolicitantes = ['Fernanda Souza', 'Ricardo Almeida', 'Juliana Costa', 'Marcos Pereira', 'Patricia Lima', 'Anderson Santos']
+const usuariosExternos = [
+  { email: 'externo@escola.gov.br', nome: 'Usuario Externo', escolaId: 'esc-001' },
+  { email: 'externo.esc-001@escola.gov.br', nome: 'Fernanda Souza', escolaId: 'esc-001' },
+  { email: 'externo.esc-002@escola.gov.br', nome: 'Ricardo Almeida', escolaId: 'esc-002' },
+  { email: 'externo.esc-003@escola.gov.br', nome: 'Juliana Costa', escolaId: 'esc-003' },
+  { email: 'externo.esc-004@escola.gov.br', nome: 'Marcos Pereira', escolaId: 'esc-004' },
+  { email: 'externo.esc-005@escola.gov.br', nome: 'Patricia Lima', escolaId: 'esc-005' },
+  { email: 'externo.esc-006@escola.gov.br', nome: 'Anderson Santos', escolaId: 'esc-006' },
+  { email: 'externo.esc-007@escola.gov.br', nome: 'Camila Rocha', escolaId: 'esc-007' },
+  { email: 'externo.esc-008@escola.gov.br', nome: 'Diego Martins', escolaId: 'esc-008' },
+]
 
 function addDays(dateStr, days) {
   const date = new Date(`${dateStr}T00:00:00`)
@@ -49,6 +59,9 @@ function addDays(dateStr, days) {
 
 export const ocorrencias = base.map(([id, escolaId, titulo, tipo, criticidade, status, localizacaoInterna, dataEnvio, aprovadaPelaEscola], index) => {
   const escola = escolas.find((item) => item.id === escolaId)
+  const criador = index % 4 === 0
+    ? usuariosExternos[0]
+    : usuariosExternos.find((usuario) => usuario.escolaId === escolaId) || usuariosExternos[0]
   const dataResolucao = status === 'Resolvida' ? addDays(dataEnvio, 8) : ''
 
   const interacoes = [
@@ -81,8 +94,8 @@ export const ocorrencias = base.map(([id, escolaId, titulo, tipo, criticidade, s
     ultimaAtualizacao: `2026-05-${String(15 + (index % 8)).padStart(2, '0')}`,
     dataResolucao,
     aprovadaPelaEscola,
-    criadoPorEmail: index % 4 === 0 ? 'externo@escola.gov.br' : `externo.${escolaId}@escola.gov.br`,
-    criadoPorNome: nomesSolicitantes[index % nomesSolicitantes.length],
+    criadoPorEmail: criador.email,
+    criadoPorNome: criador.nome,
     chatPendente: index % 3 === 0,
     fotos: ['Foto da area', 'Detalhe do problema', 'Contexto da sala'],
     interacoes,
@@ -146,5 +159,5 @@ export const usuarios = [
   { nome: 'Carlos Henrique', email: 'carlos.henrique@seduc.gov.br', role: 'SEDUC', escolaId: null, status: 'Ativo', ultimoAcesso: 'Ontem, 17:42' },
   { nome: 'Marina Souza', email: 'marina.souza@escola.gov.br', role: 'DIRETOR', escolaId: 'esc-001', status: 'Ativo', ultimoAcesso: '02/07/2026' },
   { nome: 'Rafael Lima', email: 'rafael.lima@escola.gov.br', role: 'DIRETOR', escolaId: 'esc-002', status: 'Inativo', ultimoAcesso: '18/06/2026' },
-  { nome: 'Julia Ferreira', email: 'julia.ferreira@escola.gov.br', role: 'EXTERNO', escolaId: null, status: 'Ativo', ultimoAcesso: '01/07/2026' },
+  ...usuariosExternos.map((usuario) => ({ ...usuario, role: 'EXTERNO', status: 'Ativo', ultimoAcesso: '01/07/2026' })),
 ]
