@@ -93,7 +93,33 @@ export function atualizarOcorrencia(id, payload) {
 }
 
 export function adicionarInteracao(id, payload) {
+  if (payload.anexosArquivos?.length) {
+    const formData = new FormData()
+    formData.append('origem', payload.origem)
+    formData.append('autor', payload.autor)
+    formData.append('mensagem', payload.mensagem || '')
+    if (payload.status) formData.append('status', payload.status)
+    payload.anexosArquivos.forEach((arquivo) => formData.append('anexos', arquivo))
+    return requestFormData(`/ocorrencias/${id}/interacoes`, formData)
+  }
+
   return request(`/ocorrencias/${id}/interacoes`, { method: 'POST', body: JSON.stringify(payload) })
+}
+
+async function requestFormData(path, formData) {
+  const response = await fetch(`${API_URL}${path}`, {
+    method: 'POST',
+    body: formData,
+    headers: authHeaders(),
+  })
+
+  if (response.status === 401 && !path.startsWith('/auth/')) {
+    handleSessaoExpirada()
+  }
+
+  const data = await response.json().catch(() => null)
+  if (!response.ok) throw new Error(data?.message || 'Erro inesperado')
+  return data
 }
 
 export async function uploadFotosOcorrencia(id, arquivos) {

@@ -20,6 +20,11 @@ export const upload = multer({
   storage,
   limits: { fileSize: 8 * 1024 * 1024 },
   fileFilter: (_request, file, callback) => {
-    callback(null, file.mimetype.startsWith('image/'))
+    if (file.fieldname === 'fotos') {
+      callback(null, file.mimetype.startsWith('image/'))
+      return
+    }
+
+    callback(null, true)
   },
 })
