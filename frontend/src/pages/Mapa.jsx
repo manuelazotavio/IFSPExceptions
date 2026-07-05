@@ -4,7 +4,7 @@ import 'leaflet/dist/leaflet.css'
 import { MapContainer, Marker, TileLayer, Tooltip, useMap, useMapEvents } from 'react-leaflet'
 import { CaraguatatubaBairrosLayer, bairroStyleDefaults } from '../components/CaraguatatubaBairrosLayer.jsx'
 import { CaraguatatubaBoundary } from '../components/Mapa_com_boundary.jsx'
-import { Card, FilterSelect, Select } from '../components/ui.jsx'
+import { Card, Select } from '../components/ui.jsx'
 import { getEscolaOcorrenciasFallback, loadMapOccurrences } from '../services/mapa.js'
 import { getAllSchools, loadSchoolCatalog } from '../utils/schools.js'
 import {
@@ -911,7 +911,7 @@ export function Mapa({ onNavigate }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {avisoGlobal ? (
         <Card className="border-amber-200 bg-amber-50/80">
           <p className="text-sm font-bold text-amber-900">{avisoGlobal.title}</p>
@@ -919,27 +919,50 @@ export function Mapa({ onNavigate }) {
         </Card>
       ) : null}
 
-      <Card className="relative z-[3000] overflow-visible">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          <FilterSelect label="Criticidade" value={filters.criticidade} onChange={(value) => setFilter('criticidade', value)} options={criticidadeOptions} />
-          <FilterSelect label="Status" value={filters.status} onChange={(value) => setFilter('status', value)} options={statusOptions} />
-          <label className="block">
-            <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Escola</span>
-            <Select
-              value={filters.escolaId}
-              onChange={handleEscolaFilterChange}
-              placeholder="Todas"
-              options={[{ value: '', label: 'Todas' }, ...schoolOptions]}
-            />
-          </label>
-          <DateFilter label="Data inicial" value={filters.dataInicial} onChange={(value) => setFilter('dataInicial', value)} />
-          <DateFilter label="Data final" value={filters.dataFinal} onChange={(value) => setFilter('dataFinal', value)} />
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="w-32">
+          <Select
+            value={filters.criticidade}
+            onChange={(value) => setFilter('criticidade', value)}
+            placeholder="Criticidade"
+            options={[{ value: '', label: 'Criticidade' }, ...criticidadeOptions]}
+          />
         </div>
-      </Card>
+        <div className="w-32">
+          <Select
+            value={filters.status}
+            onChange={(value) => setFilter('status', value)}
+            placeholder="Status"
+            options={[{ value: '', label: 'Status' }, ...statusOptions]}
+          />
+        </div>
+        <div className="w-48">
+          <Select
+            value={filters.escolaId}
+            onChange={handleEscolaFilterChange}
+            placeholder="Escola"
+            options={[{ value: '', label: 'Escola' }, ...schoolOptions]}
+          />
+        </div>
+        <input
+          type="date"
+          aria-label="Data inicial"
+          value={filters.dataInicial}
+          onChange={(event) => setFilter('dataInicial', event.target.value)}
+          className="h-10 w-36 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500"
+        />
+        <input
+          type="date"
+          aria-label="Data final"
+          value={filters.dataFinal}
+          onChange={(event) => setFilter('dataFinal', event.target.value)}
+          className="h-10 w-36 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500"
+        />
+      </div>
 
       <Card className="relative z-0 overflow-hidden p-0">
 
-        <div className="relative h-[70vh] min-h-105 sm:h-[calc(100vh-16rem)] sm:min-h-140">
+        <div className="relative h-[88vh] min-h-105 sm:h-[calc(100vh-8rem)] sm:min-h-100">
           <MetricPanel context={metricContext} drawerAberto={drawerAberto} />
 
           <MapContainer center={mapCenter} zoom={13} scrollWheelZoom zoomControl={false} className="h-full w-full z-0">
@@ -1202,14 +1225,6 @@ function ColorScaleField({ label, value, onChange }) {
   )
 }
 
-function DateFilter({ label, value, onChange }) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">{label}</span>
-      <input type="date" value={value} onChange={(event) => onChange(event.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500" />
-    </label>
-  )
-}
 
 function BairroLabelsLayer({ entries, bairroStats, currentZoom, selectedBairro }) {
   return entries.map((entry) => {
