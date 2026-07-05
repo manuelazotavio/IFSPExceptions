@@ -17,17 +17,33 @@ export function normalizeName(value) {
     .toLowerCase()
 }
 
+function pickBairroDisplayName(featureOrEntry) {
+  const props = featureOrEntry?.feature?.properties || featureOrEntry?.properties || featureOrEntry || {}
+  const candidates = [
+    featureOrEntry?.nome,
+    featureOrEntry?.name,
+    props.nome,
+    props.NOME,
+    props.bairro,
+    props.BAIRRO,
+    props.name,
+    props.Name,
+    props.NM_BAIRRO,
+    props.nm_bairro,
+    props.nome_bairro,
+    props.nome_bairr,
+  ]
+
+  const match = candidates.find((value) => String(value || '').trim())
+  return match ? String(match).trim() : ''
+}
+
+export function getBairroDisplayName(featureOrEntry) {
+  return pickBairroDisplayName(featureOrEntry) || 'Bairro sem nome'
+}
+
 export function getBairroName(feature) {
-  return feature?.properties?.NM_BAIRRO
-    || feature?.properties?.nome_bairro
-    || feature?.properties?.nome_bairr
-    || feature?.properties?.NOME
-    || feature?.properties?.bairro
-    || feature?.properties?.BAIRRO
-    || feature?.properties?.nome
-    || feature?.properties?.name
-    || feature?.properties?.Name
-    || 'Bairro sem nome'
+  return getBairroDisplayName(feature)
 }
 
 export function getBairroKey(feature) {
@@ -322,15 +338,34 @@ export function buildFeatureEntries(bairrosGeoJson) {
   return bairrosGeoJson.features
     .filter((feature) => ['Polygon', 'MultiPolygon'].includes(feature?.geometry?.type))
     .map((feature) => {
+      const bairroName = getBairroDisplayName(feature)
       const representativePoint = getRepresentativePoint(feature)
       const coordinateBounds = getCoordinateBounds(feature?.geometry?.coordinates)
       const boundsWidth = coordinateBounds ? coordinateBounds.maxLongitude - coordinateBounds.minLongitude : 0
       const boundsHeight = coordinateBounds ? coordinateBounds.maxLatitude - coordinateBounds.minLatitude : 0
+      const bounds = coordinateBounds ? {
+        northWest: [coordinateBounds.maxLatitude, coordinateBounds.minLongitude],
+        southEast: [coordinateBounds.minLatitude, coordinateBounds.maxLongitude],
+        center: [
+          (coordinateBounds.minLatitude + coordinateBounds.maxLatitude) / 2,
+          (coordinateBounds.minLongitude + coordinateBounds.maxLongitude) / 2,
+        ],
+      } : null
+      const labelPosition = representativePoint
+        ? [representativePoint[1], representativePoint[0]]
+        : bounds?.center || null
+
+      if (import.meta.env.DEV && bairroName === 'Bairro sem nome') {
+        console.warn('[Mapa] Feature de bairro sem nome identificavel no GeoJSON.', feature?.properties || feature)
+      }
+
       return {
         key: getBairroKey(feature),
-        name: getBairroName(feature),
+        nome: bairroName,
+        name: bairroName,
         feature,
-        labelPosition: representativePoint ? [representativePoint[1], representativePoint[0]] : null,
+        labelPosition,
+        bounds,
         labelBounds: coordinateBounds ? {
           width: boundsWidth,
           height: boundsHeight,
@@ -339,6 +374,7 @@ export function buildFeatureEntries(bairrosGeoJson) {
           maxLongitude: coordinateBounds.maxLongitude,
           minLatitude: coordinateBounds.minLatitude,
           maxLatitude: coordinateBounds.maxLatitude,
+          bounds,
         } : null,
       }
     })
@@ -378,7 +414,7 @@ export function buildSchoolBairroIndex({ schools, featureEntries }) {
 export function buildBairroStats({ featureEntries, schools, schoolBairroIndex, colorScale }) {
   const bairroStats = Object.fromEntries(
     featureEntries.map((entry) => [entry.key, {
-      nome: entry.name,
+      nome: entry.nome || entry.name,
       key: entry.key,
       labelPosition: entry.labelPosition,
       totalEscolas: 0,
