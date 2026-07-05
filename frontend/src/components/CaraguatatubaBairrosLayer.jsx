@@ -7,11 +7,13 @@ function hasValidBoundaryGeometry(feature) {
 
 function getFeatureKey(feature) {
   return String(
-    feature?.properties?.nome_bairro
+    feature?.properties?.NM_BAIRRO
+    || feature?.properties?.nome_bairro
     || feature?.properties?.nome_bairr
     || feature?.properties?.nome
+    || feature?.properties?.name
     || feature?.properties?.id
-    || '',
+    || 'bairro-sem-nome',
   )
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
