@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { diasEmAberto, sortOcorrencias } from '../utils/metrics.js'
-import { isCustomSchool, loadCustomSchools, removeCustomSchool } from '../utils/schools.js'
-import { listarOcorrencias, obterEscola } from '../services/api.js'
-import { Badge, Card, MetricCard, Modal } from '../components/ui.jsx'
+import { isCustomSchool, loadCustomSchoolById, removeCustomSchool, saveCustomSchool } from '../utils/schools.js'
+import { atualizarEscola, listarOcorrencias, obterEscola } from '../services/api.js'
+import { Badge, Card, MetricCard, Modal, Toast } from '../components/ui.jsx'
 import { Icon } from '../components/Icons.jsx'
 import { SchoolLocationMap } from '../components/SchoolLocationMap.jsx'
 import { formatDisplayLabel } from '../utils/labels.js'
@@ -15,6 +15,11 @@ export function EscolaDetalhe({ id, onNavigate }) {
   const [escola, setEscola] = useState(null)
   const [loadingEscola, setLoadingEscola] = useState(true)
   const [erroEscola, setErroEscola] = useState('')
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [savingEdit, setSavingEdit] = useState(false)
+  const [editForm, setEditForm] = useState(createEmptyEditForm())
+  const [novoComodo, setNovoComodo] = useState({ nome: '', codigo: '' })
+  const [toast, setToast] = useState(null)
   const canDeleteSchool = isCustomSchool(escola?.id)
   const salas = useMemo(() => getSchoolRooms(escola), [escola])
   const fotosEscola = useMemo(() => {
@@ -87,7 +92,7 @@ export function EscolaDetalhe({ id, onNavigate }) {
 
       try {
         const dados = await obterEscola(id)
-        const complementoLocal = loadCustomSchools().find((item) => item.id === dados.id)
+        const complementoLocal = await loadCustomSchoolById(dados.id)
         if (active) setEscola(formatSchoolDetailData(dados, complementoLocal))
       } catch (error) {
         if (active) {
@@ -139,14 +144,125 @@ export function EscolaDetalhe({ id, onNavigate }) {
     printWindow.document.close()
   }
 
-  function handleDeleteSchool() {
+  async function handleDeleteSchool() {
     if (!canDeleteSchool) return
 
     const shouldDelete = window.confirm(`Deseja excluir a escola "${escola.nome}"? Esta acao remove o cadastro salvo no front.`)
     if (!shouldDelete) return
 
-    removeCustomSchool(escola.id)
+    await removeCustomSchool(escola.id)
     onNavigate('/escolas')
+  }
+
+  function openEditModal() {
+    if (!escola) return
+    setEditForm(createEditForm(escola))
+    setNovoComodo({ nome: '', codigo: '' })
+    setEditModalOpen(true)
+  }
+
+  function updateEditForm(key, value) {
+    setEditForm((prev) => ({ ...prev, [key]: value }))
+  }
+
+  async function handleEditPhotosSelected(event) {
+    const files = Array.from(event.target.files || [])
+    if (!files.length) return
+
+    const nextPhotos = await Promise.all(files.map(readPhotoFile))
+    setEditForm((prev) => ({
+      ...prev,
+      fotos: [...prev.fotos, ...nextPhotos],
+    }))
+    event.target.value = ''
+  }
+
+  function removeEditPhoto(photoIndex) {
+    setEditForm((prev) => ({
+      ...prev,
+      fotos: prev.fotos.filter((_, index) => index !== photoIndex),
+    }))
+  }
+
+  function addEditComodo() {
+    const nome = novoComodo.nome.trim()
+    const codigo = novoComodo.codigo.trim()
+    if (!nome || !codigo) return
+
+    setEditForm((prev) => {
+      const duplicated = prev.comodos.some((item) => (
+        normalizeRoomValue(getRoomName(item)) === normalizeRoomValue(nome)
+        && normalizeRoomValue(getRoomCode(item)) === normalizeRoomValue(codigo)
+      ))
+      if (duplicated) return prev
+
+      return {
+        ...prev,
+        comodos: [...prev.comodos, { nome, codigo }],
+      }
+    })
+    setNovoComodo({ nome: '', codigo: '' })
+  }
+
+  function removeEditComodo(comodo) {
+    setEditForm((prev) => ({
+      ...prev,
+      comodos: prev.comodos.filter((item) => getRoomKey(item) !== getRoomKey(comodo)),
+    }))
+  }
+
+  async function handleSaveSchoolEdit(event) {
+    event.preventDefault()
+    if (!escola) return
+
+    setSavingEdit(true)
+
+    const normalized = normalizeEditedSchool(editForm, escola)
+    const localPayload = {
+      ...escola,
+      ...normalized,
+      fotoNome: normalized.fotos[0]?.nome || '',
+      fotoUrl: normalized.fotos[0]?.url || '',
+      fotos: normalized.fotos,
+      comodos: normalized.comodos,
+    }
+
+    try {
+      let baseSchool = escola
+
+      if (!isCustomSchool(escola.id)) {
+        try {
+          baseSchool = await atualizarEscola(escola.id, {
+            nome: normalized.nome,
+            bairro: normalized.bairro,
+            endereco: normalized.endereco,
+            latitude: normalized.latitude,
+            longitude: normalized.longitude,
+            comodos: normalized.comodos,
+          })
+        } catch (error) {
+          setToast({
+            type: 'info',
+            title: 'Edicao salva neste navegador',
+            message: error.message || 'Os dados principais nao puderam ser sincronizados agora.',
+          })
+        }
+      }
+
+      const savedLocalList = await saveCustomSchool(localPayload)
+      const localSchool = savedLocalList.find((item) => item.id === escola.id) || localPayload
+      const nextSchool = formatSchoolDetailData(baseSchool, localSchool)
+
+      setEscola(nextSchool)
+      setEditModalOpen(false)
+      setToast((current) => current || {
+        type: 'success',
+        title: 'Escola atualizada',
+        message: 'Os dados da escola foram atualizados.',
+      })
+    } finally {
+      setSavingEdit(false)
+    }
   }
 
   return (
@@ -173,6 +289,14 @@ export function EscolaDetalhe({ id, onNavigate }) {
             Voltar
           </button>
           <div className="ml-auto flex flex-wrap gap-2">
+            <button
+              onClick={openEditModal}
+              disabled={!escola}
+              className="flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Icon name="settings" className="h-4 w-4" />
+              Editar escola
+            </button>
             <button
               onClick={() => setLocationModalOpen(true)}
               disabled={!escola}
@@ -322,6 +446,103 @@ export function EscolaDetalhe({ id, onNavigate }) {
           </div>
         </div>
       )}
+
+      <Modal open={editModalOpen} onClose={() => setEditModalOpen(false)} title="Editar escola">
+        <form onSubmit={handleSaveSchoolEdit} className="space-y-4">
+          <label className="block">
+            <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Nome</span>
+            <input value={editForm.nome} onChange={(event) => updateEditForm('nome', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500" />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">CEP</span>
+            <input value={editForm.cep} onChange={(event) => updateEditForm('cep', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500" placeholder="00000-000" />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Bairro</span>
+            <input value={editForm.bairro} onChange={(event) => updateEditForm('bairro', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500" />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Endereco</span>
+            <input value={editForm.endereco} onChange={(event) => updateEditForm('endereco', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500" />
+          </label>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Latitude</span>
+              <input value={editForm.latitude} onChange={(event) => updateEditForm('latitude', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500" />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Longitude</span>
+              <input value={editForm.longitude} onChange={(event) => updateEditForm('longitude', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500" />
+            </label>
+          </div>
+          <label className="block">
+            <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Descricao</span>
+            <textarea value={editForm.descricao} onChange={(event) => updateEditForm('descricao', event.target.value)} className="min-h-24 w-full rounded-md border border-slate-200 bg-white p-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500" />
+          </label>
+
+          <div className="space-y-3">
+            <div>
+              <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Fotos</span>
+              <input type="file" accept="image/*" multiple onChange={handleEditPhotosSelected} className="block w-full text-sm font-semibold text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-bold file:text-slate-700 hover:file:bg-slate-200" />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {editForm.fotos.map((foto, index) => (
+                <div key={`${foto.nome}-${index}`} className="overflow-hidden rounded-md border border-slate-200">
+                  <img src={foto.url} alt={foto.nome || `Foto ${index + 1}`} className="h-28 w-full object-cover" />
+                  <div className="flex items-center justify-between gap-2 px-3 py-2">
+                    <span className="truncate text-xs font-bold text-slate-700">{foto.nome || `Foto ${index + 1}`}</span>
+                    <button type="button" onClick={() => removeEditPhoto(index)} className="cursor-pointer rounded-md border border-slate-200 px-2 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-50">
+                      Remover
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Comodos</span>
+              <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_140px_auto]">
+                <input
+                  value={novoComodo.nome}
+                  onChange={(event) => setNovoComodo((prev) => ({ ...prev, nome: event.target.value }))}
+                  className="h-11 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
+                  placeholder="Nome do comodo"
+                />
+                <input
+                  value={novoComodo.codigo}
+                  onChange={(event) => setNovoComodo((prev) => ({ ...prev, codigo: event.target.value }))}
+                  className="h-11 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
+                  placeholder="Codigo"
+                />
+                <button type="button" onClick={addEditComodo} className="cursor-pointer rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
+                  Adicionar
+                </button>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {editForm.comodos.map((comodo) => (
+                <button key={getRoomKey(comodo)} type="button" onClick={() => removeEditComodo(comodo)} className="cursor-pointer rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-700 hover:bg-slate-100">
+                  {formatRoomLabel(comodo)} x
+                </button>
+              ))}
+              {!editForm.comodos.length ? <p className="text-xs font-semibold text-slate-500">Nenhum comodo cadastrado.</p> : null}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button type="button" onClick={() => setEditModalOpen(false)} className="cursor-pointer rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
+              Cancelar
+            </button>
+            <button type="submit" disabled={savingEdit} className="cursor-pointer rounded-md bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-strong disabled:cursor-wait disabled:opacity-60">
+              {savingEdit ? 'Salvando...' : 'Salvar alteracoes'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      <Toast toast={toast} onClose={() => setToast(null)} />
     </>
   )
 }
@@ -331,6 +552,7 @@ function formatSchoolDetailData(escolaApi, complementoLocal) {
 
   return {
     ...escolaApi,
+    cep: local.cep || escolaApi.cep || '',
     status: local.status || escolaApi.status || 'Ativo',
     dataCadastro: escolaApi.dataCadastro || escolaApi.criadoEm?.slice(0, 10) || local.dataCadastro || '',
     descricao: local.descricao || escolaApi.descricao || '',
@@ -345,6 +567,76 @@ function formatSchoolDetailData(escolaApi, complementoLocal) {
     x: local.x || escolaApi.x,
     y: local.y || escolaApi.y,
   }
+}
+
+function createEmptyEditForm() {
+  return {
+    nome: '',
+    cep: '',
+    bairro: '',
+    endereco: '',
+    latitude: '',
+    longitude: '',
+    descricao: '',
+    fotos: [],
+    comodos: [],
+  }
+}
+
+function createEditForm(escola) {
+  const fotos = Array.isArray(escola?.fotos) && escola.fotos.length
+    ? escola.fotos.map((foto) => ({ nome: foto.nome || 'Foto cadastrada', url: foto.url || '' })).filter((foto) => foto.url)
+    : escola?.fotoUrl
+      ? [{ nome: escola.fotoNome || 'Foto cadastrada', url: escola.fotoUrl }]
+      : []
+
+  return {
+    nome: escola?.nome || '',
+    cep: escola?.cep || '',
+    bairro: escola?.bairro || '',
+    endereco: escola?.endereco || '',
+    latitude: escola?.latitude ?? '',
+    longitude: escola?.longitude ?? '',
+    descricao: escola?.descricao || '',
+    fotos,
+    comodos: Array.isArray(escola?.comodos)
+      ? escola.comodos.map((comodo) => ({ nome: getRoomName(comodo), codigo: getRoomCode(comodo) }))
+      : [],
+  }
+}
+
+function normalizeEditedSchool(form, escola) {
+  return {
+    id: escola.id,
+    nome: String(form.nome || '').trim(),
+    cep: String(form.cep || '').trim(),
+    bairro: String(form.bairro || '').trim(),
+    endereco: String(form.endereco || '').trim(),
+    latitude: Number(form.latitude),
+    longitude: Number(form.longitude),
+    descricao: String(form.descricao || '').trim(),
+    fotos: Array.isArray(form.fotos) ? form.fotos.filter((foto) => foto?.url) : [],
+    comodos: Array.isArray(form.comodos)
+      ? form.comodos
+        .map((comodo) => ({
+          nome: String(getRoomName(comodo) || '').trim(),
+          codigo: String(getRoomCode(comodo) || '').trim(),
+        }))
+        .filter((comodo) => comodo.nome && comodo.codigo)
+      : [],
+  }
+}
+
+function readPhotoFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve({
+      nome: file.name,
+      url: typeof reader.result === 'string' ? reader.result : '',
+    })
+    reader.onerror = () => reject(new Error(`Nao foi possivel ler o arquivo ${file.name}.`))
+    reader.readAsDataURL(file)
+  })
 }
 
 function getRoomCategory(sala) {
@@ -918,6 +1210,10 @@ function normalizeRoomText(value) {
   return String(value || '').trim().toLowerCase()
 }
 
+function normalizeRoomValue(value) {
+  return String(value || '').trim().toLowerCase()
+}
+
 function formatCoordinate(value) {
   return Number.isFinite(Number(value)) ? Number(value).toFixed(6) : 'Não informada'
 }
@@ -930,3 +1226,4 @@ function escapeHtml(value) {
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;')
 }
+
