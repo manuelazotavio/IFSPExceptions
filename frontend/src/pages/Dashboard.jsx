@@ -246,7 +246,7 @@ export function Dashboard({ onNavigate, user }) {
               type="date"
               value={filtros.dataInicial}
               onChange={(event) => setFiltros((prev) => ({ ...prev, dataInicial: event.target.value }))}
-              className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
+              className="h-10 w-[90%] rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
             />
           </label>
           <label className="block">
@@ -255,7 +255,7 @@ export function Dashboard({ onNavigate, user }) {
               type="date"
               value={filtros.dataFinal}
               onChange={(event) => setFiltros((prev) => ({ ...prev, dataFinal: event.target.value }))}
-              className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
+              className="h-10 w-[90%] rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
             />
           </label>
         </div>
