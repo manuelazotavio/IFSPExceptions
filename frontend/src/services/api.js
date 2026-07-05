@@ -77,3 +77,13 @@ export function atualizarOcorrencia(id, payload) {
 export function adicionarInteracao(id, payload) {
   return request(`/ocorrencias/${id}/interacoes`, { method: 'POST', body: JSON.stringify(payload) })
 }
+
+export async function uploadFotosOcorrencia(id, arquivos) {
+  const formData = new FormData()
+  arquivos.forEach((arquivo) => formData.append('fotos', arquivo))
+
+  const response = await fetch(`${API_URL}/ocorrencias/${id}/fotos`, { method: 'POST', body: formData })
+  const data = await response.json().catch(() => null)
+  if (!response.ok) throw new Error(data?.message || 'Erro inesperado')
+  return data
+}

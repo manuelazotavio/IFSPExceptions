@@ -1,5 +1,7 @@
 import { z } from 'zod'
 import { OcorrenciaModel } from '../models/OcorrenciaModel.js'
+import { LogAuditoriaModel } from '../models/LogAuditoriaModel.js'
+import { AppError } from '../utils/AppError.js'
 import { parseOrThrow } from '../utils/validate.js'
 
 const CRITICIDADES = ['Baixa', 'Media', 'Alta', 'Critica']
@@ -58,23 +60,75 @@ export class OcorrenciaController {
   static async create(request, response) {
     const payload = parseOrThrow(criarOcorrenciaSchema, request.body)
     const ocorrencia = await OcorrenciaModel.create(payload)
+    await LogAuditoriaModel.registrar({
+      acao: 'CRIAR',
+      entidade: 'Ocorrencia',
+      entidadeId: ocorrencia.id,
+      descricao: `Ocorrencia ${ocorrencia.protocolo} "${ocorrencia.titulo}" criada`,
+      escolaId: ocorrencia.escolaId,
+      actor: request.actor,
+    })
     return response.status(201).json(ocorrencia)
   }
 
   static async update(request, response) {
     const payload = parseOrThrow(atualizarOcorrenciaSchema, request.body)
     const ocorrencia = await OcorrenciaModel.update(request.params.id, payload)
+    await LogAuditoriaModel.registrar({
+      acao: 'ATUALIZAR',
+      entidade: 'Ocorrencia',
+      entidadeId: ocorrencia.id,
+      descricao: `Ocorrencia ${ocorrencia.protocolo} atualizada (status: ${ocorrencia.status}, criticidade: ${ocorrencia.criticidade})`,
+      escolaId: ocorrencia.escolaId,
+      actor: request.actor,
+    })
     return response.json(ocorrencia)
+  }
+
+  static async uploadFotos(request, response) {
+    const arquivos = request.files || []
+    if (arquivos.length === 0) throw new AppError('Envie ao menos uma foto', 422)
+
+    const baseUrl = `${request.protocol}://${request.get('host')}`
+    const urls = arquivos.map((file) => `${baseUrl}/uploads/ocorrencias/${request.params.id}/${file.filename}`)
+
+    const ocorrencia = await OcorrenciaModel.addFotos(request.params.id, urls)
+    await LogAuditoriaModel.registrar({
+      acao: 'ATUALIZAR',
+      entidade: 'Ocorrencia',
+      entidadeId: ocorrencia.id,
+      descricao: `${urls.length} foto(s) adicionada(s) na ocorrencia ${ocorrencia.protocolo}`,
+      escolaId: ocorrencia.escolaId,
+      actor: request.actor,
+    })
+    return response.status(201).json(ocorrencia)
   }
 
   static async addInteracao(request, response) {
     const payload = parseOrThrow(interacaoSchema, request.body)
     const ocorrencia = await OcorrenciaModel.addInteracao(request.params.id, payload)
+    await LogAuditoriaModel.registrar({
+      acao: 'CRIAR',
+      entidade: 'Interacao',
+      entidadeId: ocorrencia.id,
+      descricao: `Mensagem registrada na ocorrencia ${ocorrencia.protocolo} por ${payload.autor}`,
+      escolaId: ocorrencia.escolaId,
+      actor: request.actor,
+    })
     return response.status(201).json(ocorrencia)
   }
 
   static async delete(request, response) {
+    const ocorrencia = await OcorrenciaModel.findById(request.params.id)
     await OcorrenciaModel.delete(request.params.id)
+    await LogAuditoriaModel.registrar({
+      acao: 'REMOVER',
+      entidade: 'Ocorrencia',
+      entidadeId: ocorrencia.id,
+      descricao: `Ocorrencia ${ocorrencia.protocolo} removida`,
+      escolaId: ocorrencia.escolaId,
+      actor: request.actor,
+    })
     return response.status(204).send()
   }
 }

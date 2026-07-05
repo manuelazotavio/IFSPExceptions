@@ -4,7 +4,7 @@ import { diasEmAberto, sortOcorrencias } from '../utils/metrics.js'
 import { Badge, Card, FilterSelect, Modal } from '../components/ui.jsx'
 import { Pagination } from '../components/Pagination.jsx'
 import { Icon } from '../components/Icons.jsx'
-import { criarOcorrencia, listarEscolas, listarOcorrencias } from '../services/api.js'
+import { criarOcorrencia, listarEscolas, listarOcorrencias, uploadFotosOcorrencia } from '../services/api.js'
 
 const CAMPOS_VAZIOS = { escolaId: '', titulo: '', tipo: '', criticidade: '', localizacaoInterna: '', descricao: '' }
 const ITENS_POR_PAGINA = 10
@@ -14,15 +14,6 @@ const COR_LINHA_CRITICIDADE = {
   Alta: 'bg-orange-500/15 hover:bg-orange-500/25',
   Media: 'bg-amber-400/15 hover:bg-amber-400/25',
   Baixa: 'bg-emerald-500/15 hover:bg-emerald-500/25',
-}
-
-function lerComoDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result)
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
 }
 
 export function Ocorrencias({ onNavigate, user }) {
@@ -116,9 +107,8 @@ export function Ocorrencias({ onNavigate, user }) {
     setSalvandoOcorrencia(true)
 
     try {
-      const fotos = await Promise.all(novasFotos.map(lerComoDataUrl))
       const dataEnvio = new Date().toISOString().slice(0, 10)
-      const ocorrenciaCriada = await criarOcorrencia({
+      let ocorrenciaCriada = await criarOcorrencia({
         escolaId: novaOcorrencia.escolaId,
         titulo: novaOcorrencia.titulo,
         descricao: novaOcorrencia.descricao,
@@ -128,8 +118,10 @@ export function Ocorrencias({ onNavigate, user }) {
         dataEnvio,
         criadoPorEmail: user?.email || '',
         criadoPorNome: user?.nome || '',
-        fotos,
       })
+      if (novasFotos.length > 0) {
+        ocorrenciaCriada = await uploadFotosOcorrencia(ocorrenciaCriada.id, novasFotos)
+      }
       setOcorrencias((prev) => [ocorrenciaCriada, ...prev])
       setNovaOcorrencia(CAMPOS_VAZIOS)
       setNovasFotos([])

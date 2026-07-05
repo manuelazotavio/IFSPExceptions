@@ -24,6 +24,7 @@ model Escola {
 
   usuarios    User[]
   ocorrencias Ocorrencia[]
+  logs        LogAuditoria[]
 }
 
 model User {
@@ -76,4 +77,18 @@ model Interacao {
 
   ocorrenciaId String
   ocorrencia   Ocorrencia @relation(fields: [ocorrenciaId], references: [id], onDelete: Cascade)
+}
+
+model LogAuditoria {
+  id           String   @id @default(cuid())
+  acao         String
+  entidade     String
+  entidadeId   String?
+  descricao    String
+  usuarioEmail String?
+  usuarioNome  String?
+  criadoEm     DateTime @default(now())
+
+  escolaId String?
+  escola   Escola? @relation(fields: [escolaId], references: [id], onDelete: SetNull)
 }

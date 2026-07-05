@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { prisma } from '../database/prismaClient.js'
 import { EscolaModel } from '../models/EscolaModel.js'
+import { LogAuditoriaModel } from '../models/LogAuditoriaModel.js'
 import { parseOrThrow } from '../utils/validate.js'
 
 function bucketCriticidade(criticidade) {
@@ -31,17 +32,42 @@ export class EscolaController {
   static async create(request, response) {
     const payload = parseOrThrow(escolaSchema, request.body)
     const escola = await EscolaModel.create(payload)
+    await LogAuditoriaModel.registrar({
+      acao: 'CRIAR',
+      entidade: 'Escola',
+      entidadeId: escola.id,
+      descricao: `Escola "${escola.nome}" cadastrada`,
+      escolaId: escola.id,
+      actor: request.actor,
+    })
     return response.status(201).json(escola)
   }
 
   static async update(request, response) {
     const payload = parseOrThrow(escolaSchema, request.body)
     const escola = await EscolaModel.update(request.params.id, payload)
+    await LogAuditoriaModel.registrar({
+      acao: 'ATUALIZAR',
+      entidade: 'Escola',
+      entidadeId: escola.id,
+      descricao: `Escola "${escola.nome}" atualizada`,
+      escolaId: escola.id,
+      actor: request.actor,
+    })
     return response.json(escola)
   }
 
   static async delete(request, response) {
+    const escola = await EscolaModel.findById(request.params.id)
     await EscolaModel.delete(request.params.id)
+    await LogAuditoriaModel.registrar({
+      acao: 'REMOVER',
+      entidade: 'Escola',
+      entidadeId: escola.id,
+      descricao: `Escola "${escola.nome}" removida`,
+      escolaId: null,
+      actor: request.actor,
+    })
     return response.status(204).send()
   }
 

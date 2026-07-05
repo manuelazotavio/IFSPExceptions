@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { categorias, criticidadeValues, locaisInternos, statusValues } from '../data/mockData.js'
-import { adicionarInteracao, atualizarOcorrencia, listarEscolas, obterOcorrencia } from '../services/api.js'
+import { adicionarInteracao, atualizarOcorrencia, listarEscolas, obterOcorrencia, uploadFotosOcorrencia } from '../services/api.js'
 import { Card, Modal } from '../components/ui.jsx'
 import { Icon } from '../components/Icons.jsx'
 
@@ -14,12 +14,18 @@ function campoClasse(extra = '') {
   return `w-full rounded-md border border-slate-300 bg-white px-3 outline-none transition-colors hover:border-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 ${extra}`
 }
 
-function lerComoDataUrl(file) {
+function isFotoImagem(foto) {
+  return typeof foto === 'string' && (foto.startsWith('data:image') || foto.startsWith('http://') || foto.startsWith('https://'))
+}
+
+async function urlParaDataUrl(url) {
+  const response = await fetch(url)
+  const blob = await response.blob()
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => resolve(reader.result)
     reader.onerror = reject
-    reader.readAsDataURL(file)
+    reader.readAsDataURL(blob)
   })
 }
 
@@ -100,7 +106,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
     setSalvando(true)
     setErroSalvar('')
     try {
-      const atualizada = await atualizarOcorrencia(ocorrencia.id, {
+      let atualizada = await atualizarOcorrencia(ocorrencia.id, {
         escolaId: form.escolaId,
         titulo: form.titulo,
         descricao: form.descricao,
@@ -112,7 +118,12 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
         dataResolucao: form.dataResolucao || null,
         fotos,
       })
+      if (novosArquivosFotos.length > 0) {
+        atualizada = await uploadFotosOcorrencia(ocorrencia.id, novosArquivosFotos)
+      }
       onAtualizar(atualizada)
+      setFotos(atualizada.fotos)
+      setNovosArquivosFotos([])
       setSavedAt(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }))
       setModalEdicaoAberto(false)
     } catch (error) {
@@ -201,8 +212,15 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
       doc.text('Fotos', margin, y + 5)
       y += 10
 
+      const fotosParaImprimir = await Promise.all(fotos.map(async (foto) => {
+        if (typeof foto === 'string' && foto.startsWith('http')) {
+          return urlParaDataUrl(foto).catch(() => foto)
+        }
+        return foto
+      }))
+
       const fotoAltura = 60
-      fotos.forEach((foto, index) => {
+      fotosParaImprimir.forEach((foto, index) => {
         y = quebrarPagina(y, fotoAltura)
         if (typeof foto === 'string' && foto.startsWith('data:image')) {
           doc.addImage(foto, 'JPEG', margin, y, pageWidth - margin * 2, fotoAltura)
@@ -311,16 +329,19 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
   const nextFoto = () => setFotoIndex((i) => (i + 1) % fotos.length)
   const fotoInputRef = useRef(null)
   const handleFotoInputClick = () => fotoInputRef.current?.click()
-  const handleFotoChange = async (e) => {
-    const files = Array.from(e.target.files || [])
-    e.target.value = ''
-    const novasFotos = await Promise.all(files.map(lerComoDataUrl))
-    setFotos((prev) => [...prev, ...novasFotos])
-  }
   const removerFoto = (index) => {
     setFotos((prev) => prev.filter((_, i) => i !== index))
     setFotoIndex((prev) => (prev >= index && prev > 0 ? prev - 1 : prev))
   }
+
+  const [novosArquivosFotos, setNovosArquivosFotos] = useState([])
+  const previewsNovasFotos = useMemo(() => novosArquivosFotos.map((file) => URL.createObjectURL(file)), [novosArquivosFotos])
+  const handleFotoChange = (e) => {
+    const files = Array.from(e.target.files || [])
+    e.target.value = ''
+    setNovosArquivosFotos((prev) => [...prev, ...files])
+  }
+  const removerNovaFoto = (index) => setNovosArquivosFotos((prev) => prev.filter((_, i) => i !== index))
 
   const [interacoes, setInteracoes] = useState(ocorrencia.interacoes)
   const [mensagem, setMensagem] = useState('')
@@ -419,7 +440,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
             <div className="relative">
               {fotos.length === 0 ? (
                 <div className="flex h-48 items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 text-center text-sm font-bold text-slate-500">Nenhuma foto</div>
-              ) : typeof fotos[fotoIndex] === 'string' && fotos[fotoIndex].startsWith('data:image') ? (
+              ) : isFotoImagem(fotos[fotoIndex]) ? (
                 <img src={fotos[fotoIndex]} alt={`Foto ${fotoIndex + 1}`} className="h-48 w-full rounded-md border border-slate-300 object-cover" />
               ) : (
                 <div className="flex h-48 items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 text-center text-sm font-bold text-slate-500">{fotos[fotoIndex]}</div>
@@ -594,11 +615,11 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
               <Icon name="image" className="h-4 w-4" />
               Adicionar fotos
             </button>
-            {fotos.length > 0 && (
+            {(fotos.length > 0 || novosArquivosFotos.length > 0) && (
               <div className="mt-2 grid grid-cols-3 gap-2">
                 {fotos.map((foto, index) => (
-                  <div key={index} className="group relative aspect-square overflow-hidden rounded-md border border-slate-200 bg-slate-50">
-                    {typeof foto === 'string' && foto.startsWith('data:image') ? (
+                  <div key={foto} className="group relative aspect-square overflow-hidden rounded-md border border-slate-200 bg-slate-50">
+                    {isFotoImagem(foto) ? (
                       <img src={foto} alt={`Foto ${index + 1}`} className="h-full w-full object-cover" />
                     ) : (
                       <div className="flex h-full items-center justify-center p-1 text-center text-[10px] font-bold text-slate-500">{foto}</div>
@@ -607,6 +628,20 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
                       type="button"
                       onClick={() => removerFoto(index)}
                       aria-label={`Remover foto ${index + 1}`}
+                      className="absolute right-1 top-1 rounded-full bg-black/60 px-1.5 text-xs font-bold text-white hover:bg-black/80"
+                    >
+                      &times;
+                    </button>
+                  </div>
+                ))}
+                {novosArquivosFotos.map((arquivo, index) => (
+                  <div key={`${arquivo.name}-${index}`} className="group relative aspect-square overflow-hidden rounded-md border border-blue-200 bg-slate-50">
+                    <img src={previewsNovasFotos[index]} alt={arquivo.name} className="h-full w-full object-cover" />
+                    <span className="absolute left-1 top-1 rounded bg-blue-600 px-1.5 py-0.5 text-[9px] font-bold text-white">Nova</span>
+                    <button
+                      type="button"
+                      onClick={() => removerNovaFoto(index)}
+                      aria-label={`Remover ${arquivo.name}`}
                       className="absolute right-1 top-1 rounded-full bg-black/60 px-1.5 text-xs font-bold text-white hover:bg-black/80"
                     >
                       &times;
