@@ -338,11 +338,16 @@ async function main() {
     await prisma.escola.upsert({
       where: { id: escola.id },
       update: escolaPayload,
-      create: {
-        ...escolaPayload,
-        ...(comodos.length ? { comodos: { create: comodos } } : {}),
-      },
+      create: escolaPayload,
     })
+
+    await prisma.comodo.deleteMany({ where: { escolaId: escola.id } })
+
+    if (comodos.length > 0) {
+      await prisma.comodo.createMany({
+        data: comodos.map((comodo) => ({ ...comodo, escolaId: escola.id })),
+      })
+    }
   }
 
   const senhaHash = await bcrypt.hash('123456', 10)
