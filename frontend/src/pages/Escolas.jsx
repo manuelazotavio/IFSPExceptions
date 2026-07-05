@@ -257,7 +257,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
       return
     }
 
-    saveCustomSchool({
+    await saveCustomSchool({
       ...escolaCriada,
       cep: normalizeCep(novoCadastro.cep),
       descricao: '',

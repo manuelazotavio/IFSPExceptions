@@ -1,6 +1,13 @@
 import { escolasSeed } from '../seeds/escolasSeed.js'
 import { listarEscolas } from '../services/api.js'
 import { normalizeSchoolList, normalizeSchoolRecord } from './schoolRecords.js'
+import {
+  hydrateSchoolWithPhotos,
+  hydrateSchoolsWithPhotos,
+  normalizeSchoolPhotos,
+  removeSchoolPhotos,
+  saveSchoolPhotos,
+} from './schoolAssets.js'
 
 const CUSTOM_SCHOOLS_KEY = 'custom-schools'
 
@@ -57,12 +64,64 @@ function persistCustomSchools(schools) {
   window.localStorage.setItem(CUSTOM_SCHOOLS_KEY, JSON.stringify(schools))
 }
 
+function isInlineAssetUrl(value) {
+  return String(value || '').startsWith('data:')
+}
+
+function buildStoredPhotoList(record) {
+  const normalizedPhotos = normalizeSchoolPhotos(record?.fotos)
+  if (normalizedPhotos.length > 0) return normalizedPhotos
+
+  if (isInlineAssetUrl(record?.fotoUrl)) {
+    return [{ nome: record?.fotoNome || 'foto-1', url: record.fotoUrl }]
+  }
+
+  return []
+}
+
+function sanitizeSchoolForStorage(record = {}) {
+  const normalized = normalizeSchoolRecord(record)
+  const inlineCover = isInlineAssetUrl(normalized.fotoUrl)
+
+  return normalizeSchoolRecord({
+    ...normalized,
+    fotoUrl: inlineCover ? '' : normalized.fotoUrl,
+    fotoNome: inlineCover && normalized.fotos.length === 0 ? '' : normalized.fotoNome,
+    fotos: [],
+  })
+}
+
+async function migrateLegacyInlineAssets() {
+  const storedSchools = readCustomSchoolsFromStorage()
+  const schoolsToMigrate = storedSchools.filter((school) => (
+    buildStoredPhotoList(school).length > 0
+      || Array.isArray(school?.fotos) && school.fotos.some((foto) => isInlineAssetUrl(foto?.url))
+  ))
+
+  if (!schoolsToMigrate.length) return
+
+  await Promise.all(schoolsToMigrate.map(async (school) => {
+    const photos = buildStoredPhotoList(school)
+    if (photos.length > 0) {
+      await saveSchoolPhotos(normalizeSchoolRecord(school).id, photos)
+    }
+  }))
+
+  persistCustomSchools(storedSchools.map(sanitizeSchoolForStorage))
+}
+
 export function isCustomSchool(schoolId) {
   return String(schoolId || '').startsWith('esc-custom-')
 }
 
 export function loadCustomSchools() {
-  return normalizeSchoolList(readCustomSchoolsFromStorage())
+  return normalizeSchoolList(readCustomSchoolsFromStorage().map(sanitizeSchoolForStorage))
+}
+
+export async function loadCustomSchoolById(schoolId) {
+  await migrateLegacyInlineAssets()
+  const school = loadCustomSchools().find((item) => item.id === schoolId) || null
+  return hydrateSchoolWithPhotos(school)
 }
 
 export function getAllSchools() {
@@ -71,24 +130,26 @@ export function getAllSchools() {
 
 export async function loadSchoolCatalog(options = {}) {
   const includeOfficialFallback = Boolean(options.includeOfficialFallback)
+  await migrateLegacyInlineAssets()
+  const customSchools = await hydrateSchoolsWithPhotos(loadCustomSchools())
 
   try {
     const remoteSchools = await listarEscolas()
-    const mergedRemoteSchools = mergeSchoolCatalog(remoteSchools, { includeOfficialFallback })
+    const mergedRemoteSchools = mergeSchoolCatalog(remoteSchools, { includeOfficialFallback, customSchools })
     if (mergedRemoteSchools.length > 0) {
       return mergedRemoteSchools
     }
   } catch {
-    return mergeSchoolCatalog([], { includeOfficialFallback: true })
+    return mergeSchoolCatalog([], { includeOfficialFallback: true, customSchools })
   }
 
-  return mergeSchoolCatalog([], { includeOfficialFallback: true })
+  return mergeSchoolCatalog([], { includeOfficialFallback: true, customSchools })
 }
 
 export function mergeSchoolCatalog(remoteSchools = [], options = {}) {
   const includeOfficialFallback = Boolean(options.includeOfficialFallback)
   const officialSchools = getOfficialSchools()
-  const customSchools = loadCustomSchools()
+  const customSchools = normalizeSchoolList(options.customSchools ?? loadCustomSchools())
   const officialByStableId = new Map(officialSchools.map((school) => [school.stableId, school]))
   const mergedByStableId = new Map()
 
@@ -106,24 +167,30 @@ export function mergeSchoolCatalog(remoteSchools = [], options = {}) {
   }
 
   customSchools.forEach((customSchool) => {
-    mergedByStableId.set(customSchool.stableId || customSchool.id, mergeSchoolData(customSchool, null))
+    const existingEntry = [...mergedByStableId.entries()].find(([, school]) => school.id === customSchool.id)
+    const targetKey = existingEntry?.[0] || customSchool.stableId || customSchool.id
+    mergedByStableId.set(targetKey, mergeSchoolData(customSchool, existingEntry?.[1] || null))
   })
 
   return [...mergedByStableId.values()].sort((left, right) => left.nome.localeCompare(right.nome, 'pt-BR'))
 }
 
-export function saveCustomSchool(payload) {
+export async function saveCustomSchool(payload) {
+  await migrateLegacyInlineAssets()
   const normalizedSchool = normalizeSchoolRecord(payload)
+  const photos = buildStoredPhotoList(normalizedSchool)
   const current = loadCustomSchools()
   const nextById = new Map(current.map((school) => [school.id, school]))
-  nextById.set(normalizedSchool.id, normalizedSchool)
+  nextById.set(normalizedSchool.id, sanitizeSchoolForStorage(normalizedSchool))
   const next = [...nextById.values()].sort((left, right) => left.nome.localeCompare(right.nome, 'pt-BR'))
   persistCustomSchools(next)
-  return next
+  await saveSchoolPhotos(normalizedSchool.id, photos)
+  return hydrateSchoolsWithPhotos(next)
 }
 
-export function removeCustomSchool(schoolId) {
+export async function removeCustomSchool(schoolId) {
   const next = loadCustomSchools().filter((item) => item.id !== schoolId)
   persistCustomSchools(next)
+  await removeSchoolPhotos(schoolId)
   return next
 }
