@@ -25,7 +25,7 @@ export function Pagination({ page, totalPages, onPageChange, totalItems, pageSiz
         <button className="cursor-pointer"
           onClick={() => onPageChange(page - 1)}
           disabled={page === 1}
-          aria-label="Pagina anterior"
+          aria-label="Página anterior"
           className="h-8 w-8 shrink-0 rounded-md border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
         >
           &lsaquo;

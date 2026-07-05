@@ -133,7 +133,7 @@ Isso cria (ou atualiza) as tabelas no MySQL de acordo com `prisma/schema.prisma`
 npm run prisma:seed
 ```
 
-Isso carrega as escolas reais da SEDUC (`frontend/public/geo/unidades_seduc_caraguatatuba.json`) e cria os usuários de teste abaixo — um por papel (o seed também cria vários outros usuários `EXTERNO`, um por escola, todos com a mesma senha):
+Isso carrega as escolas reais da SEDUC (`backend/prisma/seeds/unidades_seduc_caraguatatuba.json`) e cria os usuários de teste abaixo — um por papel (o seed também cria vários outros usuários `EXTERNO`, um por escola, todos com a mesma senha):
 
 | Papel | Email | Senha |
 | --- | --- | --- |
@@ -180,3 +180,32 @@ O Vite sobe em `http://localhost:5173` e já tem proxy configurado para `/api` �
 | `npm run dev` | Sobe o Vite em modo desenvolvimento |
 | `npm run build` | Build de produção |
 | `npm run preview` | Sobe um servidor local servindo o build de produção |
+
+---
+
+## Deploy
+
+**Frontend — Vercel**
+Conectado ao GitHub: todo push (na branch configurada no projeto da Vercel) dispara um deploy automático. O `vercel.json` na raiz do repositório aponta o build para a pasta `frontend/`:
+
+```json
+{
+  "installCommand": "npm --prefix frontend install",
+  "buildCommand": "npm --prefix frontend run build",
+  "outputDirectory": "frontend/dist"
+}
+```
+
+**Backend — Railway**
+O serviço **não** está conectado ao GitHub — não há deploy automático em `git push`. A atualização é sempre manual, rodando o CLI da Railway de dentro da pasta `backend/`:
+
+```bash
+cd backend
+railway up
+```
+
+Depois de um deploy, se precisar (re)popular o banco de produção com os dados oficiais (escolas, cômodos, ocorrências de exemplo), rode o seed pelo Shell do próprio serviço no dashboard da Railway (aba **Shell** do serviço `backend`), não do seu terminal local — o `DATABASE_URL` de produção usa o host interno da Railway (`mysql.railway.internal`), que só é acessível de dentro do container:
+
+```bash
+node prisma/seed.js
+```
