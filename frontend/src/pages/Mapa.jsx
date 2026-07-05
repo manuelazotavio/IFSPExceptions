@@ -688,6 +688,7 @@ export function Mapa({ onNavigate }) {
   const [colorScale, setColorScale] = useState(() => readStoredColorScale())
   const [isColorScaleExpanded, setIsColorScaleExpanded] = useState(false)
   const [isMapStyleExpanded, setIsMapStyleExpanded] = useState(false)
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(false)
   const [schoolSearch, setSchoolSearch] = useState('')
   const warnedSchoolIdsRef = useRef(new Set())
   const [mapStyleKey, setMapStyleKey] = useState(() => {
@@ -1214,47 +1215,54 @@ export function Mapa({ onNavigate }) {
       ) : null}
 
       <div className="shrink-0">
-        <div className="flex flex-wrap items-center gap-2">
-        <div className="w-32">
-          <Select
-            value={filters.criticidade}
-            onChange={(value) => setFilter('criticidade', value)}
-            placeholder="Criticidade"
-            options={[{ value: '', label: 'Criticidade' }, ...criticidadeOptions]}
+        <button
+          type="button"
+          onClick={() => setIsFiltersExpanded((current) => !current)}
+          className="flex w-full items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 shadow-sm sm:hidden"
+          aria-expanded={isFiltersExpanded}
+          aria-label={isFiltersExpanded ? 'Fechar filtros do mapa' : 'Abrir filtros do mapa'}
+        >
+          Filtros
+          <ChevronIcon direction={isFiltersExpanded ? 'up' : 'down'} />
+        </button>
+
+        <div className={`${isFiltersExpanded ? 'grid' : 'hidden'} mt-2 grid-cols-2 gap-2 rounded-lg border border-slate-200 bg-white p-2 shadow-sm sm:mt-0 sm:flex sm:flex-wrap sm:items-center sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none`}>
+          <div className="min-w-0 sm:w-32">
+            <Select
+              value={filters.criticidade}
+              onChange={(value) => setFilter('criticidade', value)}
+              placeholder="Criticidade"
+              options={[{ value: '', label: 'Criticidade' }, ...criticidadeOptions]}
+            />
+          </div>
+          <div className="min-w-0 sm:w-32">
+            <Select
+              value={filters.status}
+              onChange={(value) => setFilter('status', value)}
+              placeholder="Todos"
+              options={[{ value: '', label: 'Todos' }, ...statusOptions]}
+            />
+          </div>
+          <div className="col-span-2 min-w-0 sm:col-span-1 sm:w-72 lg:w-[25rem]">
+            <SchoolSearchCombobox
+              options={filteredSchoolOptions}
+              searchValue={schoolSearch}
+              selectedValue={filters.escolaId}
+              onClear={handleClearSchoolSelection}
+              onSearchChange={handleSchoolSearchChange}
+              onSelectOption={handleSelectSchoolOption}
+            />
+          </div>
+          <MapDateFilter
+            label="Início"
+            value={filters.dataInicial}
+            onChange={(value) => setFilter('dataInicial', value)}
           />
-        </div>
-        <div className="w-32">
-          <Select
-            value={filters.status}
-            onChange={(value) => setFilter('status', value)}
-            placeholder="Todos"
-            options={[{ value: '', label: 'Todos' }, ...statusOptions]}
+          <MapDateFilter
+            label="Fim"
+            value={filters.dataFinal}
+            onChange={(value) => setFilter('dataFinal', value)}
           />
-        </div>
-        <div className="w-full sm:w-72 lg:w-[25rem]">
-          <SchoolSearchCombobox
-            options={filteredSchoolOptions}
-            searchValue={schoolSearch}
-            selectedValue={filters.escolaId}
-            onClear={handleClearSchoolSelection}
-            onSearchChange={handleSchoolSearchChange}
-            onSelectOption={handleSelectSchoolOption}
-          />
-        </div>
-        <input
-          type="date"
-          aria-label="Data inicial"
-          value={filters.dataInicial}
-          onChange={(event) => setFilter('dataInicial', event.target.value)}
-          className="h-10 w-36 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500"
-        />
-        <input
-          type="date"
-          aria-label="Data final"
-          value={filters.dataFinal}
-          onChange={(event) => setFilter('dataFinal', event.target.value)}
-          className="h-10 w-36 rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500"
-        />
         </div>
       </div>
 

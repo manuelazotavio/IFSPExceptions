@@ -240,16 +240,24 @@ export function Dashboard({ onNavigate, user }) {
               options={!isDiretor ? bairrosDisponiveis.map((bairro) => ({ value: bairro, label: formatLabel(bairro) })) : []}
             />
           </label>
-          <DashboardDateFilter
-            label="Data inicial"
-            value={filtros.dataInicial}
-            onChange={(value) => setFiltros((prev) => ({ ...prev, dataInicial: value }))}
-          />
-          <DashboardDateFilter
-            label="Data final"
-            value={filtros.dataFinal}
-            onChange={(value) => setFiltros((prev) => ({ ...prev, dataFinal: value }))}
-          />
+          <label className="block">
+            <span className="mb-1 block text-xs font-bold text-slate-500">Data inicial</span>
+            <input
+              type="date"
+              value={filtros.dataInicial}
+              onChange={(event) => setFiltros((prev) => ({ ...prev, dataInicial: event.target.value }))}
+              className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-bold text-slate-500">Data final</span>
+            <input
+              type="date"
+              value={filtros.dataFinal}
+              onChange={(event) => setFiltros((prev) => ({ ...prev, dataFinal: event.target.value }))}
+              className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
+            />
+          </label>
         </div>
       </Card>
       <div className={`grid grid-cols-2 gap-4 md:grid-cols-3 ${isDiretor ? 'xl:grid-cols-5' : 'xl:grid-cols-6'}`}>
@@ -320,27 +328,6 @@ export function Dashboard({ onNavigate, user }) {
         </Card>
       </div>
     </div>
-  )
-}
-
-function DashboardDateFilter({ label, value, onChange }) {
-  return (
-    <label className="block min-w-0">
-      <span className="mb-1 block text-xs font-bold text-slate-500">{label}</span>
-      <span className="relative block min-w-0">
-        {!value && (
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-400">
-            dd/mm/aaaa
-          </span>
-        )}
-        <input
-          type="date"
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          className={`h-10 w-full min-w-0 max-w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold outline-none focus:border-primary-500 ${value ? 'text-slate-700' : 'text-slate-700 [&::-webkit-datetime-edit]:text-transparent'}`}
-        />
-      </span>
-    </label>
   )
 }
 
