@@ -962,7 +962,7 @@ export function Mapa({ onNavigate }) {
 
       <Card className="relative z-0 overflow-hidden p-0">
 
-        <div className="relative h-[88vh] min-h-105 sm:h-[calc(100vh-8rem)] sm:min-h-100">
+        <div className="relative h-[calc(88vh-100px)] min-h-105 sm:h-[calc(100vh-8rem-100px)] sm:min-h-100">
           <MetricPanel context={metricContext} drawerAberto={drawerAberto} />
 
           <MapContainer center={mapCenter} zoom={13} scrollWheelZoom zoomControl={false} className="h-full w-full z-0">
@@ -1057,6 +1057,7 @@ export function Mapa({ onNavigate }) {
             <div className={`${isMapStyleExpanded ? 'block' : 'hidden'} sm:block`}>
               <Select
                 size="xs"
+                dropUp
                 className="mt-1"
                 value={mapStyleKey}
                 onChange={setMapStyleKey}
