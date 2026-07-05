@@ -13,8 +13,7 @@ const titles = {
   '/escolas': 'Escolas cadastradas',
   '/usuarios': 'Usuários',
   '/categorias': 'Categorias globais',
-  '/auditoria': 'Log de auditoria',
-  '/configuracoes': 'Configurações',
+  '/auditoria': 'Log de auditoria'
 }
 
 const roleLabels = {

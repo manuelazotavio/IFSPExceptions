@@ -7,8 +7,7 @@ const items = [
   ['escolas', 'Escolas cadastradas', '/escolas', 'school'],
   ['usuarios', 'Usuários', '/usuarios', 'users'],
   ['categorias', 'Categorias globais', '/categorias', 'tag'],
-  ['auditoria', 'Log de auditoria', '/auditoria', 'history'],
-  ['configuracoes', 'Configurações', '/configuracoes', 'settings'],
+  ['auditoria', 'Log de auditoria', '/auditoria', 'history']
 ]
 
 export function Sidebar({ route, onNavigate, user, open = false, onClose, collapsed = false, onToggleCollapsed, nomeExibido, roleLabel, onLogout }) {
