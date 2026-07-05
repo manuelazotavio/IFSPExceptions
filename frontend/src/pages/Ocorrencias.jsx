@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { bairros, categorias, criticidadeValues, escolas, locaisInternos, ocorrenciasAprovadas, statusValues } from '../data/mockData.js'
 import { diasEmAberto, sortOcorrencias } from '../utils/metrics.js'
-import { Badge, Card, FilterSelect, Modal } from '../components/ui.jsx'
+import { Card, FilterSelect, Modal } from '../components/ui.jsx'
 import { Pagination } from '../components/Pagination.jsx'
 import { Icon } from '../components/Icons.jsx'
 
@@ -35,6 +35,15 @@ export function Ocorrencias({ onNavigate, user }) {
   const fotoInputRef = useRef(null)
   const [busca, setBusca] = useState('')
   const [pagina, setPagina] = useState(1)
+  const [expandidos, setExpandidos] = useState(() => new Set())
+  const toggleExpandido = (id) => {
+    setExpandidos((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   const previewsFotos = useMemo(() => novasFotos.map((file) => URL.createObjectURL(file)), [novasFotos])
   const handleFotoInputClick = () => fotoInputRef.current?.click()
@@ -130,7 +139,7 @@ export function Ocorrencias({ onNavigate, user }) {
             className="block w-full rounded-lg border-0 py-2 pl-10 pr-4 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 text-sm"
           />
         </div>
-        <div className="flex w-full gap-2 sm:w-auto">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
           <button
             onClick={exportarCsv}
             className="w-full sm:w-auto rounded-lg border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors duration-200 flex items-center justify-center gap-2"
@@ -146,14 +155,81 @@ export function Ocorrencias({ onNavigate, user }) {
         </div>
       </div>
       <Card>
-        <div className="grid gap-3 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
           <FilterSelect label="Bairro" value={filters.bairro} onChange={(v) => setFilter('bairro', v)} options={bairros} />
           <FilterSelect label="Status" value={filters.status} onChange={(v) => setFilter('status', v)} options={statusValues} />
           <FilterSelect label="Criticidade" value={filters.criticidade} onChange={(v) => setFilter('criticidade', v)} options={criticidadeValues} />
           <FilterSelect label="Tipo" value={filters.tipo} onChange={(v) => setFilter('tipo', v)} options={categorias} />
         </div>
       </Card>
-      <div className="overflow-x-auto w-full overflow-x-auto border border-slate-200 rounded-xl shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-slate-200 shadow-sm sm:hidden">
+        <div className="border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-extrabold tracking-wide text-slate-700">
+          Protocolo
+        </div>
+        <div className="divide-y divide-slate-200">
+          {listaPaginada.map((item) => {
+            const aberto = expandidos.has(item.id)
+            return (
+              <div key={item.id}>
+                <button
+                  type="button"
+                  onClick={() => toggleExpandido(item.id)}
+                  aria-expanded={aberto}
+                  className={`flex w-full items-center justify-between px-4 py-3 text-left ${COR_LINHA_CRITICIDADE[item.criticidade] || 'hover:bg-slate-50'}`}
+                >
+                  <span className="font-bold text-slate-800">{item.protocolo}</span>
+                  <Icon name="chevron-down" className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${aberto ? 'rotate-180' : ''}`} />
+                </button>
+                {aberto && (
+                  <div className="space-y-3 border-t border-slate-200 bg-white px-4 py-3 text-sm">
+                    <div>
+                      <span className="block text-xs font-bold tracking-wide text-slate-500">Escola:</span>
+                      <span className="block font-semibold text-slate-800">{item.escola}</span>
+                    </div>
+                    <div>
+                      <span className="block text-xs font-bold tracking-wide text-slate-500">Bairro:</span>
+                      <span className="block text-slate-700">{item.bairro}</span>
+                    </div>
+                    <div>
+                      <span className="block text-xs font-bold tracking-wide text-slate-500">Tipo:</span>
+                      <span className="block text-slate-700">{item.tipo}</span>
+                    </div>
+                    <div>
+                      <span className="block text-xs font-bold tracking-wide text-slate-500">Criticidade:</span>
+                      <span className="block text-slate-700">{item.criticidade}</span>
+                    </div>
+                    <div>
+                      <span className="block text-xs font-bold tracking-wide text-slate-500">Status:</span>
+                      <span className="block text-slate-700">{item.status}</span>
+                    </div>
+                    <div>
+                      <span className="block text-xs font-bold tracking-wide text-slate-500">Localizacao:</span>
+                      <span className="block text-slate-700">{item.localizacaoInterna}</span>
+                    </div>
+                    <div>
+                      <span className="block text-xs font-bold tracking-wide text-slate-500">Dias em aberto:</span>
+                      <span className="block text-slate-700">{diasEmAberto(item.dataEnvio)}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onNavigate(`/ocorrencias/${item.id}`)}
+                      className="mt-2 w-full rounded-md border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
+                    >
+                      Ver detalhes
+                    </button>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+          {!listaPaginada.length && (
+            <p className="px-4 py-8 text-center text-sm font-semibold text-slate-500">
+              Nenhuma ocorrência encontrada.
+            </p>
+          )}
+        </div>
+      </div>
+      <div className="hidden w-full overflow-x-auto rounded-xl border border-slate-200 shadow-sm sm:block">
         <table className="w-full min-w-[1100px] border-collapse rounded-2 text-sm">
           <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-extrabold tracking-wide">
             <tr className="divide-x divide-slate-200">
@@ -198,7 +274,7 @@ export function Ocorrencias({ onNavigate, user }) {
             <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Titulo <span className="text-red-500">*</span></span>
             <input value={novaOcorrencia.titulo} onChange={(e) => setCampo('titulo', e.target.value)} className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm text-slate-700 outline-none focus:border-blue-500" />
           </label>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="block">
               <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Tipo <span className="text-red-500">*</span></span>
               <select value={novaOcorrencia.tipo} onChange={(e) => setCampo('tipo', e.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-500">
@@ -233,7 +309,7 @@ export function Ocorrencias({ onNavigate, user }) {
               Adicionar fotos
             </button>
             {novasFotos.length > 0 && (
-              <div className="mt-2 grid grid-cols-3 gap-2">
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {novasFotos.map((file, index) => (
                   <div key={`${file.name}-${index}`} className="group relative aspect-square overflow-hidden rounded-md border border-slate-200">
                     <img src={previewsFotos[index]} alt={file.name} className="h-full w-full object-cover" />
