@@ -13,6 +13,12 @@ export function Icon({ name, className = 'h-4 w-4' }) {
     paperclip: 'M8 12V7a4 4 0 0 1 8 0v9a3 3 0 0 1-6 0V8',
     send: 'm4 12 16-8-6 8 6 8-16-8Z',
     image: 'M4 5h16v14H4V5Zm3 10 4-4 3 3 3-5 3 6M8.5 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z',
+    menu: 'M4 6h16M4 12h16M4 18h16',
+    'chevron-down': 'm6 9 6 6 6-6',
+    'arrow-left': 'M19 12H5m7-7-7 7 7 7',
+    history: 'M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0',
+    download: 'M12 4v11m0 0 4-4m-4 4-4-4M4 20h16',
+    close: 'M18 6 6 18M6 6l12 12',
   }
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
