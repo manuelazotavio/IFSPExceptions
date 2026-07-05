@@ -5,7 +5,7 @@ function hasValidBoundaryGeometry(feature) {
   return geometryType === 'Polygon' || geometryType === 'MultiPolygon'
 }
 
-export function CaraguatatubaBoundary({ data }) {
+export function CaraguatatubaBoundary({ data, styleConfig }) {
   if (data?.type !== 'FeatureCollection' || !Array.isArray(data.features)) {
     return null
   }
@@ -20,12 +20,12 @@ export function CaraguatatubaBoundary({ data }) {
       data={{ ...data, features: validFeatures }}
       interactive={false}
       style={{
-        color: '#dc2626',
-        weight: 3,
-        opacity: 0.95,
-        fillColor: '#dc2626',
-        fillOpacity: 0.04,
-        dashArray: '6 6',
+        color: styleConfig?.strokeColor || '#334155',
+        weight: styleConfig?.municipioBoundaryWeight || 2.2,
+        opacity: styleConfig?.strokeOpacity || 0.75,
+        fillColor: styleConfig?.strokeColor || '#334155',
+        fillOpacity: styleConfig?.municipioFillOpacity || 0.02,
+        dashArray: styleConfig?.dashArray || '6 4',
       }}
     />
   )
