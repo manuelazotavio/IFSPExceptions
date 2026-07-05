@@ -15,17 +15,13 @@ const userFieldsSchema = z.object({
 
 function comRegraDeEscola(schema) {
   return schema
-    .refine((data) => !(data.role === 'SEDUC' && data.escolaId), {
-      message: 'Perfil SEDUC nao deve estar vinculado a uma escola',
-      path: ['escolaId'],
-    })
-    .refine((data) => !(data.role && data.role !== 'SEDUC' && !data.escolaId), {
+    .refine((data) => !(data.role === 'DIRETOR' && !data.escolaId), {
       message: 'Informe a escola para este perfil',
       path: ['escolaId'],
     })
     .transform((data) => ({
       ...data,
-      ...(data.role !== undefined ? { escolaId: data.role === 'SEDUC' ? null : data.escolaId } : {}),
+      ...(data.role !== undefined ? { escolaId: data.role === 'DIRETOR' ? data.escolaId : null } : {}),
     }))
 }
 

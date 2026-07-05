@@ -600,7 +600,7 @@ function KanbanOcorrencias({ lista, onNavigate, onStatusChange }) {
                   <p className="mt-1 line-clamp-2 text-xs font-semibold text-slate-600">{item.escola}</p>
                   <div className="mt-3 flex items-center justify-between gap-2 text-xs font-semibold text-slate-500">
                     <span>{formatDisplayLabel(item.tipo)}</span>
-                    <span>{diasEmAberto(item.dataEnvio)} dias</span>
+                    <span>{diasEmAberto(item.dataEnvio)}</span>
                   </div>
                 </button>
               ))}

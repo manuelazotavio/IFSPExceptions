@@ -18,7 +18,10 @@ const registroSchema = z.object({
   email: z.string({ message: 'Informe o email' }).trim().toLowerCase().email('Email invalido'),
   senha: z.string({ message: 'Informe a senha' }).min(6, 'A senha deve ter ao menos 6 caracteres'),
   role: z.enum(REGISTRO_ROLES, { message: 'Perfil invalido' }),
-  escolaId: z.string({ message: 'Informe a escola' }).trim().min(1, 'Informe a escola'),
+  escolaId: z.string().trim().min(1).optional(),
+}).refine((data) => !(data.role === 'DIRETOR' && !data.escolaId), {
+  message: 'Informe a escola para este perfil',
+  path: ['escolaId'],
 })
 
 function sanitizeUser(user) {
@@ -51,10 +54,13 @@ export class AuthController {
 
   static async registro(request, response) {
     const payload = parseOrThrow(registroSchema, request.body)
+    const escolaId = payload.role === 'DIRETOR' ? payload.escolaId : null
 
-    await EscolaModel.findById(payload.escolaId)
+    if (escolaId) {
+      await EscolaModel.findById(escolaId)
+    }
 
-    const usuario = await UserModel.create(payload)
+    const usuario = await UserModel.create({ ...payload, escolaId })
     return response.status(201).json(usuario)
   }
 }

@@ -11,5 +11,5 @@ ocorrenciaRoutes.get('/:id', optionalAuthenticate, asyncHandler(OcorrenciaContro
 ocorrenciaRoutes.post('/', authenticate, asyncHandler(OcorrenciaController.create))
 ocorrenciaRoutes.put('/:id', authenticate, asyncHandler(OcorrenciaController.update))
 ocorrenciaRoutes.post('/:id/fotos', authenticate, upload.array('fotos', 10), asyncHandler(OcorrenciaController.uploadFotos))
-ocorrenciaRoutes.post('/:id/interacoes', authenticate, asyncHandler(OcorrenciaController.addInteracao))
+ocorrenciaRoutes.post('/:id/interacoes', authenticate, upload.array('anexos', 10), asyncHandler(OcorrenciaController.addInteracao))
 ocorrenciaRoutes.delete('/:id', authenticate, asyncHandler(OcorrenciaController.delete))

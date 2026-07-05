@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { categorias } from '../data/mockData.js'
 import { dashboardMetrics, groupCount } from '../utils/metrics.js'
-import { atualizarUsuario, listarAuditoria, listarEscolas, listarOcorrencias, listarUsuarios } from '../services/api.js'
+import { atualizarUsuario, criarUsuario, listarAuditoria, listarEscolas, listarOcorrencias, listarUsuarios } from '../services/api.js'
 import { Badge, BarList, Card, FilterSelect, MetricCard, Modal, Select } from '../components/ui.jsx'
 
 export function Indicadores() {
@@ -32,11 +32,17 @@ const PERMISSOES = [
   { value: 'EXTERNO', label: 'Externo' },
 ]
 
+const USUARIO_VAZIO = { nome: '', email: '', senha: '', role: 'EXTERNO', escolaId: '' }
+
 export function Usuarios() {
   const [lista, setLista] = useState([])
   const [escolas, setEscolas] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState('')
+  const [modalAberto, setModalAberto] = useState(false)
+  const [novoUsuario, setNovoUsuario] = useState(USUARIO_VAZIO)
+  const [salvando, setSalvando] = useState(false)
+  const [erroCriar, setErroCriar] = useState('')
 
   useEffect(() => {
     let ativo = true
@@ -74,7 +80,7 @@ export function Usuarios() {
   function alterarPermissao(id, role) {
     const usuario = lista.find((item) => item.id === id)
     if (!usuario) return
-    const atualizado = { ...usuario, role, escolaId: role === 'SEDUC' ? null : usuario.escolaId }
+    const atualizado = { ...usuario, role, escolaId: role === 'DIRETOR' ? usuario.escolaId : null }
     setLista((prev) => prev.map((item) => (item.id === id ? atualizado : item)))
     persistirUsuario(atualizado)
   }
@@ -87,8 +93,54 @@ export function Usuarios() {
     persistirUsuario(atualizado)
   }
 
+  function updateNovoUsuario(key, value) {
+    setNovoUsuario((prev) => ({
+      ...prev,
+      [key]: value,
+      ...(key === 'role' && value !== 'DIRETOR' ? { escolaId: '' } : {}),
+    }))
+  }
+
+  function fecharModal() {
+    setModalAberto(false)
+    setNovoUsuario(USUARIO_VAZIO)
+    setErroCriar('')
+  }
+
+  async function handleCriarUsuario() {
+    setErroCriar('')
+    setSalvando(true)
+    try {
+      const criado = await criarUsuario({
+        nome: novoUsuario.nome.trim(),
+        email: novoUsuario.email.trim(),
+        senha: novoUsuario.senha,
+        role: novoUsuario.role,
+        escolaId: novoUsuario.role === 'DIRETOR' ? novoUsuario.escolaId : null,
+      })
+      setLista((prev) => [criado, ...prev])
+      fecharModal()
+    } catch (error) {
+      setErroCriar(error.message)
+    } finally {
+      setSalvando(false)
+    }
+  }
+
+  const formularioValido = novoUsuario.nome.trim() && novoUsuario.email.trim() && novoUsuario.senha.length >= 6
+    && (novoUsuario.role !== 'DIRETOR' || novoUsuario.escolaId)
+
   return (
     <div className="space-y-3">
+      <div className="flex items-center justify-end">
+        <button
+          type="button"
+          onClick={() => setModalAberto(true)}
+          className="cursor-pointer rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-primary-strong"
+        >
+          + Novo usuário
+        </button>
+      </div>
       {erro && (
         <p className="rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{erro}</p>
       )}
@@ -135,6 +187,69 @@ export function Usuarios() {
           </table>
         </div>
       )}
+
+      <Modal open={modalAberto} onClose={fecharModal} title="Novo usuário">
+        <div className="space-y-3">
+          <label className="block">
+            <span className="mb-1 block text-xs font-bold  text-slate-500">Nome</span>
+            <input
+              value={novoUsuario.nome}
+              onChange={(event) => updateNovoUsuario('nome', event.target.value)}
+              className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm text-slate-700 outline-none focus:border-primary-500"
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-bold  text-slate-500">Email</span>
+            <input
+              type="email"
+              value={novoUsuario.email}
+              onChange={(event) => updateNovoUsuario('email', event.target.value)}
+              className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm text-slate-700 outline-none focus:border-primary-500"
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-bold  text-slate-500">Senha</span>
+            <input
+              type="password"
+              minLength={6}
+              value={novoUsuario.senha}
+              onChange={(event) => updateNovoUsuario('senha', event.target.value)}
+              className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm text-slate-700 outline-none focus:border-primary-500"
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-bold  text-slate-500">Permissão</span>
+            <Select value={novoUsuario.role} onChange={(value) => updateNovoUsuario('role', value)} options={PERMISSOES} />
+          </label>
+          {novoUsuario.role === 'DIRETOR' && (
+            <label className="block">
+              <span className="mb-1 block text-xs font-bold  text-slate-500">Escola</span>
+              <Select
+                value={novoUsuario.escolaId}
+                onChange={(value) => updateNovoUsuario('escolaId', value)}
+                placeholder="Selecione"
+                options={escolas.map((escola) => ({ value: escola.id, label: escola.nome }))}
+              />
+            </label>
+          )}
+          {erroCriar && (
+            <p className="rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{erroCriar}</p>
+          )}
+          <div className="flex justify-end gap-2 pt-2">
+            <button type="button" onClick={fecharModal} className="cursor-pointer rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleCriarUsuario}
+              disabled={!formularioValido || salvando}
+              className="cursor-pointer rounded-md bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-strong disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {salvando ? 'Criando...' : 'Criar usuário'}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

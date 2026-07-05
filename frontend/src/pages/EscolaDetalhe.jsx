@@ -730,6 +730,24 @@ function OcorrenciaItem({ item, onNavigate }) {
   )
 }
 
+function getOccurrenceSignalColor(value, variant) {
+  const normalized = String(value || '').toLowerCase()
+
+  if (variant === 'criticidade') {
+    if (normalized.includes('critica') || normalized.includes('crítica')) return 'bg-red-500'
+    if (normalized.includes('alta')) return 'bg-orange-500'
+    if (normalized.includes('media') || normalized.includes('média')) return 'bg-amber-400'
+    return 'bg-emerald-500'
+  }
+
+  if (normalized.includes('resolvida')) return 'bg-emerald-500'
+  if (normalized.includes('aprovacao') || normalized.includes('aprovação')) return 'bg-sky-500'
+  if (normalized.includes('andamento')) return 'bg-blue-500'
+  if (normalized.includes('analise') || normalized.includes('análise')) return 'bg-indigo-500'
+  if (normalized.includes('visita')) return 'bg-violet-500'
+  return 'bg-slate-400'
+}
+
 function Info({ label, value }) {
   return (
     <div>

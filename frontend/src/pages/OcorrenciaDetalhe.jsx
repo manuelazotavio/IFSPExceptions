@@ -294,7 +294,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
     interacoes.forEach((entry) => {
       const cabecalho = entry.origem === 'sistema' ? 'Sistema' : entry.autor
       const linhasMensagem = entry.mensagem ? doc.splitTextToSize(entry.mensagem, larguraTexto) : []
-      const linhasAnexos = entry.anexos?.length > 0 ? doc.splitTextToSize(`Anexos: ${entry.anexos.join(', ')}`, larguraTexto) : []
+      const linhasAnexos = entry.anexos?.length > 0 ? doc.splitTextToSize(`Anexos: ${entry.anexos.map(getAnexoNome).join(', ')}`, larguraTexto) : []
       const altura = 7 + linhasMensagem.length * 5 + (linhasAnexos.length ? linhasAnexos.length * 5 + 2 : 0) + 8
 
       y = quebrarPagina(y, altura)
@@ -408,7 +408,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
         autor: user?.nome || 'Você',
         mensagem,
         status,
-        anexos: anexos.map((file) => file.name),
+        anexosArquivos: anexos,
       })
       onAtualizar(atualizada)
       setInteracoes(atualizada.interacoes)
@@ -572,11 +572,8 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
                       {entry.mensagem && <p className="mt-0.5 break-words text-sm text-slate-600">{entry.mensagem}</p>}
                       {entry.anexos?.length > 0 && (
                         <div className="mt-1.5 flex flex-wrap gap-1.5">
-                          {entry.anexos.map((nome) => (
-                            <span key={nome} className="flex items-center gap-1 rounded bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">
-                              <Icon name="paperclip" className="h-3 w-3" />
-                              {nome}
-                            </span>
+                          {entry.anexos.map((anexo, anexoIndex) => (
+                            <AnexoHistorico key={`${getAnexoNome(anexo)}-${anexoIndex}`} anexo={anexo} />
                           ))}
                         </div>
                       )}
@@ -836,4 +833,42 @@ function InfoField({ label, value }) {
       <p className="mt-1 text-sm font-semibold text-slate-800">{value || '-'}</p>
     </div>
   )
+}
+
+function AnexoHistorico({ anexo }) {
+  const nome = getAnexoNome(anexo)
+  const url = getAnexoUrl(anexo)
+
+  if (!url) {
+    return (
+      <span className="flex items-center gap-1 rounded bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">
+        <Icon name="paperclip" className="h-3 w-3" />
+        {nome}
+      </span>
+    )
+  }
+
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      title={`Abrir ${nome}`}
+      className="flex cursor-pointer items-center gap-1 rounded bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600 transition hover:bg-primary-50 hover:text-primary-700"
+    >
+      <Icon name="paperclip" className="h-3 w-3" />
+      {nome}
+    </a>
+  )
+}
+
+function getAnexoNome(anexo) {
+  if (!anexo || typeof anexo === 'string') return String(anexo || 'Anexo')
+  return anexo.nome || anexo.name || 'Anexo'
+}
+
+function getAnexoUrl(anexo) {
+  if (!anexo) return ''
+  if (typeof anexo === 'string') return anexo.startsWith('http') || anexo.startsWith('/uploads') ? anexo : ''
+  return anexo.url || ''
 }
