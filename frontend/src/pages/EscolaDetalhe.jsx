@@ -219,12 +219,8 @@ export function EscolaDetalhe({ id, onNavigate }) {
                   <span className="text-xs font-bold uppercase tracking-wide text-slate-400">Cômodos</span>
                   <h3 className="mt-1 text-lg font-800 text-slate-950">Detalhamento das quantidades de cômodos cadastrados da escola "{escola.nome}"</h3>
                 </div>
-                <div className="mt-3">
-                  <span className="flex w-full items-center justify-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">
-                    {salas.length} ambientes cadastrados
-                  </span>
-                </div>
-                <div className="mt-3">
+                <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <Badge className="flex w-full items-center justify-center">{salas.length} ambientes cadastrados</Badge>
                   <button onClick={exportRoomPdfReport} className="cursor-pointer w-full rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
                     Exportar PDF
                   </button>
