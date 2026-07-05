@@ -1,5 +1,3 @@
-import { escolas, ocorrenciasAprovadas } from '../data/mockData.js'
-
 const peso = { Baixa: 1, Media: 2, Alta: 3, Critica: 4 }
 
 export function sortOcorrencias(lista) {
@@ -20,8 +18,8 @@ export function groupCount(items, key) {
   return items.reduce((acc, item) => ({ ...acc, [item[key]]: (acc[item[key]] || 0) + 1 }), {})
 }
 
-export function getSchoolStats(escolaId) {
-  const lista = ocorrenciasAprovadas.filter((item) => item.escolaId === escolaId)
+export function getSchoolStats(escolaId, ocorrencias) {
+  const lista = ocorrencias.filter((item) => item.escolaId === escolaId)
   const abertas = lista.filter((item) => item.status !== 'Resolvida')
   return {
     total: lista.length,
@@ -32,14 +30,14 @@ export function getSchoolStats(escolaId) {
   }
 }
 
-export function getSchoolSeverity(escolaId) {
-  const stats = getSchoolStats(escolaId)
+export function getSchoolSeverity(escolaId, ocorrencias) {
+  const stats = getSchoolStats(escolaId, ocorrencias)
   if (stats.criticas > 0) return 'red'
   if (stats.altas > 0 || stats.medias >= 3) return 'yellow'
   return 'green'
 }
 
-export function dashboardMetrics(lista = ocorrenciasAprovadas, totalEscolas = escolas.length) {
+export function dashboardMetrics(lista, totalEscolas) {
   return {
     escolas: totalEscolas,
     aprovadas: lista.length,
@@ -50,15 +48,15 @@ export function dashboardMetrics(lista = ocorrenciasAprovadas, totalEscolas = es
   }
 }
 
-export function buildNotificacoes(user) {
+export function buildNotificacoes(user, ocorrencias) {
   const isExterno = user?.role === 'EXTERNO'
   const isDiretor = user?.role === 'DIRETOR'
 
   const escopo = isExterno
-    ? ocorrenciasAprovadas.filter((item) => item.criadoPorEmail === user.email)
+    ? ocorrencias.filter((item) => item.criadoPorEmail === user.email)
     : isDiretor
-      ? ocorrenciasAprovadas.filter((item) => item.escolaId === user.escolaId)
-      : ocorrenciasAprovadas
+      ? ocorrencias.filter((item) => item.escolaId === user.escolaId)
+      : ocorrencias
 
   const urgentes = escopo
     .filter((item) => item.criticidade === 'Critica' && item.status !== 'Resolvida')

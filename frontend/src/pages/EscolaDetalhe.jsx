@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ocorrencias } from '../data/mockData.js'
 import { sortOcorrencias } from '../utils/metrics.js'
 import { isCustomSchool, loadCustomSchools, loadSchoolCatalog, removeCustomSchool } from '../utils/schools.js'
+import { listarOcorrencias } from '../services/api.js'
 import { Badge, Card } from '../components/ui.jsx'
 import { SchoolLocationMap } from '../components/SchoolLocationMap.jsx'
 import schoolCorridor from '../assets/school-corridor.png'
@@ -47,9 +47,26 @@ export function EscolaDetalhe({ id, onNavigate }) {
       ...defaultPhotos,
     ]
   }, [escola])
+  const [ocorrenciasDaEscola, setOcorrenciasDaEscola] = useState([])
+
+  useEffect(() => {
+    if (!escola) {
+      setOcorrenciasDaEscola([])
+      return undefined
+    }
+
+    let ativo = true
+    listarOcorrencias({ escolaId: escola.id })
+      .then((dados) => { if (ativo) setOcorrenciasDaEscola(dados) })
+      .catch(() => { if (ativo) setOcorrenciasDaEscola([]) })
+    return () => {
+      ativo = false
+    }
+  }, [escola])
+
   const ocorrenciasEscola = useMemo(
-    () => escola ? sortOcorrencias(ocorrencias.filter((item) => item.escolaId === escola.id)) : [],
-    [escola],
+    () => sortOcorrencias(ocorrenciasDaEscola),
+    [ocorrenciasDaEscola],
   )
   const roomSummary = useMemo(() => buildRoomSummary(salas), [salas])
   const roomTypeSummary = useMemo(() => buildRoomTypeSummary(salas), [salas])

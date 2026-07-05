@@ -6,17 +6,33 @@ const includeRelacoes = {
   interacoes: { orderBy: { criadoEm: 'asc' } },
 }
 
-function serialize(ocorrencia) {
-  const { escola, interacoes, fotos, ...rest } = ocorrencia
+function serializeInteracao(interacao) {
+  const { criadoEm, anexos, ...rest } = interacao
   return {
     ...rest,
+    data: criadoEm.toISOString().slice(0, 10),
+    hora: criadoEm.toISOString().slice(11, 16),
+    anexos: JSON.parse(anexos || '[]'),
+  }
+}
+
+function toDateStr(date) {
+  return date ? date.toISOString().slice(0, 10) : null
+}
+
+function serialize(ocorrencia) {
+  const { escola, interacoes, fotos, atualizadoEm, dataEnvio, dataAprovacao, dataResolucao, ...rest } = ocorrencia
+  return {
+    ...rest,
+    dataEnvio: toDateStr(dataEnvio),
+    dataAprovacao: toDateStr(dataAprovacao),
+    dataResolucao: toDateStr(dataResolucao),
+    atualizadoEm,
+    ultimaAtualizacao: atualizadoEm.toISOString().slice(0, 10),
     escola: escola?.nome,
     bairro: escola?.bairro,
     fotos: JSON.parse(fotos || '[]'),
-    interacoes: interacoes?.map((item) => ({
-      ...item,
-      anexos: JSON.parse(item.anexos || '[]'),
-    })),
+    interacoes: interacoes?.map(serializeInteracao),
   }
 }
 
@@ -61,6 +77,8 @@ export class OcorrenciaModel {
         endereco: payload.endereco || escola.endereco,
         dataEnvio: new Date(payload.dataEnvio),
         criadoPorEmail: payload.criadoPorEmail,
+        criadoPorNome: payload.criadoPorNome || '',
+        fotos: JSON.stringify(payload.fotos || []),
         escolaId: escola.id,
         interacoes: {
           create: [{ origem: 'sistema', autor: 'Sistema', mensagem: 'Ocorrencia aberta pela escola.' }],
@@ -73,9 +91,17 @@ export class OcorrenciaModel {
 
   static async update(id, payload) {
     await OcorrenciaModel.findById(id)
+
+    let escolaDestino = null
+    if (payload.escolaId !== undefined) {
+      escolaDestino = await prisma.escola.findUnique({ where: { id: payload.escolaId } })
+      if (!escolaDestino) throw new AppError('Escola nao encontrada', 404)
+    }
+
     const ocorrencia = await prisma.ocorrencia.update({
       where: { id },
       data: {
+        ...(escolaDestino ? { escolaId: escolaDestino.id, endereco: payload.endereco || escolaDestino.endereco } : {}),
         ...(payload.titulo !== undefined ? { titulo: payload.titulo } : {}),
         ...(payload.descricao !== undefined ? { descricao: payload.descricao } : {}),
         ...(payload.tipo !== undefined ? { tipo: payload.tipo } : {}),
@@ -87,7 +113,21 @@ export class OcorrenciaModel {
         ...(payload.dataAprovacao !== undefined ? { dataAprovacao: payload.dataAprovacao ? new Date(payload.dataAprovacao) : null } : {}),
         ...(payload.dataResolucao !== undefined ? { dataResolucao: payload.dataResolucao ? new Date(payload.dataResolucao) : null } : {}),
         ...(payload.chatPendente !== undefined ? { chatPendente: payload.chatPendente } : {}),
+        ...(payload.fotos !== undefined ? { fotos: JSON.stringify(payload.fotos) } : {}),
       },
+      include: includeRelacoes,
+    })
+    return serialize(ocorrencia)
+  }
+
+  static async addFotos(id, urls) {
+    const atual = await prisma.ocorrencia.findUnique({ where: { id } })
+    if (!atual) throw new AppError('Ocorrencia nao encontrada', 404)
+
+    const fotosAtuais = JSON.parse(atual.fotos || '[]')
+    const ocorrencia = await prisma.ocorrencia.update({
+      where: { id },
+      data: { fotos: JSON.stringify([...fotosAtuais, ...urls]) },
       include: includeRelacoes,
     })
     return serialize(ocorrencia)
@@ -101,6 +141,7 @@ export class OcorrenciaModel {
         origem: payload.origem,
         autor: payload.autor,
         mensagem: payload.mensagem,
+        status: payload.status,
         anexos: JSON.stringify(payload.anexos || []),
       },
     })

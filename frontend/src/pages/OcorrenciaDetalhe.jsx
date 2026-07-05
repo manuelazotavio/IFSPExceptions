@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { categorias, criticidadeValues, escolas, locaisInternos, ocorrenciasAprovadas, statusValues } from '../data/mockData.js'
+import { categorias, criticidadeValues, locaisInternos, statusValues } from '../data/mockData.js'
+import { adicionarInteracao, atualizarOcorrencia, listarEscolas, obterOcorrencia } from '../services/api.js'
 import { Card, Modal } from '../components/ui.jsx'
 import { Icon } from '../components/Icons.jsx'
 
@@ -22,8 +23,60 @@ function lerComoDataUrl(file) {
   })
 }
 
-export function OcorrenciaDetalhe({ id, onNavigate }) {
-  const ocorrencia = ocorrenciasAprovadas.find((item) => item.id === id) || ocorrenciasAprovadas[0]
+export function OcorrenciaDetalhe({ id, onNavigate, user }) {
+  const [ocorrencia, setOcorrencia] = useState(null)
+  const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState('')
+
+  useEffect(() => {
+    let ativo = true
+    setCarregando(true)
+    setErro('')
+    obterOcorrencia(id)
+      .then((dados) => { if (ativo) setOcorrencia(dados) })
+      .catch((error) => { if (ativo) setErro(error.message) })
+      .finally(() => { if (ativo) setCarregando(false) })
+    return () => {
+      ativo = false
+    }
+  }, [id])
+
+  if (carregando) {
+    return <Card><p className="text-sm font-semibold text-slate-500">Carregando ocorrência...</p></Card>
+  }
+
+  if (erro || !ocorrencia) {
+    return (
+      <div className="space-y-4">
+        <button onClick={() => onNavigate('/ocorrencias')} className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold">Voltar para lista</button>
+        <Card><p className="text-sm font-semibold text-red-600">{erro || 'Ocorrência não encontrada.'}</p></Card>
+      </div>
+    )
+  }
+
+  return (
+    <OcorrenciaDetalheConteudo
+      key={ocorrencia.id}
+      ocorrencia={ocorrencia}
+      onNavigate={onNavigate}
+      user={user}
+      onAtualizar={setOcorrencia}
+    />
+  )
+}
+
+function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }) {
+  const [escolas, setEscolas] = useState([])
+  useEffect(() => {
+    let ativo = true
+    listarEscolas()
+      .then((dados) => { if (ativo) setEscolas(dados) })
+      .catch(() => { if (ativo) setEscolas([]) })
+    return () => {
+      ativo = false
+    }
+  }, [])
+
   const [status, setStatus] = useState(ocorrencia.status)
   const [criticidade, setCriticidade] = useState(ocorrencia.criticidade)
   const [form, setForm] = useState({
@@ -33,18 +86,40 @@ export function OcorrenciaDetalhe({ id, onNavigate }) {
     localizacaoInterna: ocorrencia.localizacaoInterna,
     tipo: ocorrencia.tipo,
     dataEnvio: ocorrencia.dataEnvio,
-    dataAprovacao: ocorrencia.dataAprovacao,
-    dataResolucao: ocorrencia.dataResolucao,
+    dataAprovacao: ocorrencia.dataAprovacao || '',
+    dataResolucao: ocorrencia.dataResolucao || '',
   })
   const updateForm = (key, value) => setForm((prev) => ({ ...prev, [key]: value }))
-  const escolaSelecionada = escolas.find((item) => item.id === form.escolaId) || {}
+  const escolaSelecionada = escolas.find((item) => item.id === form.escolaId) || { nome: ocorrencia.escola, bairro: ocorrencia.bairro, endereco: ocorrencia.endereco }
   const [savedAt, setSavedAt] = useState('')
+  const [salvando, setSalvando] = useState(false)
+  const [erroSalvar, setErroSalvar] = useState('')
   const [modalEdicaoAberto, setModalEdicaoAberto] = useState(false)
 
-  const handleSalvar = () => {
-    // Front-only: sem backend ainda. Quando existir API, disparar aqui o PUT/PATCH de ocorrência com { ...form, status, criticidade }.
-    setSavedAt(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }))
-    setModalEdicaoAberto(false)
+  const handleSalvar = async () => {
+    setSalvando(true)
+    setErroSalvar('')
+    try {
+      const atualizada = await atualizarOcorrencia(ocorrencia.id, {
+        escolaId: form.escolaId,
+        titulo: form.titulo,
+        descricao: form.descricao,
+        tipo: form.tipo,
+        criticidade,
+        status,
+        localizacaoInterna: form.localizacaoInterna,
+        dataAprovacao: form.dataAprovacao || null,
+        dataResolucao: form.dataResolucao || null,
+        fotos,
+      })
+      onAtualizar(atualizada)
+      setSavedAt(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }))
+      setModalEdicaoAberto(false)
+    } catch (error) {
+      setErroSalvar(error.message)
+    } finally {
+      setSalvando(false)
+    }
   }
 
   async function exportarPdf() {
@@ -250,6 +325,7 @@ export function OcorrenciaDetalhe({ id, onNavigate }) {
   const [interacoes, setInteracoes] = useState(ocorrencia.interacoes)
   const [mensagem, setMensagem] = useState('')
   const [anexos, setAnexos] = useState([])
+  const [enviandoMensagem, setEnviandoMensagem] = useState(false)
   const fileInputRef = useRef(null)
   const chatFimRef = useRef(null)
 
@@ -265,20 +341,26 @@ export function OcorrenciaDetalhe({ id, onNavigate }) {
   }
   const removerAnexo = (index) => setAnexos((prev) => prev.filter((_, i) => i !== index))
 
-  const enviarMensagem = () => {
+  const enviarMensagem = async () => {
     if (!mensagem.trim() && anexos.length === 0) return
-    const agora = new Date()
-    setInteracoes((prev) => [...prev, {
-      origem: 'seduc',
-      autor: 'Você',
-      data: agora.toISOString().slice(0, 10),
-      hora: agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-      status,
-      mensagem,
-      anexos: anexos.map((file) => file.name),
-    }])
-    setMensagem('')
-    setAnexos([])
+    setEnviandoMensagem(true)
+    try {
+      const atualizada = await adicionarInteracao(ocorrencia.id, {
+        origem: 'seduc',
+        autor: user?.nome || 'Você',
+        mensagem,
+        status,
+        anexos: anexos.map((file) => file.name),
+      })
+      onAtualizar(atualizada)
+      setInteracoes(atualizada.interacoes)
+      setMensagem('')
+      setAnexos([])
+    } catch (error) {
+      setErroSalvar(error.message)
+    } finally {
+      setEnviandoMensagem(false)
+    }
   }
 
   return (
@@ -373,7 +455,7 @@ export function OcorrenciaDetalhe({ id, onNavigate }) {
                 const fechado = status === 'Resolvida'
                 const mostrarLinha = !ultimo || !fechado
                 return (
-                  <div key={index} className={`relative ${ultimo && fechado ? 'pb-0' : 'pb-5'}`}>
+                  <div key={entry.id || index} className={`relative ${ultimo && fechado ? 'pb-0' : 'pb-5'}`}>
                     {mostrarLinha && <span className="absolute left-[4px] top-1 bottom-0 w-0.5 bg-slate-200" />}
                     <span className="absolute left-0 top-1 h-2.5 w-2.5 rounded-full border-2 border-white bg-blue-600 ring-1 ring-blue-200" />
                     <div className="pl-5">
@@ -438,7 +520,7 @@ export function OcorrenciaDetalhe({ id, onNavigate }) {
               <input ref={fileInputRef} type="file" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" onChange={handleFileChange} className="hidden" />
               <button
                 onClick={enviarMensagem}
-                disabled={!mensagem.trim() && anexos.length === 0}
+                disabled={enviandoMensagem || (!mensagem.trim() && anexos.length === 0)}
                 aria-label="Enviar mensagem"
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
               >
@@ -534,9 +616,14 @@ export function OcorrenciaDetalhe({ id, onNavigate }) {
               </div>
             )}
           </div>
+          {erroSalvar && (
+            <p className="rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{erroSalvar}</p>
+          )}
           <div className="flex justify-end gap-2 pt-2">
             <button onClick={() => setModalEdicaoAberto(false)} className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">Cancelar</button>
-            <button onClick={handleSalvar} className="rounded-md bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700">Salvar</button>
+            <button onClick={handleSalvar} disabled={salvando} className="rounded-md bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">
+              {salvando ? 'Salvando...' : 'Salvar'}
+            </button>
           </div>
         </div>
       </Modal>

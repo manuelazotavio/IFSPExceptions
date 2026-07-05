@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { NotificationBell } from './NotificationBell.jsx'
 import { Sidebar } from './Sidebar.jsx'
 import { buildNotificacoes } from '../utils/metrics.js'
+import { listarOcorrencias } from '../services/api.js'
 
 const titles = {
   '/dashboard': 'Dashboard Geral',
@@ -22,7 +23,24 @@ const roleLabels = {
 export function Layout({ route, onNavigate, onExport, user, onLogout, children }) {
   const [exportOpen, setExportOpen] = useState(false)
   const isExterno = user?.role === 'EXTERNO'
-  const notificacoes = buildNotificacoes(user)
+  const isDiretor = user?.role === 'DIRETOR'
+  const [ocorrenciasNotificacoes, setOcorrenciasNotificacoes] = useState([])
+
+  useEffect(() => {
+    let ativo = true
+    const filtros = {
+      ...(isDiretor && user?.escolaId ? { escolaId: user.escolaId } : {}),
+      ...(isExterno && user?.email ? { criadoPorEmail: user.email } : {}),
+    }
+    listarOcorrencias(filtros)
+      .then((dados) => { if (ativo) setOcorrenciasNotificacoes(dados) })
+      .catch(() => { if (ativo) setOcorrenciasNotificacoes([]) })
+    return () => {
+      ativo = false
+    }
+  }, [isDiretor, isExterno, user?.escolaId, user?.email])
+
+  const notificacoes = buildNotificacoes(user, ocorrenciasNotificacoes)
   const title = isExterno
     ? (route.startsWith('/ocorrencias/') ? 'Detalhe da ocorrencia' : 'Minhas ocorrencias')
     : titles[route]

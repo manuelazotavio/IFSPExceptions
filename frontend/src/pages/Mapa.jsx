@@ -2,14 +2,14 @@ import { useEffect, useMemo, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { MapContainer, Marker, TileLayer, Tooltip, useMap } from 'react-leaflet'
-import { escolas, statusValues } from '../data/mockData.js'
+import { statusValues } from '../data/mockData.js'
 import { Badge, Card, FilterSelect } from '../components/ui.jsx'
 import { fetchEscolaOcorrencias, fetchHeatmapOcorrencias, getEscolaOcorrenciasFallback, getHeatmapFallback } from '../services/mapa.js'
+import { listarEscolas } from '../services/api.js'
 
 const mapCenter = [-23.6203, -45.4131]
 const drawerFocusOffset = { x: -180, y: 0 }
 const criticidadeOptions = ['Baixa', 'Atencao', 'Critica']
-const schoolOptions = escolas.map((escola) => ({ value: escola.id, label: escola.nome }))
 const mapStyleStorageKey = 'seduc-map-style'
 const mapStyles = {
   cartoLight: {
@@ -151,6 +151,7 @@ export function Mapa({ onNavigate }) {
     dataInicial: '',
     dataFinal: '',
   })
+  const [escolas, setEscolas] = useState([])
   const [heatmapData, setHeatmapData] = useState([])
   const [loadingMapa, setLoadingMapa] = useState(true)
   const [erroMapa, setErroMapa] = useState('')
@@ -172,6 +173,18 @@ export function Mapa({ onNavigate }) {
       return 'cartoLight'
     }
   })
+
+  const schoolOptions = useMemo(() => escolas.map((escola) => ({ value: escola.id, label: escola.nome })), [escolas])
+
+  useEffect(() => {
+    let ativo = true
+    listarEscolas()
+      .then((dados) => { if (ativo) setEscolas(dados) })
+      .catch(() => { if (ativo) setEscolas([]) })
+    return () => {
+      ativo = false
+    }
+  }, [])
 
   useEffect(() => {
     const controller = new AbortController()

@@ -1,9 +1,10 @@
-import { useMemo, useRef, useState } from 'react'
-import { bairros, categorias, criticidadeValues, escolas, locaisInternos, ocorrenciasAprovadas, statusValues } from '../data/mockData.js'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { bairros, categorias, criticidadeValues, locaisInternos, statusValues } from '../data/mockData.js'
 import { diasEmAberto, sortOcorrencias } from '../utils/metrics.js'
 import { Badge, Card, FilterSelect, Modal } from '../components/ui.jsx'
 import { Pagination } from '../components/Pagination.jsx'
 import { Icon } from '../components/Icons.jsx'
+import { criarOcorrencia, listarEscolas, listarOcorrencias } from '../services/api.js'
 
 const CAMPOS_VAZIOS = { escolaId: '', titulo: '', tipo: '', criticidade: '', localizacaoInterna: '', descricao: '' }
 const ITENS_POR_PAGINA = 10
@@ -25,9 +26,16 @@ function lerComoDataUrl(file) {
 }
 
 export function Ocorrencias({ onNavigate, user }) {
+  const isDiretor = user?.role === 'DIRETOR'
+  const isExterno = user?.role === 'EXTERNO'
   const [filters, setFilters] = useState({ bairro: '', status: '', criticidade: '', tipo: '' })
   const setFilter = (key, value) => { setFilters((prev) => ({ ...prev, [key]: value })); setPagina(1) }
-  const [ocorrencias, setOcorrencias] = useState(ocorrenciasAprovadas)
+  const [ocorrencias, setOcorrencias] = useState([])
+  const [escolas, setEscolas] = useState([])
+  const [carregando, setCarregando] = useState(true)
+  const [erroLista, setErroLista] = useState('')
+  const [erroCadastro, setErroCadastro] = useState('')
+  const [salvandoOcorrencia, setSalvandoOcorrencia] = useState(false)
   const [modalAberto, setModalAberto] = useState(false)
   const [novaOcorrencia, setNovaOcorrencia] = useState(CAMPOS_VAZIOS)
   const setCampo = (key, value) => setNovaOcorrencia((prev) => ({ ...prev, [key]: value }))
@@ -35,6 +43,42 @@ export function Ocorrencias({ onNavigate, user }) {
   const fotoInputRef = useRef(null)
   const [busca, setBusca] = useState('')
   const [pagina, setPagina] = useState(1)
+
+  useEffect(() => {
+    let ativo = true
+
+    async function carregarOcorrencias() {
+      setCarregando(true)
+      setErroLista('')
+      try {
+        const filtrosApi = {
+          ...(isDiretor && user?.escolaId ? { escolaId: user.escolaId } : {}),
+          ...(isExterno && user?.email ? { criadoPorEmail: user.email } : {}),
+        }
+        const dados = await listarOcorrencias(filtrosApi)
+        if (ativo) setOcorrencias(dados)
+      } catch (error) {
+        if (ativo) setErroLista(error.message)
+      } finally {
+        if (ativo) setCarregando(false)
+      }
+    }
+
+    carregarOcorrencias()
+    return () => {
+      ativo = false
+    }
+  }, [isDiretor, isExterno, user?.escolaId, user?.email])
+
+  useEffect(() => {
+    let ativo = true
+    listarEscolas()
+      .then((dados) => { if (ativo) setEscolas(dados) })
+      .catch(() => { if (ativo) setEscolas([]) })
+    return () => {
+      ativo = false
+    }
+  }, [])
 
   const previewsFotos = useMemo(() => novasFotos.map((file) => URL.createObjectURL(file)), [novasFotos])
   const handleFotoInputClick = () => fotoInputRef.current?.click()
@@ -62,43 +106,39 @@ export function Ocorrencias({ onNavigate, user }) {
   const cancelarNovaOcorrencia = () => {
     setNovaOcorrencia(CAMPOS_VAZIOS)
     setNovasFotos([])
+    setErroCadastro('')
     setModalAberto(false)
   }
 
   const cadastrarOcorrencia = async () => {
     if (!formularioValido) return
-    const escola = escolas.find((item) => item.id === novaOcorrencia.escolaId)
-    const fotos = await Promise.all(novasFotos.map(lerComoDataUrl))
-    const dataEnvio = new Date().toISOString().slice(0, 10)
-    const ocorrencia = {
-      id: `occ-${Date.now()}`,
-      protocolo: `2026-${String(ocorrencias.length + 1).padStart(4, '0')}`,
-      escolaId: escola.id,
-      escola: escola.nome,
-      bairro: escola.bairro,
-      endereco: escola.endereco,
-      titulo: novaOcorrencia.titulo,
-      descricao: novaOcorrencia.descricao,
-      tipo: novaOcorrencia.tipo,
-      criticidade: novaOcorrencia.criticidade,
-      status: 'Aberta',
-      localizacaoInterna: novaOcorrencia.localizacaoInterna,
-      dataEnvio,
-      dataAprovacao: '',
-      ultimaAtualizacao: dataEnvio,
-      dataResolucao: '',
-      aprovadaPelaEscola: true,
-      criadoPorEmail: user?.email || '',
-      criadoPorNome: user?.nome || '',
-      chatPendente: false,
-      fotos,
-      interacoes: [{ origem: 'sistema', autor: 'Sistema', data: dataEnvio, mensagem: 'Ocorrencia aberta pela escola.' }],
+    setErroCadastro('')
+    setSalvandoOcorrencia(true)
+
+    try {
+      const fotos = await Promise.all(novasFotos.map(lerComoDataUrl))
+      const dataEnvio = new Date().toISOString().slice(0, 10)
+      const ocorrenciaCriada = await criarOcorrencia({
+        escolaId: novaOcorrencia.escolaId,
+        titulo: novaOcorrencia.titulo,
+        descricao: novaOcorrencia.descricao,
+        tipo: novaOcorrencia.tipo,
+        criticidade: novaOcorrencia.criticidade,
+        localizacaoInterna: novaOcorrencia.localizacaoInterna,
+        dataEnvio,
+        criadoPorEmail: user?.email || '',
+        criadoPorNome: user?.nome || '',
+        fotos,
+      })
+      setOcorrencias((prev) => [ocorrenciaCriada, ...prev])
+      setNovaOcorrencia(CAMPOS_VAZIOS)
+      setNovasFotos([])
+      setModalAberto(false)
+    } catch (error) {
+      setErroCadastro(error.message)
+    } finally {
+      setSalvandoOcorrencia(false)
     }
-    ocorrenciasAprovadas.push(ocorrencia)
-    setOcorrencias((prev) => [...prev, ocorrencia])
-    setNovaOcorrencia(CAMPOS_VAZIOS)
-    setNovasFotos([])
-    setModalAberto(false)
   }
 
   const exportarCsv = () => {
@@ -153,6 +193,12 @@ export function Ocorrencias({ onNavigate, user }) {
           <FilterSelect label="Tipo" value={filters.tipo} onChange={(v) => setFilter('tipo', v)} options={categorias} />
         </div>
       </Card>
+      {erroLista && (
+        <p className="rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{erroLista}</p>
+      )}
+      {carregando && (
+        <p className="text-sm font-semibold text-slate-500">Carregando ocorrências...</p>
+      )}
       <div className="overflow-x-auto w-full overflow-x-auto border border-slate-200 rounded-xl shadow-sm">
         <table className="w-full min-w-[1100px] border-collapse rounded-2 text-sm">
           <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-extrabold tracking-wide">
@@ -223,7 +269,7 @@ export function Ocorrencias({ onNavigate, user }) {
           </label>
           <label className="block">
             <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Descrição <span className="text-red-500">*</span></span>
-            <textarea value={novaOcorrencia.descricao} onChange={(e) => setCampo('descrição', e.target.value)} className="min-h-20 w-full rounded-md border border-slate-200 p-3 text-sm text-slate-700 outline-none focus:border-blue-500" />
+            <textarea value={novaOcorrencia.descricao} onChange={(e) => setCampo('descricao', e.target.value)} className="min-h-20 w-full rounded-md border border-slate-200 p-3 text-sm text-slate-700 outline-none focus:border-blue-500" />
           </label>
           <div>
             <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Fotos <span className="text-red-500">*</span></span>
@@ -250,9 +296,14 @@ export function Ocorrencias({ onNavigate, user }) {
               </div>
             )}
           </div>
+          {erroCadastro && (
+            <p className="rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{erroCadastro}</p>
+          )}
           <div className="flex justify-end gap-2 pt-2">
             <button onClick={cancelarNovaOcorrencia} className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">Cancelar</button>
-            <button onClick={cadastrarOcorrencia} disabled={!formularioValido} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50">Cadastrar</button>
+            <button onClick={cadastrarOcorrencia} disabled={!formularioValido || salvandoOcorrencia} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50">
+              {salvandoOcorrencia ? 'Salvando...' : 'Cadastrar'}
+            </button>
           </div>
         </div>
       </Modal>

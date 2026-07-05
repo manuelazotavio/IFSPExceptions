@@ -64,7 +64,7 @@ export function Cadastro({ onNavigate }) {
             <Icon name="school" className="h-5 w-5" />
           </div>
           <div>
-            <strong className="block text-sm font-800 text-slate-950">Escola em Dia</strong>
+            <strong className="block text-sm font-800 text-slate-950">Zela+</strong>
       
           </div>
         </div>

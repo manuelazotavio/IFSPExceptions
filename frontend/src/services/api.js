@@ -25,3 +25,55 @@ export function listarEscolas() {
 export function obterEscola(id, options = {}) {
   return request(`/escolas/${id}`, options)
 }
+
+export function criarEscola(payload) {
+  return request('/escolas', { method: 'POST', body: JSON.stringify(payload) })
+}
+
+export function atualizarEscola(id, payload) {
+  return request(`/escolas/${id}`, { method: 'PUT', body: JSON.stringify(payload) })
+}
+
+export function removerEscola(id) {
+  return request(`/escolas/${id}`, { method: 'DELETE' })
+}
+
+export function listarUsuarios(filters = {}) {
+  const params = new URLSearchParams(filters)
+  const query = params.toString()
+  return request(`/usuarios${query ? `?${query}` : ''}`)
+}
+
+export function criarUsuario(payload) {
+  return request('/usuarios', { method: 'POST', body: JSON.stringify(payload) })
+}
+
+export function atualizarUsuario(id, payload) {
+  return request(`/usuarios/${id}`, { method: 'PUT', body: JSON.stringify(payload) })
+}
+
+export function removerUsuario(id) {
+  return request(`/usuarios/${id}`, { method: 'DELETE' })
+}
+
+export function listarOcorrencias(filters = {}) {
+  const params = new URLSearchParams(filters)
+  const query = params.toString()
+  return request(`/ocorrencias${query ? `?${query}` : ''}`)
+}
+
+export function obterOcorrencia(id) {
+  return request(`/ocorrencias/${id}`)
+}
+
+export function criarOcorrencia(payload) {
+  return request('/ocorrencias', { method: 'POST', body: JSON.stringify(payload) })
+}
+
+export function atualizarOcorrencia(id, payload) {
+  return request(`/ocorrencias/${id}`, { method: 'PUT', body: JSON.stringify(payload) })
+}
+
+export function adicionarInteracao(id, payload) {
+  return request(`/ocorrencias/${id}/interacoes`, { method: 'POST', body: JSON.stringify(payload) })
+}

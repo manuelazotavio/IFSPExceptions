@@ -15,9 +15,12 @@ const criarOcorrenciaSchema = z.object({
   endereco: z.string().trim().optional(),
   dataEnvio: z.string({ message: 'Informe a data de envio' }).trim().min(1, 'Informe a data de envio'),
   criadoPorEmail: z.string({ message: 'Email invalido' }).trim().toLowerCase().email('Email invalido'),
+  criadoPorNome: z.string().trim().optional(),
+  fotos: z.array(z.string()).optional(),
 })
 
 const atualizarOcorrenciaSchema = z.object({
+  escolaId: z.string().trim().min(1, 'Informe a escola').optional(),
   titulo: z.string().trim().min(1, 'Informe o titulo').optional(),
   descricao: z.string().trim().optional(),
   tipo: z.string().trim().min(1, 'Informe o tipo').optional(),
@@ -29,12 +32,14 @@ const atualizarOcorrenciaSchema = z.object({
   dataAprovacao: z.string().nullable().optional(),
   dataResolucao: z.string().nullable().optional(),
   chatPendente: z.boolean().optional(),
+  fotos: z.array(z.string()).optional(),
 })
 
 const interacaoSchema = z.object({
   origem: z.string().trim().min(1, 'Informe a origem'),
   autor: z.string().trim().min(1, 'Informe o autor'),
   mensagem: z.string().trim().min(1, 'Informe a mensagem'),
+  status: z.string().trim().optional(),
   anexos: z.array(z.string()).optional(),
 })
 

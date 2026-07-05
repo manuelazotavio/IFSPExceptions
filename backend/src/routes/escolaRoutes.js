@@ -6,6 +6,7 @@ export const escolaRoutes = Router()
 
 escolaRoutes.get('/', asyncHandler(EscolaController.getAll))
 escolaRoutes.get('/:id', asyncHandler(EscolaController.get))
+escolaRoutes.get('/:id/ocorrencias', asyncHandler(EscolaController.getOcorrencias))
 escolaRoutes.post('/', asyncHandler(EscolaController.create))
 escolaRoutes.put('/:id', asyncHandler(EscolaController.update))
 escolaRoutes.delete('/:id', asyncHandler(EscolaController.delete))

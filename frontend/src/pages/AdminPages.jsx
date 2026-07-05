@@ -1,11 +1,29 @@
-import { useState } from 'react'
-import { categorias, escolas, ocorrenciasAprovadas, usuarios } from '../data/mockData.js'
+import { useEffect, useState } from 'react'
+import { categorias } from '../data/mockData.js'
 import { dashboardMetrics, groupCount } from '../utils/metrics.js'
+import { atualizarUsuario, listarEscolas, listarOcorrencias, listarUsuarios } from '../services/api.js'
 import { Badge, BarList, Card, MetricCard, Modal } from '../components/ui.jsx'
 
 export function Indicadores() {
-  const metrics = dashboardMetrics()
-  return <div className="space-y-5"><div className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">{Object.entries(metrics).map(([label, value]) => <MetricCard key={label} label={label} value={value} />)}</div><div className="grid gap-5 xl:grid-cols-2"><Card><h2 className="mb-4 text-lg font-800">Por bairro</h2><BarList data={Object.entries(groupCount(ocorrenciasAprovadas, 'bairro')).map(([label, value]) => ({ label, value }))} /></Card><Card><h2 className="mb-4 text-lg font-800">Por criticidade</h2><BarList data={Object.entries(groupCount(ocorrenciasAprovadas, 'criticidade')).map(([label, value]) => ({ label, value }))} /></Card></div></div>
+  const [escolas, setEscolas] = useState([])
+  const [ocorrencias, setOcorrencias] = useState([])
+
+  useEffect(() => {
+    let ativo = true
+    Promise.all([listarEscolas(), listarOcorrencias()])
+      .then(([escolasApi, ocorrenciasApi]) => {
+        if (!ativo) return
+        setEscolas(escolasApi)
+        setOcorrencias(ocorrenciasApi.filter((item) => item.aprovadaPelaEscola))
+      })
+      .catch(() => {})
+    return () => {
+      ativo = false
+    }
+  }, [])
+
+  const metrics = dashboardMetrics(ocorrencias, escolas.length)
+  return <div className="space-y-5"><div className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">{Object.entries(metrics).map(([label, value]) => <MetricCard key={label} label={label} value={value} />)}</div><div className="grid gap-5 xl:grid-cols-2"><Card><h2 className="mb-4 text-lg font-800">Por bairro</h2><BarList data={Object.entries(groupCount(ocorrencias, 'bairro')).map(([label, value]) => ({ label, value }))} /></Card><Card><h2 className="mb-4 text-lg font-800">Por criticidade</h2><BarList data={Object.entries(groupCount(ocorrencias, 'criticidade')).map(([label, value]) => ({ label, value }))} /></Card></div></div>
 }
 
 const PERMISSOES = [
@@ -15,62 +33,115 @@ const PERMISSOES = [
 ]
 
 export function Usuarios() {
-  const [lista, setLista] = useState(usuarios)
+  const [lista, setLista] = useState([])
+  const [escolas, setEscolas] = useState([])
+  const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState('')
 
-  function alterarPermissao(email, role) {
-    setLista((prev) => prev.map((user) => (user.email === email ? { ...user, role } : user)))
+  useEffect(() => {
+    let ativo = true
+
+    async function carregar() {
+      setCarregando(true)
+      setErro('')
+      try {
+        const [usuariosApi, escolasApi] = await Promise.all([listarUsuarios(), listarEscolas()])
+        if (!ativo) return
+        setLista(usuariosApi)
+        setEscolas(escolasApi)
+      } catch (error) {
+        if (ativo) setErro(error.message)
+      } finally {
+        if (ativo) setCarregando(false)
+      }
+    }
+
+    carregar()
+    return () => {
+      ativo = false
+    }
+  }, [])
+
+  async function persistirUsuario(usuario) {
+    try {
+      const atualizado = await atualizarUsuario(usuario.id, { role: usuario.role, escolaId: usuario.escolaId })
+      setLista((prev) => prev.map((item) => (item.id === usuario.id ? atualizado : item)))
+    } catch (error) {
+      setErro(error.message)
+    }
   }
 
-  function alterarEscola(email, escolaId) {
-    setLista((prev) => prev.map((user) => (user.email === email ? { ...user, escolaId: escolaId || null } : user)))
+  function alterarPermissao(id, role) {
+    const usuario = lista.find((item) => item.id === id)
+    if (!usuario) return
+    const atualizado = { ...usuario, role, escolaId: role === 'SEDUC' ? null : usuario.escolaId }
+    setLista((prev) => prev.map((item) => (item.id === id ? atualizado : item)))
+    persistirUsuario(atualizado)
+  }
+
+  function alterarEscola(id, escolaId) {
+    const usuario = lista.find((item) => item.id === id)
+    if (!usuario) return
+    const atualizado = { ...usuario, escolaId: escolaId || null }
+    setLista((prev) => prev.map((item) => (item.id === id ? atualizado : item)))
+    persistirUsuario(atualizado)
   }
 
   return (
-    <div className="overflow-x-auto w-full overflow-x-auto border border-slate-200 rounded-xl shadow-sm">
-      <table className="w-full min-w-[900px] border-collapse rounded-2 text-sm">
-        <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-extrabold tracking-wide">
-          <tr className="divide-x divide-slate-200">
-            {['Nome', 'Email', 'Permissão', 'Escola vinculada', 'Status', 'Último acesso'].map((head) => (
-              <th key={head} className="px-4 py-3">
-                {head}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-200">
-          {lista.map((user) => (
-            <tr key={user.email} className="divide-x divide-slate-200 border-x border-slate-200">
-              <td className="px-4 py-3 font-bold text-slate-800">{user.nome}</td>
-              <td className="px-4 py-3 text-slate-600">{user.email}</td>
-              <td className="px-4 py-3">
-                <select
-                  value={user.role}
-                  onChange={(event) => alterarPermissao(user.email, event.target.value)}
-                  className="h-10 cursor-pointer rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-500"
-                >
-                  {PERMISSOES.map((opcao) => <option key={opcao.value} value={opcao.value}>{opcao.label}</option>)}
-                </select>
-              </td>
-              <td className="px-4 py-3">
-                {user.role === 'DIRETOR' ? (
-                  <select
-                    value={user.escolaId || ''}
-                    onChange={(event) => alterarEscola(user.email, event.target.value)}
-                    className="h-10 w-full max-w-56 cursor-pointer rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-500"
-                  >
-                    <option value="">Sem vinculo</option>
-                    {escolas.map((escola) => <option key={escola.id} value={escola.id}>{escola.nome}</option>)}
-                  </select>
-                ) : (
-                  <span className="text-slate-400">—</span>
-                )}
-              </td>
-              <td className="px-4 py-3"><Badge>{user.status}</Badge></td>
-              <td className="px-4 py-3 text-slate-600">{user.ultimoAcesso}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="space-y-3">
+      {erro && (
+        <p className="rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{erro}</p>
+      )}
+      {carregando ? (
+        <p className="text-sm font-semibold text-slate-500">Carregando usuários...</p>
+      ) : (
+        <div className="overflow-x-auto w-full overflow-x-auto border border-slate-200 rounded-xl shadow-sm">
+          <table className="w-full min-w-[900px] border-collapse rounded-2 text-sm">
+            <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-extrabold tracking-wide">
+              <tr className="divide-x divide-slate-200">
+                {['Nome', 'Email', 'Permissão', 'Escola vinculada', 'Status', 'Cadastro'].map((head) => (
+                  <th key={head} className="px-4 py-3">
+                    {head}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {lista.map((user) => (
+                <tr key={user.id} className="divide-x divide-slate-200 border-x border-slate-200">
+                  <td className="px-4 py-3 font-bold text-slate-800">{user.nome}</td>
+                  <td className="px-4 py-3 text-slate-600">{user.email}</td>
+                  <td className="px-4 py-3">
+                    <select
+                      value={user.role}
+                      onChange={(event) => alterarPermissao(user.id, event.target.value)}
+                      className="h-10 cursor-pointer rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-500"
+                    >
+                      {PERMISSOES.map((opcao) => <option key={opcao.value} value={opcao.value}>{opcao.label}</option>)}
+                    </select>
+                  </td>
+                  <td className="px-4 py-3">
+                    {user.role === 'DIRETOR' ? (
+                      <select
+                        value={user.escolaId || ''}
+                        onChange={(event) => alterarEscola(user.id, event.target.value)}
+                        className="h-10 w-full max-w-56 cursor-pointer rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-500"
+                      >
+                        <option value="">Sem vinculo</option>
+                        {escolas.map((escola) => <option key={escola.id} value={escola.id}>{escola.nome}</option>)}
+                      </select>
+                    ) : (
+                      <span className="text-slate-400">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3"><Badge>{user.ativo ? 'Ativo' : 'Inativo'}</Badge></td>
+                  <td className="px-4 py-3 text-slate-600">{user.criadoEm?.slice(0, 10)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }
@@ -79,7 +150,19 @@ export function Categorias() {
   const [lista, setLista] = useState(categorias)
   const [modalAberto, setModalAberto] = useState(false)
   const [novaCategoria, setNovaCategoria] = useState('')
-  const contagem = groupCount(ocorrenciasAprovadas, 'tipo')
+  const [ocorrencias, setOcorrencias] = useState([])
+
+  useEffect(() => {
+    let ativo = true
+    listarOcorrencias()
+      .then((dados) => { if (ativo) setOcorrencias(dados) })
+      .catch(() => { if (ativo) setOcorrencias([]) })
+    return () => {
+      ativo = false
+    }
+  }, [])
+
+  const contagem = groupCount(ocorrencias, 'tipo')
 
   function adicionarCategoria() {
     const nome = novaCategoria.trim()

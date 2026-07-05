@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getSchoolStats } from '../utils/metrics.js'
 import { loadCustomSchools, loadSchoolCatalog, saveCustomSchool } from '../utils/schools.js'
+import { criarEscola, listarOcorrencias } from '../services/api.js'
 import { Badge, Card, FilterSelect } from '../components/ui.jsx'
 
 export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
   const [schoolList, setSchoolList] = useState(loadCustomSchools)
+  const [ocorrencias, setOcorrencias] = useState([])
   const [loadingSchools, setLoadingSchools] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [salvandoEscola, setSalvandoEscola] = useState(false)
+  const [erroCadastro, setErroCadastro] = useState('')
   const [novoCadastro, setNovoCadastro] = useState({
     nome: '',
     bairro: '',
@@ -52,6 +56,16 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
     }
 
     refreshSchoolList()
+    return () => {
+      active = false
+    }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    listarOcorrencias()
+      .then((dados) => { if (active) setOcorrencias(dados) })
+      .catch(() => { if (active) setOcorrencias([]) })
     return () => {
       active = false
     }
@@ -123,25 +137,36 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
 
   async function handleCadastrarEscola(event) {
     event.preventDefault()
+    setErroCadastro('')
+    setSalvandoEscola(true)
 
-    const createdSchool = {
-      id: `esc-custom-${Date.now()}`,
-      nome: novoCadastro.nome.trim(),
-      bairro: novoCadastro.bairro.trim(),
-      endereco: novoCadastro.endereco.trim(),
-      latitude: Number(novoCadastro.latitude),
-      longitude: Number(novoCadastro.longitude),
+    let escolaCriada
+    try {
+      escolaCriada = await criarEscola({
+        nome: novoCadastro.nome.trim(),
+        bairro: novoCadastro.bairro.trim(),
+        endereco: novoCadastro.endereco.trim(),
+        latitude: Number(novoCadastro.latitude),
+        longitude: Number(novoCadastro.longitude),
+      })
+    } catch (error) {
+      setErroCadastro(error.message)
+      setSalvandoEscola(false)
+      return
+    }
+
+    saveCustomSchool({
+      ...escolaCriada,
       descricao: novoCadastro.descricao.trim(),
       status: 'Ativo',
       fotoNome: novoCadastro.fotoNome,
       fotoUrl: novoCadastro.fotoUrl,
       comodos: novoCadastro.comodos,
-      dataCadastro: new Date().toISOString().slice(0, 10),
+      dataCadastro: escolaCriada.criadoEm?.slice(0, 10) || new Date().toISOString().slice(0, 10),
       x: 50,
       y: 50,
-    }
+    })
 
-    saveCustomSchool(createdSchool)
     try {
       setSchoolList(await loadSchoolCatalog())
     } catch {
@@ -159,6 +184,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
       comodos: [],
     })
     setNovoComodo({ nome: '', codigo: '' })
+    setSalvandoEscola(false)
     setIsModalOpen(false)
   }
 
@@ -234,7 +260,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
             </thead>
             <tbody>
               {escolasFiltradas.map((escola) => {
-                const stats = getSchoolStats(escola.id)
+                const stats = getSchoolStats(escola.id, ocorrencias)
                 return (
                   <tr
                     key={escola.id}
@@ -376,12 +402,15 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                   {!novoCadastro.comodos.length && <p className="text-xs font-semibold text-slate-500">Nenhum comodo adicionado ainda.</p>}
                 </div>
               </div>
+              {erroCadastro && (
+                <p className="rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{erroCadastro}</p>
+              )}
               <div className="flex justify-end gap-2 pt-2">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">
                   Cancelar
                 </button>
-                <button type="submit" className="rounded-md bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700">
-                  Salvar escola
+                <button type="submit" disabled={salvandoEscola} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">
+                  {salvandoEscola ? 'Salvando...' : 'Salvar escola'}
                 </button>
               </div>
             </form>

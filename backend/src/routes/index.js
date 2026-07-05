@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { authRoutes } from './authRoutes.js'
 import { escolaRoutes } from './escolaRoutes.js'
+import { mapaRoutes } from './mapaRoutes.js'
 import { ocorrenciaRoutes } from './ocorrenciaRoutes.js'
 import { userRoutes } from './userRoutes.js'
 
@@ -14,3 +15,4 @@ routes.use('/auth', authRoutes)
 routes.use('/escolas', escolaRoutes)
 routes.use('/usuarios', userRoutes)
 routes.use('/ocorrencias', ocorrenciaRoutes)
+routes.use('/mapa', mapaRoutes)
