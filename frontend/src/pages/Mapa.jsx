@@ -446,6 +446,7 @@ export function Mapa({ onNavigate }) {
   const [currentZoom, setCurrentZoom] = useState(13)
   const [colorScale, setColorScale] = useState(() => readStoredColorScale())
   const [isColorScaleExpanded, setIsColorScaleExpanded] = useState(false)
+  const [isMapStyleExpanded, setIsMapStyleExpanded] = useState(false)
   const warnedSchoolIdsRef = useRef(new Set())
   const [mapStyleKey, setMapStyleKey] = useState(() => {
     if (typeof window === 'undefined') return 'cartoLight'
@@ -938,8 +939,8 @@ export function Mapa({ onNavigate }) {
 
       <Card className="relative z-0 overflow-hidden p-0">
 
-        <div className="relative h-[calc(100vh-16rem)] min-h-[560px]">
-          <MetricPanel context={metricContext} />
+        <div className="relative h-[70vh] min-h-105 sm:h-[calc(100vh-16rem)] sm:min-h-140">
+          <MetricPanel context={metricContext} drawerAberto={drawerAberto} />
 
           <MapContainer center={mapCenter} zoom={13} scrollWheelZoom zoomControl={false} className="h-full w-full z-0">
             <TileLayer
@@ -1015,56 +1016,69 @@ export function Mapa({ onNavigate }) {
             onToggle={() => setIsColorScaleExpanded((current) => !current)}
           />
 
-          <div className={`absolute bottom-4 z-[650] rounded-lg border border-slate-200 bg-white/95 px-3 py-2 shadow-md backdrop-blur ${drawerAberto ? 'right-[410px]' : 'right-4'}`}>
-            <span className="block text-[10px] font-bold tracking-wide text-slate-500">
-              Estilo do mapa
-            </span>
-            <Select
-              size="xs"
-              className="mt-1"
-              value={mapStyleKey}
-              onChange={setMapStyleKey}
-              options={Object.entries(mapStyles).map(([styleKey, style]) => ({ value: styleKey, label: style.label }))}
-            />
-            <div className="mt-2 space-y-1.5 text-xs font-semibold text-slate-600">
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={showBairrosLayer}
-                  onChange={(event) => setShowBairrosLayer(event.target.checked)}
-                  className="h-3.5 w-3.5 rounded border border-slate-300 text-primary"
-                />
-                Divisão por bairros
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={showMunicipioBoundary}
-                  onChange={(event) => setShowMunicipioBoundary(event.target.checked)}
-                  className="h-3.5 w-3.5 rounded border border-slate-300 text-primary"
-                />
-                Limite da cidade
-              </label>
+          <div className={`absolute bottom-4 z-[650] max-w-[calc(100%-1rem)] rounded-lg border border-slate-200 bg-white/95 px-3 py-2 shadow-md backdrop-blur ${drawerAberto ? 'hidden right-4 sm:block sm:right-[410px]' : 'right-4'}`}>
+            <div className="flex items-center justify-between gap-2">
+              <span className="block text-[10px] font-bold tracking-wide text-slate-500">
+                Estilo do mapa
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsMapStyleExpanded((current) => !current)}
+                className="rounded-md border border-slate-200 p-1 text-slate-500 hover:bg-slate-50 sm:hidden"
+                aria-label={isMapStyleExpanded ? 'Recolher opcoes do mapa' : 'Expandir opcoes do mapa'}
+              >
+                <ChevronIcon direction={isMapStyleExpanded ? 'up' : 'down'} />
+              </button>
             </div>
-            {selectedBairroStats ? (
-              <div className="mt-2 border-t border-slate-200 pt-2">
-                <p className="truncate text-[10px] font-bold tracking-wide text-slate-500">
-                  Bairro: {selectedBairroStats.nome}
-                </p>
-                <p className="mt-1 text-[11px] font-semibold text-slate-500">
-                  {selectedBairroStats.totalEscolas > 0
-                    ? `${selectedBairroStats.totalEscolas} escola${selectedBairroStats.totalEscolas > 1 ? 's' : ''} com ${selectedBairroStats.totalSolicitacoes} ocorrencia${selectedBairroStats.totalSolicitacoes === 1 ? '' : 's'}.`
-                    : 'Sem escolas associadas no cadastro atual.'}
-                </p>
-                <button
-                  type="button"
-                  onClick={clearSelectedBairro}
-                  className="mt-2 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-50"
-                >
-                  Limpar bairro
-                </button>
+
+            <div className={`${isMapStyleExpanded ? 'block' : 'hidden'} sm:block`}>
+              <Select
+                size="xs"
+                className="mt-1"
+                value={mapStyleKey}
+                onChange={setMapStyleKey}
+                options={Object.entries(mapStyles).map(([styleKey, style]) => ({ value: styleKey, label: style.label }))}
+              />
+              <div className="mt-2 space-y-1.5 text-xs font-semibold text-slate-600">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={showBairrosLayer}
+                    onChange={(event) => setShowBairrosLayer(event.target.checked)}
+                    className="h-3.5 w-3.5 rounded border border-slate-300 text-primary"
+                  />
+                  Divisão por bairros
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={showMunicipioBoundary}
+                    onChange={(event) => setShowMunicipioBoundary(event.target.checked)}
+                    className="h-3.5 w-3.5 rounded border border-slate-300 text-primary"
+                  />
+                  Limite da cidade
+                </label>
               </div>
-            ) : null}
+              {selectedBairroStats ? (
+                <div className="mt-2 border-t border-slate-200 pt-2">
+                  <p className="truncate text-[10px] font-bold tracking-wide text-slate-500">
+                    Bairro: {selectedBairroStats.nome}
+                  </p>
+                  <p className="mt-1 text-[11px] font-semibold text-slate-500">
+                    {selectedBairroStats.totalEscolas > 0
+                      ? `${selectedBairroStats.totalEscolas} escola${selectedBairroStats.totalEscolas > 1 ? 's' : ''} com ${selectedBairroStats.totalSolicitacoes} ocorrencia${selectedBairroStats.totalSolicitacoes === 1 ? '' : 's'}.`
+                      : 'Sem escolas associadas no cadastro atual.'}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={clearSelectedBairro}
+                    className="mt-2 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-50"
+                  >
+                    Limpar bairro
+                  </button>
+                </div>
+              ) : null}
+            </div>
           </div>
 
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[450] h-28 bg-gradient-to-t from-slate-950/12 to-transparent" />
@@ -1094,9 +1108,11 @@ export function Mapa({ onNavigate }) {
   )
 }
 
-function MetricPanel({ context }) {
+function MetricPanel({ context, drawerAberto }) {
   return (
-    <div className="absolute left-4 top-4 z-[650] w-[260px] rounded-xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur">
+    <div
+      className={`absolute left-2 top-2 z-[650] w-[260px] max-w-[calc(100%-1rem)] rounded-xl border border-slate-200 bg-white/95 p-3 shadow-lg backdrop-blur sm:left-4 sm:top-4 sm:p-4 ${drawerAberto ? 'hidden sm:block' : ''}`}
+    >
       <p className="text-[10px] font-bold text-slate-500">
         {context.title}
       </p>
@@ -1123,7 +1139,7 @@ function MetricCard({ item }) {
 
 function MapColorScaleControl({ colorScale, isExpanded, legendGradient, legendRange, onChangeScale, onToggle }) {
   return (
-    <div className={`absolute bottom-4 left-20 z-[650] border border-slate-200 bg-white/95 shadow-md backdrop-blur transition-all ${isExpanded ? 'w-[280px] rounded-xl p-3 shadow-lg' : 'w-[210px] rounded-lg px-3 py-2'}`}>
+    <div className={`absolute bottom-4 left-20 z-[650] hidden border border-slate-200 bg-white/95 shadow-md backdrop-blur transition-all sm:block ${isExpanded ? 'w-[280px] rounded-xl p-3 shadow-lg' : 'w-[210px] rounded-lg px-3 py-2'}`}>
       <div className="flex items-center justify-between gap-2">
         <p className="text-[10px] font-bold tracking-wide text-slate-600">
           Solicitações pendentes
@@ -1138,18 +1154,20 @@ function MapColorScaleControl({ colorScale, isExpanded, legendGradient, legendRa
         </button>
       </div>
 
-      {isExpanded ? (
-        <div className="mt-3 grid grid-cols-3 gap-2">
-          <ColorScaleField label="Inicio" value={colorScale.start} onChange={(value) => onChangeScale((current) => ({ ...current, start: value }))} />
-          <ColorScaleField label="Meio" value={colorScale.middle} onChange={(value) => onChangeScale((current) => ({ ...current, middle: value }))} />
-          <ColorScaleField label="Fim" value={colorScale.end} onChange={(value) => onChangeScale((current) => ({ ...current, end: value }))} />
-        </div>
-      ) : null}
+      <div className={`${isExpanded ? 'block' : 'hidden'} sm:block`}>
+        {isExpanded ? (
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            <ColorScaleField label="Inicio" value={colorScale.start} onChange={(value) => onChangeScale((current) => ({ ...current, start: value }))} />
+            <ColorScaleField label="Meio" value={colorScale.middle} onChange={(value) => onChangeScale((current) => ({ ...current, middle: value }))} />
+            <ColorScaleField label="Fim" value={colorScale.end} onChange={(value) => onChangeScale((current) => ({ ...current, end: value }))} />
+          </div>
+        ) : null}
 
-      <div className={`${isExpanded ? 'mt-3' : 'mt-2'} h-3 rounded-full`} style={{ backgroundImage: legendGradient }} />
-      <div className="mt-1 flex justify-between text-[10px] font-semibold text-slate-500">
-        <span>{legendRange.minimum}</span>
-        <span>{legendRange.maximum}</span>
+        <div className={`${isExpanded ? 'mt-3' : 'mt-2'} h-3 rounded-full`} style={{ backgroundImage: legendGradient }} />
+        <div className="mt-1 flex justify-between text-[10px] font-semibold text-slate-500">
+          <span>{legendRange.minimum}</span>
+          <span>{legendRange.maximum}</span>
+        </div>
       </div>
     </div>
   )
@@ -1412,9 +1430,6 @@ function OcorrenciaCard({ ocorrencia, schoolName = '', onClick }) {
           {formatOcorrenciaData(ocorrencia.data || ocorrencia.dataAtualizacao || ocorrencia.dataAbertura || ocorrencia.dataEnvio)}
         </span>
       </div>
-      <p className="mt-2 text-xs leading-5 text-slate-600">
-        {ocorrencia.descricao || 'Sem descricao resumida para esta ocorrencia.'}
-      </p>
     </article>
   )
 }
