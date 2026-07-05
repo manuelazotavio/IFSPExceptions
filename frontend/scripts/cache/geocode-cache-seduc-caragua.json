@@ -189,7 +189,7 @@
     "updatedAt": "2026-07-05T04:27:28.864Z"
   },
   "rua sebastiao nepomuceno, 20, sumare, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
+    "version": 3,
     "query": "Rua Sebastião Nepomuceno, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
@@ -197,7 +197,8 @@
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:35:03.865Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:35:36.600Z"
   },
   "rua geraldo cordeiro de souza, 501, jetuba, caraguatatuba, sao paulo, brasil": {
     "version": 2,
@@ -222,7 +223,7 @@
     "updatedAt": "2026-07-05T04:35:09.615Z"
   },
   "travessa manoel severino de castro, 720, barranco alto, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
+    "version": 3,
     "query": "Travessa Manoel Severino de Castro, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
@@ -230,10 +231,11 @@
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:35:10.821Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:35:36.603Z"
   },
   "rua manoel francisco ricardo, 360, sertao dos tourinhos, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
+    "version": 3,
     "query": "Rua Manoel Francisco Ricardo, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
@@ -241,7 +243,8 @@
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:35:16.898Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:35:36.605Z"
   },
   "av jose geraldo fernandes da silva filho, 165, pereque mirim, caraguatatuba, sao paulo, brasil": {
     "query": "Av. José Geraldo Fernandes da Silva Filho, 165, Perequê Mirim, Caraguatatuba, São Paulo, Brasil",
@@ -254,7 +257,7 @@
     "updatedAt": "2026-07-05T04:27:36.658Z"
   },
   "rua jose geraldo fernandes da silva filho, 85, pereque mirim, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
+    "version": 3,
     "query": "Rua José Geraldo Fernandes da Silva Filho, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
@@ -262,7 +265,8 @@
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:35:22.084Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:35:36.608Z"
   },
   "av pedro goncalves leite, 685, pereque mirim, caraguatatuba, sao paulo, brasil": {
     "query": "Av. Pedro Gonçalves Leite, 685, Perequê Mirim, Caraguatatuba, São Paulo, Brasil",
@@ -329,7 +333,7 @@
     "updatedAt": "2026-07-05T04:35:44.694Z"
   },
   "rua benedito severino de castro, 248, barranco alto, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
+    "version": 3,
     "query": "Rua Benedito Severino de Castro, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
@@ -337,7 +341,8 @@
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:35:45.899Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:35:36.613Z"
   },
   "rua luiz jacinto da silva, 205, barranco alto, caraguatatuba, sao paulo, brasil": {
     "version": 2,
@@ -351,7 +356,7 @@
     "updatedAt": "2026-07-05T04:35:51.645Z"
   },
   "estrada antonio francisco paschoal peliciare, 1985, canta galo, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
+    "version": 3,
     "query": "Estrada Antonio Francisco Paschoal Peliciare, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
@@ -359,10 +364,11 @@
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:35:51.993Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:35:36.615Z"
   },
   "rua oziel egidio de farias, jaraguazinho, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
+    "version": 3,
     "query": "Rua Oziel Egídio de Farias, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
@@ -370,7 +376,8 @@
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:35:57.459Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:35:36.618Z"
   },
   "av emilio manzano lhorente, 670, golfinhos, caraguatatuba, sao paulo, brasil": {
     "query": "Av. Emílio Manzano Lhorente, 670, Golfinhos, Caraguatatuba, São Paulo, Brasil",
@@ -533,7 +540,7 @@
     "updatedAt": "2026-07-05T04:36:20.992Z"
   },
   "rua antonio teles de souza, 64, morro do algodao, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
+    "version": 3,
     "query": "Rua Antônio Teles de Souza, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
@@ -541,7 +548,8 @@
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:36:26.565Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:35:36.624Z"
   },
   "av brasil, 1350, ipiranga, caraguatatuba, sao paulo, brasil": {
     "query": "Av. Brasil, 1350, Ipiranga, Caraguatatuba, São Paulo, Brasil",
@@ -823,48 +831,52 @@
     "updatedAt": "2026-07-05T04:34:45.865Z"
   },
   "avenida regina margareth passos, 400, massaguacu, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
-    "query": "Avenida. Regina Margareth Passos, Caraguatatuba, São Paulo, Brasil",
+    "version": 3,
+    "query": "Avenida Regina Margareth Passos, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
     "status": "falhou",
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:34:47.872Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:35:36.596Z"
   },
   "avenida regina margareth passos, massaguacu, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
-    "query": "Avenida. Regina Margareth Passos, Massaguaçu, Caraguatatuba, São Paulo, Brasil",
+    "version": 3,
+    "query": "Avenida Regina Margareth Passos, Massaguaçu, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
     "status": "falhou",
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:34:47.872Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:32:46.574Z"
   },
   "avenida regina margareth passos, 400, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
-    "query": "Avenida. Regina Margareth Passos, 400, Caraguatatuba, São Paulo, Brasil",
+    "version": 3,
+    "query": "Avenida Regina Margareth Passos, 400, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
     "status": "falhou",
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:34:47.872Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:32:46.574Z"
   },
   "avenida regina margareth passos, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
-    "query": "Avenida. Regina Margareth Passos, Caraguatatuba, São Paulo, Brasil",
+    "version": 3,
+    "query": "Avenida Regina Margareth Passos, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
     "status": "falhou",
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:34:47.872Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:32:46.574Z"
   },
   "rua olavo bilac , 15, morro do algodao, caraguatatuba, sao paulo, brasil": {
     "version": 2,
@@ -933,7 +945,7 @@
     "updatedAt": "2026-07-05T04:35:02.369Z"
   },
   "rua sebastiao nepomuceno, sumare, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
+    "version": 3,
     "query": "Rua Sebastião Nepomuceno, Sumaré, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
@@ -941,10 +953,11 @@
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:35:03.865Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:32:51.183Z"
   },
   "rua sebastiao nepomuceno, 20, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
+    "version": 3,
     "query": "Rua Sebastião Nepomuceno, 20, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
@@ -952,10 +965,11 @@
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:35:03.865Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:32:51.183Z"
   },
   "rua sebastiao nepomuceno, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
+    "version": 3,
     "query": "Rua Sebastião Nepomuceno, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
@@ -963,10 +977,11 @@
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:35:03.865Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:32:51.183Z"
   },
   "travessa manoel severino de castro, barranco alto, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
+    "version": 3,
     "query": "Travessa Manoel Severino de Castro, Barranco Alto, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
@@ -974,10 +989,11 @@
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:35:10.821Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:32:54.700Z"
   },
   "travessa manoel severino de castro, 720, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
+    "version": 3,
     "query": "Travessa Manoel Severino de Castro, 720, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
@@ -985,10 +1001,11 @@
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:35:10.821Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:32:54.700Z"
   },
   "travessa manoel severino de castro, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
+    "version": 3,
     "query": "Travessa Manoel Severino de Castro, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
@@ -996,10 +1013,11 @@
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:35:10.821Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:32:54.700Z"
   },
   "rua manoel francisco ricardo, sertao dos tourinhos, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
+    "version": 3,
     "query": "Rua Manoel Francisco Ricardo, Sertão dos Tourinhos, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
@@ -1007,10 +1025,11 @@
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:35:16.898Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:32:59.470Z"
   },
   "rua manoel francisco ricardo, 360, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
+    "version": 3,
     "query": "Rua Manoel Francisco Ricardo, 360, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
@@ -1018,10 +1037,11 @@
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:35:16.898Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:32:59.470Z"
   },
   "rua manoel francisco ricardo, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
+    "version": 3,
     "query": "Rua Manoel Francisco Ricardo, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
@@ -1029,7 +1049,8 @@
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:35:16.898Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:32:59.470Z"
   },
   "avenida jose geraldo fernandes da silva filho, 165, pereque mirim, caraguatatuba, sao paulo, brasil": {
     "version": 2,
@@ -1043,7 +1064,7 @@
     "updatedAt": "2026-07-05T04:35:21.286Z"
   },
   "rua jose geraldo fernandes da silva filho, pereque mirim, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
+    "version": 3,
     "query": "Rua José Geraldo Fernandes da Silva Filho, Perequê Mirim, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
@@ -1051,10 +1072,11 @@
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:35:22.084Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:33:03.571Z"
   },
   "rua jose geraldo fernandes da silva filho, 85, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
+    "version": 3,
     "query": "Rua José Geraldo Fernandes da Silva Filho, 85, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
@@ -1062,10 +1084,11 @@
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:35:22.084Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:33:03.571Z"
   },
   "rua jose geraldo fernandes da silva filho, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
+    "version": 3,
     "query": "Rua José Geraldo Fernandes da Silva Filho, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
@@ -1073,51 +1096,56 @@
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:35:22.084Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:33:03.571Z"
   },
   "avenida pedro goncalves leite, 685, pereque mirim, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
-    "query": "Avenida. Pedro Gonçalves Leite, Caraguatatuba, São Paulo, Brasil",
+    "version": 3,
+    "query": "Avenida Pedro Gonçalves Leite, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
     "status": "falhou",
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:35:27.417Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:35:36.610Z"
   },
   "avenida pedro goncalves leite, pereque mirim, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
-    "query": "Avenida. Pedro Gonçalves Leite, Perequê Mirim, Caraguatatuba, São Paulo, Brasil",
+    "version": 3,
+    "query": "Avenida Pedro Gonçalves Leite, Perequê Mirim, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
     "status": "falhou",
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:35:27.417Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:33:08.334Z"
   },
   "avenida pedro goncalves leite, 685, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
-    "query": "Avenida. Pedro Gonçalves Leite, 685, Caraguatatuba, São Paulo, Brasil",
+    "version": 3,
+    "query": "Avenida Pedro Gonçalves Leite, 685, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
     "status": "falhou",
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:35:27.417Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:33:08.334Z"
   },
   "avenida pedro goncalves leite, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
-    "query": "Avenida. Pedro Gonçalves Leite, Caraguatatuba, São Paulo, Brasil",
+    "version": 3,
+    "query": "Avenida Pedro Gonçalves Leite, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
     "status": "falhou",
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:35:27.417Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:33:08.334Z"
   },
   "a inacio batista faria, golfinhos, caraguatatuba, sao paulo, brasil": {
     "version": 2,
@@ -1208,7 +1236,7 @@
     "updatedAt": "2026-07-05T04:35:40.180Z"
   },
   "rua benedito severino de castro, barranco alto, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
+    "version": 3,
     "query": "Rua Benedito Severino de Castro, Barranco Alto, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
@@ -1216,10 +1244,11 @@
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:35:45.899Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:33:13.505Z"
   },
   "rua benedito severino de castro, 248, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
+    "version": 3,
     "query": "Rua Benedito Severino de Castro, 248, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
@@ -1227,10 +1256,11 @@
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:35:45.899Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:33:13.505Z"
   },
   "rua benedito severino de castro, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
+    "version": 3,
     "query": "Rua Benedito Severino de Castro, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
@@ -1238,10 +1268,11 @@
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:35:45.899Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:33:13.505Z"
   },
   "estrada antonio francisco paschoal peliciare, canta galo, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
+    "version": 3,
     "query": "Estrada Antonio Francisco Paschoal Peliciare, Canta Galo, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
@@ -1249,10 +1280,11 @@
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:35:51.993Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:33:17.184Z"
   },
   "estrada antonio francisco paschoal peliciare, 1985, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
+    "version": 3,
     "query": "Estrada Antonio Francisco Paschoal Peliciare, 1985, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
@@ -1260,10 +1292,11 @@
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:35:51.993Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:33:17.184Z"
   },
   "estrada antonio francisco paschoal peliciare, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
+    "version": 3,
     "query": "Estrada Antonio Francisco Paschoal Peliciare, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
@@ -1271,10 +1304,11 @@
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:35:51.993Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:33:17.184Z"
   },
   "rua oziel egidio de farias, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
+    "version": 3,
     "query": "Rua Oziel Egídio de Farias, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
@@ -1282,7 +1316,8 @@
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:35:57.459Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:33:21.972Z"
   },
   "avenida emilio manzano lhorente, 670, golfinhos, caraguatatuba, sao paulo, brasil": {
     "version": 2,
@@ -1417,7 +1452,7 @@
     "updatedAt": "2026-07-05T04:36:20.992Z"
   },
   "rua antonio teles de souza, morro do algodao, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
+    "version": 3,
     "query": "Rua Antônio Teles de Souza, Morro do Algodão, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
@@ -1425,10 +1460,11 @@
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:36:26.565Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:33:29.117Z"
   },
   "rua antonio teles de souza, 64, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
+    "version": 3,
     "query": "Rua Antônio Teles de Souza, 64, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
@@ -1436,10 +1472,11 @@
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:36:26.565Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:33:29.117Z"
   },
   "rua antonio teles de souza, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
+    "version": 3,
     "query": "Rua Antônio Teles de Souza, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
@@ -1447,7 +1484,8 @@
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:36:26.565Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:33:29.117Z"
   },
   "avenida brasil, 1350, ipiranga, caraguatatuba, sao paulo, brasil": {
     "version": 2,
@@ -1571,48 +1609,52 @@
     "updatedAt": "2026-07-05T04:36:51.177Z"
   },
   "avenida azaleias, 418, jetuba, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
-    "query": "Avenida. Azaleias, Caraguatatuba, São Paulo, Brasil",
+    "version": 3,
+    "query": "Avenida Azaleias, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
     "status": "falhou",
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:36:53.118Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:35:36.628Z"
   },
   "avenida azaleias, jetuba, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
-    "query": "Avenida. Azaleias, Jetuba, Caraguatatuba, São Paulo, Brasil",
+    "version": 3,
+    "query": "Avenida Azaleias, Jetuba, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
     "status": "falhou",
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:36:53.118Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:33:32.891Z"
   },
   "avenida azaleias, 418, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
-    "query": "Avenida. Azaleias, 418, Caraguatatuba, São Paulo, Brasil",
+    "version": 3,
+    "query": "Avenida Azaleias, 418, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
     "status": "falhou",
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:36:53.118Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:33:32.891Z"
   },
   "avenida azaleias, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
-    "query": "Avenida. Azaleias, Caraguatatuba, São Paulo, Brasil",
+    "version": 3,
+    "query": "Avenida Azaleias, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
     "status": "falhou",
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:36:53.118Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:33:32.891Z"
   },
   "avenida siqueira campos, 705, sumare, caraguatatuba, sao paulo, brasil": {
     "version": 2,
@@ -1626,48 +1668,52 @@
     "updatedAt": "2026-07-05T04:36:58.414Z"
   },
   "avenida pedro goncalves, 685, pereque mirim, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
-    "query": "Avenida. Pedro Gonçalves, Caraguatatuba, São Paulo, Brasil",
+    "version": 3,
+    "query": "Avenida Pedro Gonçalves, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
     "status": "falhou",
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:37:00.369Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:35:36.630Z"
   },
   "avenida pedro goncalves, pereque mirim, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
-    "query": "Avenida. Pedro Gonçalves, Perequê Mirim, Caraguatatuba, São Paulo, Brasil",
+    "version": 3,
+    "query": "Avenida Pedro Gonçalves, Perequê Mirim, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
     "status": "falhou",
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:37:00.369Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:33:37.919Z"
   },
   "avenida pedro goncalves, 685, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
-    "query": "Avenida. Pedro Gonçalves, 685, Caraguatatuba, São Paulo, Brasil",
+    "version": 3,
+    "query": "Avenida Pedro Gonçalves, 685, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
     "status": "falhou",
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:37:00.369Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:33:37.919Z"
   },
   "avenida pedro goncalves, caraguatatuba, sao paulo, brasil": {
-    "version": 2,
-    "query": "Avenida. Pedro Gonçalves, Caraguatatuba, São Paulo, Brasil",
+    "version": 3,
+    "query": "Avenida Pedro Gonçalves, Caraguatatuba, São Paulo, Brasil",
     "latitude": null,
     "longitude": null,
     "status": "falhou",
     "confidence": 0,
     "displayName": null,
     "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
-    "updatedAt": "2026-07-05T04:37:00.369Z"
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:33:37.919Z"
   },
   "rua santa cruz, 396, centro, caraguatatuba, sao paulo, brasil": {
     "version": 2,
@@ -1679,5 +1725,53 @@
     "displayName": "Polo Cultural e Educacional Professora Eloiza Andrade Antunes, 396, Rua Santa Cruz, Jardim Califórnia, Centro, Caraguatatuba, São Paulo, Região Sudeste, 11660-280, Brasil",
     "observation": "Endereco confirmado com numero correspondente.",
     "updatedAt": "2026-07-05T04:37:05.202Z"
+  },
+  "travessa caminho grande, 50, pegorelli, caraguatatuba, sao paulo, brasil": {
+    "version": 3,
+    "query": "Travessa Caminho Grande, Caraguatatuba, São Paulo, Brasil",
+    "latitude": null,
+    "longitude": null,
+    "status": "falhou",
+    "confidence": 0,
+    "displayName": null,
+    "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:35:36.622Z"
+  },
+  "travessa caminho grande, pegorelli, caraguatatuba, sao paulo, brasil": {
+    "version": 3,
+    "query": "Travessa Caminho Grande, Pegorelli, Caraguatatuba, São Paulo, Brasil",
+    "latitude": null,
+    "longitude": null,
+    "status": "falhou",
+    "confidence": 0,
+    "displayName": null,
+    "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:33:23.860Z"
+  },
+  "travessa caminho grande, 50, caraguatatuba, sao paulo, brasil": {
+    "version": 3,
+    "query": "Travessa Caminho Grande, 50, Caraguatatuba, São Paulo, Brasil",
+    "latitude": null,
+    "longitude": null,
+    "status": "falhou",
+    "confidence": 0,
+    "displayName": null,
+    "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:33:23.860Z"
+  },
+  "travessa caminho grande, caraguatatuba, sao paulo, brasil": {
+    "version": 3,
+    "query": "Travessa Caminho Grande, Caraguatatuba, São Paulo, Brasil",
+    "latitude": null,
+    "longitude": null,
+    "status": "falhou",
+    "confidence": 0,
+    "displayName": null,
+    "observation": "Nenhum resultado confiavel encontrado no Nominatim.",
+    "postcode": null,
+    "updatedAt": "2026-07-05T05:33:23.860Z"
   }
 }

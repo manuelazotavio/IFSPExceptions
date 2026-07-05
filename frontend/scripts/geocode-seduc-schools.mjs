@@ -1,11 +1,13 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { access, mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const USER_AGENT = 'hackaton-2026-seduc-caraguatatuba-geocoder/1.0'
-const REQUEST_DELAY_MS = 1200
-const CACHE_VERSION = 2
+const REQUEST_DELAY_MS = 1100
+const GEOCODE_CACHE_VERSION = 3
+const CEP_CACHE_VERSION = 1
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search'
+const VIACEP_BASE_URL = 'https://viacep.com.br/ws/SP/Caraguatatuba'
 const VIEWBOX = '-45.75,-23.35,-45.10,-24.05'
 const NOMINATIM_HEADERS = {
   'User-Agent': USER_AGENT,
@@ -16,9 +18,12 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const projectRoot = path.resolve(__dirname, '..')
 
-const inputPath = path.join(projectRoot, 'public', 'geo', 'unidades_seduc_caraguatatuba_mock.json')
-const outputPath = path.join(projectRoot, 'public', 'geo', 'unidades_seduc_caraguatatuba_geocoded.json')
-const cachePath = path.join(projectRoot, 'scripts', 'cache', 'geocode-cache-seduc-caragua.json')
+const mockPath = path.join(projectRoot, 'public', 'geo', 'unidades_seduc_caraguatatuba_mock.json')
+const geocodedPath = path.join(projectRoot, 'public', 'geo', 'unidades_seduc_caraguatatuba_geocoded.json')
+const finalPath = path.join(projectRoot, 'public', 'geo', 'unidades_seduc_caraguatatuba_final.json')
+const pendingPath = path.join(projectRoot, 'public', 'geo', 'unidades_seduc_caraguatatuba_pendencias.json')
+const geocodeCachePath = path.join(projectRoot, 'scripts', 'cache', 'geocode-cache-seduc-caragua.json')
+const cepCachePath = path.join(projectRoot, 'scripts', 'cache', 'cep-cache-seduc-caragua.json')
 
 const CARAGUA_BOUNDS = {
   minLongitude: -45.75,
@@ -27,13 +32,27 @@ const CARAGUA_BOUNDS = {
   maxLatitude: -23.35,
 }
 
-const ABBREVIATION_REPLACEMENTS = [
-  [/\bav[.]?\b/gi, 'Avenida'],
-  [/\br[.]?\b/gi, 'Rua'],
-  [/\bjd[.]?\b/gi, 'Jardim'],
-  [/\bpq[.]?\b/gi, 'Parque'],
-  [/\bsta[.]?\b/gi, 'Santa'],
-  [/\bsto[.]?\b/gi, 'Santo'],
+const DEFAULT_COMODOS = Object.freeze([
+  { ambiente: 'Sala 1', codigo: 'SALA-01' },
+  { ambiente: 'Sala 2', codigo: 'SALA-02' },
+  { ambiente: 'Sala 3', codigo: 'SALA-03' },
+  { ambiente: 'Banheiro Feminino', codigo: 'BAN-FEM-01' },
+  { ambiente: 'Banheiro Masculino', codigo: 'BAN-MASC-01' },
+  { ambiente: 'Cozinha', codigo: 'COZ-01' },
+  { ambiente: 'Diretoria', codigo: 'DIR-01' },
+  { ambiente: 'Biblioteca', codigo: 'BIB-01' },
+  { ambiente: 'Refeitório', codigo: 'REF-01' },
+])
+
+const QUERY_ABBREVIATIONS = [
+  { pattern: /\bAv\.(?=\s)/gi, replacement: 'Avenida' },
+  { pattern: /\bAv(?=\s)/gi, replacement: 'Avenida' },
+  { pattern: /\bR\.(?=\s)/gi, replacement: 'Rua' },
+  { pattern: /\bR(?=\s)/gi, replacement: 'Rua' },
+  { pattern: /\bJd\.(?=\s)/gi, replacement: 'Jardim' },
+  { pattern: /\bJd(?=\s)/gi, replacement: 'Jardim' },
+  { pattern: /\bTrav\.(?=\s)/gi, replacement: 'Travessa' },
+  { pattern: /\bTrav(?=\s)/gi, replacement: 'Travessa' },
 ]
 
 const LOCATION_STOPWORDS = new Set(['de', 'do', 'da', 'dos', 'das', 'd', 'e'])
@@ -71,6 +90,8 @@ const SCHOOL_NAME_STOPWORDS = new Set([
   'e',
 ])
 
+const FINAL_GEOCODE_STATUSES = new Set(['confirmado', 'aproximado', 'falhou', 'sem_endereco'])
+
 function normalizeText(value) {
   return String(value ?? '')
     .normalize('NFD')
@@ -80,14 +101,45 @@ function normalizeText(value) {
     .trim()
 }
 
-function expandCommonAbbreviations(value) {
-  let output = String(value ?? '')
+function mojibakeScore(value) {
+  return (String(value ?? '').match(/[ÃÂ�]/g) || []).length
+}
 
-  for (const [pattern, replacement] of ABBREVIATION_REPLACEMENTS) {
+function repairText(value) {
+  const text = String(value ?? '').trim()
+  if (!text) return ''
+  if (!/[ÃÂ]/.test(text)) return text
+
+  try {
+    const repaired = Buffer.from(text, 'latin1').toString('utf8')
+    return mojibakeScore(repaired) < mojibakeScore(text) ? repaired : text
+  } catch {
+    return text
+  }
+}
+
+function cleanText(value) {
+  return repairText(value).replace(/\s+/g, ' ').trim()
+}
+
+function normalizeGeocodeStatus(value) {
+  const normalized = normalizeText(value).replace(/\s+/g, '_')
+  return FINAL_GEOCODE_STATUSES.has(normalized) ? normalized : null
+}
+
+function expandAddressAbbreviations(value) {
+  let output = cleanText(value)
+
+  for (const { pattern, replacement } of QUERY_ABBREVIATIONS) {
     output = output.replace(pattern, replacement)
   }
 
-  return output.replace(/\s+/g, ' ').trim()
+  return output
+    .replace(/\s+,/g, ',')
+    .replace(/\(\s+/g, '(')
+    .replace(/\s+\)/g, ')')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 function escapeRegExp(value) {
@@ -98,19 +150,52 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+async function pathExists(filePath) {
+  try {
+    await access(filePath)
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function readJson(filePath, fallbackValue) {
+  try {
+    const content = await readFile(filePath, 'utf8')
+    return JSON.parse(content)
+  } catch (error) {
+    if (error.code === 'ENOENT' && fallbackValue !== undefined) {
+      return fallbackValue
+    }
+
+    throw error
+  }
+}
+
+async function writeJson(filePath, value) {
+  await mkdir(path.dirname(filePath), { recursive: true })
+  await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, 'utf8')
+}
+
 function isFiniteCoordinate(value) {
   if (value === null || value === undefined) return false
   if (typeof value === 'string' && value.trim() === '') return false
   return Number.isFinite(Number(value))
 }
 
-function hasValidCoordinates(record) {
-  return isFiniteCoordinate(record?.latitude) && isFiniteCoordinate(record?.longitude)
+function toNullableNumber(value) {
+  return isFiniteCoordinate(value) ? Number(value) : null
 }
 
-function toNullableNumber(value) {
-  const parsed = Number(value)
-  return Number.isFinite(parsed) ? parsed : null
+function formatCep(value) {
+  const digits = String(value ?? '').replace(/\D/g, '')
+  if (digits.length !== 8) return null
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`
+}
+
+function extractCepFromText(value) {
+  const match = cleanText(value).match(/\b\d{5}-?\d{3}\b/)
+  return match ? formatCep(match[0]) : null
 }
 
 function isWithinCaraguaBounds(latitude, longitude) {
@@ -125,13 +210,13 @@ function hasNoNumberMarker(address) {
 }
 
 function extractStreetNumber(address) {
-  const sanitized = String(address ?? '')
+  const sanitized = cleanText(address)
   const match = sanitized.match(/,\s*(?:n[º°o.]?\s*)?(\d+[a-z0-9/-]*)\b/i)
   return match?.[1] ?? null
 }
 
 function removeNoNumberSuffix(address) {
-  return String(address ?? '')
+  return cleanText(address)
     .replace(/\s*\(.*?\)\s*/g, ' ')
     .replace(/,\s*s\s*\/?\s*n(?:[\s.]*[oº°])?.*$/i, '')
     .replace(/\s+/g, ' ')
@@ -139,12 +224,28 @@ function removeNoNumberSuffix(address) {
 }
 
 function removeStreetNumberSuffix(address) {
-  return String(address ?? '')
+  return cleanText(address)
     .replace(/\s*\(.*?\)\s*/g, ' ')
     .replace(/,\s*(?:n[º°o.]?\s*)?\d+[a-z0-9/-]*\b.*$/i, '')
     .replace(/,\s*s\s*\/?\s*n(?:[\s.]*[oº°])?.*$/i, '')
     .replace(/\s+/g, ' ')
     .trim()
+}
+
+function looksLikeStreetNumberPart(value) {
+  const text = cleanText(value)
+  return /^(?:n[º°o.]?\s*)?\d+[a-z0-9/-]*$/i.test(text) || hasNoNumberMarker(text)
+}
+
+function extractPrimaryAddress(value) {
+  const expanded = expandAddressAbbreviations(value)
+  if (!expanded) return null
+
+  const parts = expanded.split(',').map((item) => item.trim()).filter(Boolean)
+  if (parts.length === 0) return null
+  if (parts.length === 1) return parts[0]
+  if (looksLikeStreetNumberPart(parts[1])) return `${parts[0]}, ${parts[1]}`
+  return `${parts[0]}, ${parts[1]}`
 }
 
 function buildCacheKey(query) {
@@ -155,7 +256,7 @@ function buildCacheKey(query) {
 }
 
 function sanitizeQuerySegment(value) {
-  return expandCommonAbbreviations(
+  return expandAddressAbbreviations(
     String(value ?? '')
       .replace(/\s*\(.*?\)\s*/g, ' ')
       .replace(/\s+/g, ' ')
@@ -186,8 +287,8 @@ function dedupeQueryCandidates(candidates) {
 }
 
 function buildGeocodeQueries(record) {
-  const endereco = String(record?.endereco ?? '').trim()
-  const bairro = String(record?.bairro ?? '').trim()
+  const endereco = String(record.endereco ?? '').trim()
+  const bairro = String(record.bairro ?? '').trim()
 
   if (!endereco) {
     return { primaryQuery: null, candidates: [], addressWithoutNumber: false, streetNumber: null }
@@ -234,13 +335,13 @@ function buildGeocodeQueries(record) {
 
 function getResultAddressText(result) {
   return Object.values(result?.address ?? {})
-    .map((value) => String(value ?? '').trim())
+    .map((value) => cleanText(value))
     .filter(Boolean)
     .join(', ')
 }
 
 function buildComparableText(value) {
-  return normalizeText(expandCommonAbbreviations(value))
+  return normalizeText(expandAddressAbbreviations(value))
     .replace(/[^a-z0-9\s]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
@@ -251,6 +352,7 @@ function buildComparableTokens(
   { ignoreStreetTypes = false, ignoreSchoolStopwords = false, extraStopwords = [] } = {},
 ) {
   const stopwords = new Set([...LOCATION_STOPWORDS, ...extraStopwords])
+
   if (ignoreSchoolStopwords) {
     for (const token of SCHOOL_NAME_STOPWORDS) {
       stopwords.add(token)
@@ -282,9 +384,7 @@ function hasTokenOverlap(
     buildComparableTokens(candidate, { ignoreStreetTypes, ignoreSchoolStopwords }),
   )
 
-  if (targetTokens.length === 0) {
-    return false
-  }
+  if (targetTokens.length === 0) return false
 
   let matches = 0
   for (const token of targetTokens) {
@@ -320,7 +420,6 @@ function matchesNeighborhood(result, bairro) {
 
 function matchesStreet(result, originalAddress) {
   const streetText = sanitizeQuerySegment(removeStreetNumberSuffix(originalAddress))
-
   if (!streetText) return false
 
   const address = result?.address ?? {}
@@ -385,7 +484,7 @@ function matchesSchoolName(result, schoolName) {
 function analyzeResult(result, context) {
   const latitude = Number(result?.lat)
   const longitude = Number(result?.lon)
-  const displayName = String(result?.display_name ?? '')
+  const displayName = cleanText(result?.display_name)
   const displayNormalized = normalizeText(displayName)
   const addressText = normalizeText(getResultAddressText(result))
   const hasCaragua = displayNormalized.includes('caraguatatuba') || addressText.includes('caraguatatuba')
@@ -398,6 +497,7 @@ function analyzeResult(result, context) {
   const neighborhoodMatches = matchesNeighborhood(result, context.bairro)
   const exactNumberMatch = matchesStreetNumber(result, context.streetNumber)
   const schoolNameMatch = matchesSchoolName(result, context.schoolName)
+  const postcode = formatCep(result?.address?.postcode)
 
   let score = 0
   if (withinBounds) score += 40
@@ -422,6 +522,7 @@ function analyzeResult(result, context) {
     neighborhoodMatches,
     exactNumberMatch,
     schoolNameMatch,
+    postcode,
     score,
   }
 }
@@ -485,39 +586,6 @@ function classifyResult(analysis, context) {
   }
 }
 
-function formatFromGeocode(record, geocode) {
-  return {
-    ...record,
-    latitude: geocode.latitude,
-    longitude: geocode.longitude,
-    geocode_status: geocode.status,
-    geocode_confianca: geocode.confidence,
-    geocode_provider: 'nominatim',
-    geocode_query: geocode.query,
-    geocode_display_name: geocode.displayName,
-    geocode_updated_at: geocode.updatedAt,
-    geocode_observacao: geocode.observation,
-  }
-}
-
-async function readJson(filePath, fallbackValue) {
-  try {
-    const content = await readFile(filePath, 'utf8')
-    return JSON.parse(content)
-  } catch (error) {
-    if (error.code === 'ENOENT' && fallbackValue !== undefined) {
-      return fallbackValue
-    }
-
-    throw error
-  }
-}
-
-async function writeJson(filePath, value) {
-  await mkdir(path.dirname(filePath), { recursive: true })
-  await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, 'utf8')
-}
-
 async function fetchNominatim(query) {
   const url = new URL(NOMINATIM_URL)
   url.searchParams.set('format', 'jsonv2')
@@ -561,6 +629,176 @@ function chooseBestResult(results, context) {
     longitude: best.analysis.longitude,
     displayName: best.analysis.displayName,
     observation: classification.observation,
+    postcode: best.analysis.postcode,
+  }
+}
+
+function buildComparableNameKey(value) {
+  return buildComparableText(value)
+}
+
+function getFirstOwnValue(record, keys) {
+  for (const key of keys) {
+    if (Object.prototype.hasOwnProperty.call(record, key)) {
+      return record[key]
+    }
+  }
+  return undefined
+}
+
+function getNameFromRecord(record) {
+  return cleanText(getFirstOwnValue(record, ['nome', 'nome_oficial', 'nomeOficial']))
+}
+
+function getBairroFromRecord(record) {
+  return cleanText(getFirstOwnValue(record, ['bairro', 'bairro_escola']))
+}
+
+function getEnderecoFromRecord(record) {
+  const enderecoDireto = extractPrimaryAddress(getFirstOwnValue(record, ['endereco']))
+  if (enderecoDireto) return enderecoDireto
+  return extractPrimaryAddress(getFirstOwnValue(record, ['endereco_geocodificacao']))
+}
+
+function normalizeInputRecord(record, index) {
+  const nome = getNameFromRecord(record) || `Escola ${index + 1}`
+  const bairro = getBairroFromRecord(record) || null
+  const endereco = getEnderecoFromRecord(record) || null
+  const latitude = toNullableNumber(record?.latitude)
+  const longitude = toNullableNumber(record?.longitude)
+  const cep = formatCep(record?.cep) || extractCepFromText(record?.geocode_display_name)
+
+  return {
+    index,
+    raw: record,
+    nome,
+    bairro,
+    endereco,
+    latitude,
+    longitude,
+    cep,
+    geocodeStatus: normalizeGeocodeStatus(record?.geocode_status),
+    geocodeConfidence: Number.isFinite(Number(record?.geocode_confianca)) ? Number(record.geocode_confianca) : 0,
+    geocodeProvider: cleanText(record?.geocode_provider) || null,
+    geocodeQuery: cleanText(record?.geocode_query) || null,
+    geocodeDisplayName: cleanText(record?.geocode_display_name) || null,
+    geocodeUpdatedAt: cleanText(record?.geocode_updated_at) || null,
+    geocodeObservation: cleanText(record?.geocode_observacao) || null,
+  }
+}
+
+function mergeOverlayValue(baseValue, overlayValue, fallbackNull = false) {
+  if (overlayValue === null && fallbackNull) return null
+  if (overlayValue === undefined) return baseValue
+  return overlayValue
+}
+
+function overlayFinalRecord(baseRecord, finalRecord) {
+  const output = { ...baseRecord }
+
+  if (Object.prototype.hasOwnProperty.call(finalRecord, 'nome')) {
+    output.nome = finalRecord.nome
+    output.nome_oficial = finalRecord.nome
+  }
+
+  if (Object.prototype.hasOwnProperty.call(finalRecord, 'bairro')) {
+    output.bairro = mergeOverlayValue(baseRecord.bairro, finalRecord.bairro, true)
+    output.bairro_escola = mergeOverlayValue(baseRecord.bairro_escola, finalRecord.bairro, true)
+  }
+
+  if (Object.prototype.hasOwnProperty.call(finalRecord, 'endereco')) {
+    output.endereco = mergeOverlayValue(baseRecord.endereco, finalRecord.endereco, true)
+    output.endereco_geocodificacao = mergeOverlayValue(baseRecord.endereco_geocodificacao, finalRecord.endereco, true)
+  }
+
+  if (Object.prototype.hasOwnProperty.call(finalRecord, 'latitude')) {
+    output.latitude = finalRecord.latitude
+  }
+
+  if (Object.prototype.hasOwnProperty.call(finalRecord, 'longitude')) {
+    output.longitude = finalRecord.longitude
+  }
+
+  if (Object.prototype.hasOwnProperty.call(finalRecord, 'cep')) {
+    output.cep = finalRecord.cep
+  }
+
+  return output
+}
+
+function mergeFinalEdits(baseRecords, finalRecords) {
+  const overlayByName = new Map(
+    finalRecords.map((record) => [buildComparableNameKey(getNameFromRecord(record)), record]),
+  )
+
+  return baseRecords.map((record, index) => {
+    const baseNameKey = buildComparableNameKey(getNameFromRecord(record))
+    const overlayRecord = overlayByName.get(baseNameKey) || (finalRecords.length === baseRecords.length ? finalRecords[index] : null)
+    return overlayRecord ? overlayFinalRecord(record, overlayRecord) : record
+  })
+}
+
+async function loadWorkingRecords() {
+  const hasGeocoded = await pathExists(geocodedPath)
+  const hasMock = await pathExists(mockPath)
+  const hasFinal = await pathExists(finalPath)
+
+  const geocodedRecords = hasGeocoded ? await readJson(geocodedPath, []) : null
+  const mockRecords = hasMock ? await readJson(mockPath, []) : null
+  const finalRecords = hasFinal ? await readJson(finalPath, []) : null
+
+  let sourceLabel = ''
+  let sourcePath = ''
+  let baseRecords = null
+
+  if (Array.isArray(geocodedRecords) && geocodedRecords.length > 0) {
+    sourceLabel = 'geocoded'
+    sourcePath = geocodedPath
+    baseRecords = geocodedRecords
+  } else if (Array.isArray(mockRecords) && mockRecords.length > 0) {
+    sourceLabel = 'mock'
+    sourcePath = mockPath
+    baseRecords = mockRecords
+  } else if (Array.isArray(finalRecords) && finalRecords.length > 0) {
+    sourceLabel = 'final'
+    sourcePath = finalPath
+    baseRecords = finalRecords
+  } else {
+    throw new Error('Nenhum arquivo de entrada valido foi encontrado.')
+  }
+
+  if (Array.isArray(finalRecords) && finalRecords.length > 0 && sourceLabel !== 'final') {
+    baseRecords = mergeFinalEdits(baseRecords, finalRecords)
+  }
+
+  return {
+    sourceLabel,
+    sourcePath,
+    records: baseRecords.map((record, index) => normalizeInputRecord(record, index)),
+  }
+}
+
+function cloneComodosPadrao() {
+  return DEFAULT_COMODOS.map((item) => ({ ...item }))
+}
+
+function createRateLimiter() {
+  let lastRequestAt = 0
+
+  return {
+    async wait() {
+      if (lastRequestAt === 0) {
+        lastRequestAt = Date.now()
+        return
+      }
+
+      const elapsed = Date.now() - lastRequestAt
+      if (elapsed < REQUEST_DELAY_MS) {
+        await sleep(REQUEST_DELAY_MS - elapsed)
+      }
+
+      lastRequestAt = Date.now()
+    },
   }
 }
 
@@ -569,17 +807,18 @@ function buildGeocodeFromCache(cached, fallbackQuery, updatedAt) {
     query: cached.query || fallbackQuery,
     latitude: toNullableNumber(cached.latitude),
     longitude: toNullableNumber(cached.longitude),
-    status: cached.status,
+    status: cleanText(cached.status) || 'falhou',
     confidence: Number(cached.confidence ?? 0),
-    displayName: cached.displayName || null,
+    displayName: cleanText(cached.displayName) || null,
     updatedAt,
-    observation: cached.observation || null,
+    observation: cleanText(cached.observation) || null,
+    postcode: formatCep(cached.postcode),
   }
 }
 
-function buildCachePayload(geocode) {
+function buildGeocodeCachePayload(geocode) {
   return {
-    version: CACHE_VERSION,
+    version: GEOCODE_CACHE_VERSION,
     query: geocode.query,
     latitude: geocode.latitude,
     longitude: geocode.longitude,
@@ -587,253 +826,448 @@ function buildCachePayload(geocode) {
     confidence: geocode.confidence,
     displayName: geocode.displayName,
     observation: geocode.observation,
+    postcode: geocode.postcode,
     updatedAt: geocode.updatedAt,
   }
 }
 
-function buildFailureGeocode(query, observation, updatedAt) {
+function buildFailureGeocode(query, observation, updatedAt, record) {
   return {
     query,
-    latitude: null,
-    longitude: null,
+    latitude: record.latitude,
+    longitude: record.longitude,
     status: 'falhou',
     confidence: 0,
-    displayName: null,
+    displayName: record.geocodeDisplayName || null,
     updatedAt,
     observation,
+    postcode: record.cep || extractCepFromText(record.geocodeDisplayName),
   }
 }
 
-function buildNoAddressGeocode(updatedAt) {
+function buildNoAddressGeocode(updatedAt, record) {
   return {
     query: null,
-    latitude: null,
-    longitude: null,
+    latitude: record.latitude,
+    longitude: record.longitude,
     status: 'sem_endereco',
     confidence: 0,
-    displayName: null,
+    displayName: record.geocodeDisplayName || null,
     updatedAt,
     observation: 'Registro sem endereco para geocodificacao.',
+    postcode: record.cep || null,
   }
 }
 
-function buildExistingCoordinatesGeocode(record, query, addressWithoutNumber, updatedAt) {
+function buildExistingCoordinatesGeocode(record, updatedAt) {
+  const addressWithoutNumber = hasNoNumberMarker(record.endereco)
+  const inferredStatus = addressWithoutNumber ? 'aproximado' : 'confirmado'
+  const resolvedStatus = (
+    record.geocodeStatus === 'confirmado' || record.geocodeStatus === 'aproximado'
+      ? record.geocodeStatus
+      : inferredStatus
+  )
+  const resolvedConfidence = record.geocodeConfidence || (resolvedStatus === 'aproximado' ? 0.8 : 0.95)
+
   return {
-    query,
-    latitude: Number(record.latitude),
-    longitude: Number(record.longitude),
-    status: addressWithoutNumber ? 'aproximado' : 'confirmado',
-    confidence: addressWithoutNumber ? 0.8 : 0.95,
-    displayName: record.geocode_display_name || null,
+    query: buildGeocodeQueries(record).primaryQuery,
+    latitude: record.latitude,
+    longitude: record.longitude,
+    status: resolvedStatus,
+    confidence: resolvedConfidence,
+    displayName: record.geocodeDisplayName || null,
     updatedAt,
-    observation: 'Coordenadas ja existentes no arquivo original; consulta nao executada.',
+    observation: record.geocodeObservation || 'Coordenadas mantidas a partir do arquivo de entrada.',
+    postcode: record.cep || extractCepFromText(record.geocodeDisplayName),
   }
 }
 
-function applyStats(stats, geocode, options = {}) {
-  if (options.alreadyHadCoordinates) {
-    stats.alreadyHadCoordinates += 1
+function getStreetForCepLookup(address) {
+  const streetOnly = sanitizeQuerySegment(removeStreetNumberSuffix(address))
+  return streetOnly || null
+}
+
+async function fetchViaCep(logradouro) {
+  const endpoint = `${VIACEP_BASE_URL}/${encodeURIComponent(logradouro)}/json/`
+  const response = await fetch(endpoint, {
+    headers: { 'User-Agent': USER_AGENT },
+  })
+
+  if (!response.ok) {
+    throw new Error(`ViaCEP respondeu com status ${response.status}.`)
   }
 
-  if (geocode.status === 'confirmado' && !options.alreadyHadCoordinates) {
-    stats.geocoded += 1
+  return response.json()
+}
+
+function evaluateViaCepMatch(result, context) {
+  const localidade = cleanText(result?.localidade)
+  const uf = cleanText(result?.uf)
+  if (normalizeText(localidade) !== 'caraguatatuba' || uf.toUpperCase() !== 'SP') {
+    return { score: -1, streetMatch: false, bairroMatch: false }
   }
 
-  if (geocode.status === 'aproximado') {
-    stats.approximated += 1
+  const streetMatch = (
+    hasDirectComparableMatch(context.logradouro, result?.logradouro)
+    || hasTokenOverlap(context.logradouro, result?.logradouro, {
+      ignoreStreetTypes: true,
+      minRatio: 0.5,
+      minMatches: 1,
+    })
+  )
+
+  const bairroMatch = !context.bairro
+    || hasDirectComparableMatch(context.bairro, result?.bairro)
+    || hasTokenOverlap(context.bairro, result?.bairro, {
+      minRatio: 0.5,
+      minMatches: 1,
+    })
+
+  let score = 15
+  if (streetMatch) score += 60
+  if (bairroMatch) score += 25
+
+  return { score, streetMatch, bairroMatch }
+}
+
+function chooseBestViaCepResult(results, context) {
+  if (!Array.isArray(results)) return null
+
+  const ranked = results
+    .map((result) => ({ result, evaluation: evaluateViaCepMatch(result, context) }))
+    .filter((entry) => entry.evaluation.score >= 0)
+    .sort((left, right) => right.evaluation.score - left.evaluation.score)
+
+  if (ranked.length === 0) return null
+
+  const best = ranked[0]
+  if (!best.evaluation.streetMatch || best.evaluation.score < 55) {
+    return null
   }
 
-  if (geocode.status === 'falhou') {
-    stats.failed += 1
-  }
+  const cep = formatCep(best.result?.cep)
+  if (!cep) return null
 
-  if (geocode.status === 'sem_endereco') {
-    stats.withoutAddress += 1
+  return {
+    cep,
+    bairro: cleanText(best.result?.bairro) || null,
+    logradouro: cleanText(best.result?.logradouro) || null,
+    observation: best.evaluation.bairroMatch
+      ? 'CEP encontrado pelo ViaCEP com boa correspondencia de logradouro e bairro.'
+      : 'CEP encontrado pelo ViaCEP com boa correspondencia de logradouro.',
   }
 }
 
-function logResult(tag, record, geocode) {
-  const suffix = geocode.displayName ? ` -> ${geocode.displayName}` : ''
-  console.log(`${tag} ${record.nome_oficial}${suffix}`)
+function buildCepCachePayload(logradouro, result) {
+  return {
+    version: CEP_CACHE_VERSION,
+    logradouro,
+    cep: result?.cep || null,
+    bairro: result?.bairro || null,
+    logradouroEncontrado: result?.logradouro || null,
+    observation: result?.observation || null,
+  }
 }
 
-function validateOutput(records) {
+async function resolveCep({ record, geocode, cepCache }) {
+  const existingCep = formatCep(record.cep)
+  if (existingCep) {
+    return existingCep
+  }
+
+  const geocodeCep = formatCep(geocode?.postcode) || extractCepFromText(geocode?.displayName)
+  if (geocodeCep) {
+    return geocodeCep
+  }
+
+  const street = getStreetForCepLookup(record.endereco)
+  if (!street || street.length < 3) {
+    return null
+  }
+
+  const cacheKey = buildCacheKey(street)
+  const cached = cepCache[cacheKey]?.version === CEP_CACHE_VERSION ? cepCache[cacheKey] : null
+  if (cached) {
+    return formatCep(cached.cep)
+  }
+
+  try {
+    const viaCepResponse = await fetchViaCep(street)
+    const chosen = chooseBestViaCepResult(Array.isArray(viaCepResponse) ? viaCepResponse : [], {
+      logradouro: street,
+      bairro: record.bairro,
+    })
+
+    cepCache[cacheKey] = buildCepCachePayload(street, chosen)
+    await writeJson(cepCachePath, cepCache)
+
+    return chosen?.cep || null
+  } catch {
+    return null
+  }
+}
+
+async function resolveGeocode({ record, geocodeCache, rateLimiter }) {
+  const updatedAt = new Date().toISOString()
+  const queryPlan = buildGeocodeQueries(record)
+  const hasCoordinates = isFiniteCoordinate(record.latitude) && isFiniteCoordinate(record.longitude)
+
+  if (!queryPlan.primaryQuery) {
+    return buildNoAddressGeocode(updatedAt, record)
+  }
+
+  if (hasCoordinates) {
+    return buildExistingCoordinatesGeocode(record, updatedAt)
+  }
+
+  let geocode = null
+  let usedCache = false
+  let lastFailure = null
+
+  for (const candidate of queryPlan.candidates) {
+    const cacheKey = buildCacheKey(candidate.query)
+    const cached = geocodeCache[cacheKey]?.version === GEOCODE_CACHE_VERSION ? geocodeCache[cacheKey] : null
+
+    if (cached) {
+      const cachedGeocode = buildGeocodeFromCache(cached, candidate.query, updatedAt)
+      if (cachedGeocode.status === 'confirmado' || cachedGeocode.status === 'aproximado') {
+        geocode = cachedGeocode
+        usedCache = true
+        break
+      }
+
+      lastFailure = cachedGeocode
+      continue
+    }
+
+    await rateLimiter.wait()
+
+    try {
+      const results = await fetchNominatim(candidate.query)
+      const best = chooseBestResult(results, {
+        bairro: record.bairro,
+        endereco: record.endereco,
+        schoolName: record.nome,
+        streetNumber: queryPlan.streetNumber,
+        addressWithoutNumber: queryPlan.addressWithoutNumber,
+        usedFallbackWithoutBairro: candidate.usedFallbackWithoutBairro,
+        usedFallbackWithoutNumber: candidate.usedFallbackWithoutNumber,
+      })
+
+      const attemptedGeocode = best
+        ? {
+            query: candidate.query,
+            latitude: best.latitude,
+            longitude: best.longitude,
+            status: best.status,
+            confidence: best.confidence,
+            displayName: best.displayName,
+            updatedAt,
+            observation: best.observation,
+            postcode: best.postcode,
+          }
+        : buildFailureGeocode(
+            candidate.query,
+            'Nenhum resultado confiavel encontrado no Nominatim.',
+            updatedAt,
+            record,
+          )
+
+      geocodeCache[cacheKey] = buildGeocodeCachePayload(attemptedGeocode)
+      await writeJson(geocodeCachePath, geocodeCache)
+
+      if (attemptedGeocode.status === 'confirmado' || attemptedGeocode.status === 'aproximado') {
+        geocode = attemptedGeocode
+        break
+      }
+
+      lastFailure = attemptedGeocode
+    } catch (error) {
+      lastFailure = buildFailureGeocode(
+        candidate.query,
+        `Erro ao consultar o Nominatim: ${error.message}`,
+        updatedAt,
+        record,
+      )
+    }
+  }
+
+  const resolved = geocode || lastFailure || buildFailureGeocode(
+    queryPlan.primaryQuery,
+    'Nenhum resultado confiavel encontrado no Nominatim.',
+    updatedAt,
+    record,
+  )
+
+  geocodeCache[buildCacheKey(queryPlan.primaryQuery)] = buildGeocodeCachePayload(resolved)
+  await writeJson(geocodeCachePath, geocodeCache)
+
+  return { ...resolved, usedCache }
+}
+
+function buildEnrichedRecord(record, geocode, cep) {
+  return {
+    ...record.raw,
+    nome: record.nome,
+    nome_oficial: record.raw?.nome_oficial ?? record.nome,
+    bairro: record.bairro,
+    endereco: record.endereco,
+    latitude: toNullableNumber(geocode.latitude),
+    longitude: toNullableNumber(geocode.longitude),
+    cep,
+    geocode_status: geocode.status,
+    geocode_confianca: geocode.confidence,
+    geocode_provider: 'nominatim',
+    geocode_query: geocode.query,
+    geocode_display_name: geocode.displayName,
+    geocode_updated_at: geocode.updatedAt,
+    geocode_observacao: geocode.observation,
+  }
+}
+
+function buildFinalRecord(enrichedRecord) {
+  return {
+    nome: cleanText(enrichedRecord.nome || enrichedRecord.nome_oficial) || null,
+    cep: formatCep(enrichedRecord.cep),
+    bairro: cleanText(enrichedRecord.bairro) || null,
+    endereco: extractPrimaryAddress(enrichedRecord.endereco) || null,
+    latitude: toNullableNumber(enrichedRecord.latitude),
+    longitude: toNullableNumber(enrichedRecord.longitude),
+    fotos: null,
+    comodosCadastrados: cloneComodosPadrao(),
+  }
+}
+
+function buildPendingRecord(finalRecord) {
+  const motivos = []
+  if (finalRecord.latitude === null) motivos.push('latitude ausente')
+  if (finalRecord.longitude === null) motivos.push('longitude ausente')
+  if (finalRecord.cep === null) motivos.push('cep ausente')
+  if (!finalRecord.endereco) motivos.push('endereco ausente')
+
+  return {
+    nome: finalRecord.nome,
+    bairro: finalRecord.bairro,
+    endereco: finalRecord.endereco,
+    latitude: finalRecord.latitude,
+    longitude: finalRecord.longitude,
+    cep: finalRecord.cep,
+    motivos,
+  }
+}
+
+function validateFinalOutput(records) {
   for (const record of records) {
-    const latitude = record.latitude
-    const longitude = record.longitude
-    const latitudeOk = latitude === null || Number.isFinite(latitude)
-    const longitudeOk = longitude === null || Number.isFinite(longitude)
+    const latitudeOk = record.latitude === null || Number.isFinite(record.latitude)
+    const longitudeOk = record.longitude === null || Number.isFinite(record.longitude)
 
     if (!latitudeOk || !longitudeOk) {
-      throw new Error(`Coordenadas invalidas para ${record.nome_oficial}.`)
+      throw new Error(`Coordenadas invalidas para ${record.nome}.`)
     }
   }
 }
 
+function updateStats(stats, finalRecord, geocode) {
+  if (finalRecord.latitude !== null && finalRecord.longitude !== null) {
+    stats.withCoordinates += 1
+  } else {
+    stats.withoutCoordinates += 1
+  }
+
+  if (finalRecord.cep) {
+    stats.withCep += 1
+  } else {
+    stats.withoutCep += 1
+  }
+
+  if (geocode.status === 'confirmado') {
+    stats.confirmed += 1
+  } else if (geocode.status === 'aproximado') {
+    stats.approximated += 1
+  } else if (geocode.status === 'falhou') {
+    stats.failed += 1
+  } else if (geocode.status === 'sem_endereco') {
+    stats.withoutAddress += 1
+  }
+}
+
+function logRecord(tag, record, geocode, cep) {
+  const displayName = geocode.displayName ? ` -> ${geocode.displayName}` : ''
+  const cepSuffix = cep ? ` [CEP ${cep}]` : ''
+  console.log(`${tag} ${record.nome}${cepSuffix}${displayName}`)
+}
+
 async function main() {
-  const records = await readJson(inputPath, [])
-  const cache = await readJson(cachePath, {})
-  const output = []
+  const { sourceLabel, sourcePath, records } = await loadWorkingRecords()
+  const geocodeCache = await readJson(geocodeCachePath, {})
+  const cepCache = await readJson(cepCachePath, {})
+  const rateLimiter = createRateLimiter()
+
+  const enrichedRecords = []
+  const finalRecords = []
+  const pendingRecords = []
   const stats = {
-    total: Array.isArray(records) ? records.length : 0,
-    alreadyHadCoordinates: 0,
-    geocoded: 0,
+    total: records.length,
+    withCoordinates: 0,
+    withoutCoordinates: 0,
+    withCep: 0,
+    withoutCep: 0,
+    confirmed: 0,
     approximated: 0,
     failed: 0,
     withoutAddress: 0,
   }
 
-  if (!Array.isArray(records)) {
-    throw new Error('O arquivo de entrada nao contem uma lista JSON.')
-  }
-
-  let lastRequestAt = 0
-
   for (const record of records) {
-    const updatedAt = new Date().toISOString()
-    const queryPlan = buildGeocodeQueries(record)
+    const geocode = await resolveGeocode({ record, geocodeCache, rateLimiter })
+    const cep = await resolveCep({ record, geocode, cepCache })
+    const enriched = buildEnrichedRecord(record, geocode, cep)
+    const finalRecord = buildFinalRecord(enriched)
 
-    if (hasValidCoordinates(record)) {
-      const geocode = buildExistingCoordinatesGeocode(
-        record,
-        queryPlan.primaryQuery,
-        queryPlan.addressWithoutNumber,
-        updatedAt,
-      )
-      applyStats(stats, geocode, { alreadyHadCoordinates: true })
-      output.push(formatFromGeocode(record, geocode))
-      logResult('[OK]', record, geocode)
-      continue
-    }
+    enrichedRecords.push(enriched)
+    finalRecords.push(finalRecord)
+    updateStats(stats, finalRecord, geocode)
 
-    if (!queryPlan.primaryQuery) {
-      const geocode = buildNoAddressGeocode(updatedAt)
-      applyStats(stats, geocode)
-      output.push(formatFromGeocode(record, geocode))
-      logResult('[SEM_ENDERECO]', record, geocode)
-      continue
-    }
-
-    let geocode = null
-    let usedCache = false
-    let lastFailure = null
-
-    for (const candidate of queryPlan.candidates) {
-      const cacheKey = buildCacheKey(candidate.query)
-      const cached = cache[cacheKey]?.version === CACHE_VERSION ? cache[cacheKey] : null
-
-      if (cached) {
-        const cachedGeocode = buildGeocodeFromCache(cached, candidate.query, updatedAt)
-        if (cachedGeocode.status === 'confirmado' || cachedGeocode.status === 'aproximado') {
-          geocode = cachedGeocode
-          usedCache = true
-          break
-        }
-
-        lastFailure = cachedGeocode
-        continue
-      }
-
-      if (lastRequestAt > 0) {
-        const elapsed = Date.now() - lastRequestAt
-        if (elapsed < REQUEST_DELAY_MS) {
-          await sleep(REQUEST_DELAY_MS - elapsed)
-        }
-      }
-
-      try {
-        lastRequestAt = Date.now()
-        const results = await fetchNominatim(candidate.query)
-        const best = chooseBestResult(results, {
-          bairro: record.bairro,
-          endereco: record.endereco,
-          schoolName: record.nome_oficial,
-          streetNumber: queryPlan.streetNumber,
-          addressWithoutNumber: queryPlan.addressWithoutNumber,
-          usedFallbackWithoutBairro: candidate.usedFallbackWithoutBairro,
-          usedFallbackWithoutNumber: candidate.usedFallbackWithoutNumber,
-        })
-
-        const attemptedGeocode = best
-          ? {
-              query: candidate.query,
-              latitude: best.latitude,
-              longitude: best.longitude,
-              status: best.status,
-              confidence: best.confidence,
-              displayName: best.displayName,
-              updatedAt,
-              observation: best.observation,
-            }
-          : buildFailureGeocode(
-              candidate.query,
-              'Nenhum resultado confiavel encontrado no Nominatim.',
-              updatedAt,
-            )
-
-        cache[cacheKey] = buildCachePayload(attemptedGeocode)
-        await writeJson(cachePath, cache)
-
-        if (attemptedGeocode.status === 'confirmado' || attemptedGeocode.status === 'aproximado') {
-          geocode = attemptedGeocode
-          break
-        }
-
-        lastFailure = attemptedGeocode
-      } catch (error) {
-        lastFailure = buildFailureGeocode(
-          candidate.query,
-          `Erro ao consultar o Nominatim: ${error.message}`,
-          updatedAt,
-        )
-      }
-    }
-
-    if (!geocode) {
-      geocode = lastFailure ?? buildFailureGeocode(
-        queryPlan.primaryQuery,
-        'Nenhum resultado confiavel encontrado no Nominatim.',
-        updatedAt,
-      )
-    }
-
-    const primaryCacheKey = buildCacheKey(queryPlan.primaryQuery)
-    cache[primaryCacheKey] = buildCachePayload(geocode)
-    await writeJson(cachePath, cache)
-
-    applyStats(stats, geocode)
-    output.push(formatFromGeocode(record, geocode))
-
-    if (usedCache) {
-      logResult('[CACHE]', record, geocode)
-      continue
+    if (finalRecord.latitude === null || finalRecord.longitude === null || finalRecord.cep === null) {
+      pendingRecords.push(buildPendingRecord(finalRecord))
     }
 
     if (geocode.status === 'confirmado') {
-      logResult('[OK]', record, geocode)
+      logRecord(geocode.usedCache ? '[CACHE]' : '[OK]', record, geocode, finalRecord.cep)
       continue
     }
 
     if (geocode.status === 'aproximado') {
-      logResult('[APROX]', record, geocode)
+      logRecord(geocode.usedCache ? '[CACHE]' : '[APROX]', record, geocode, finalRecord.cep)
       continue
     }
 
-    logResult('[FALHOU]', record, geocode)
+    if (geocode.status === 'sem_endereco') {
+      logRecord('[SEM_ENDERECO]', record, geocode, finalRecord.cep)
+      continue
+    }
+
+    logRecord('[FALHOU]', record, geocode, finalRecord.cep)
   }
 
-  validateOutput(output)
-  await writeJson(outputPath, output)
+  validateFinalOutput(finalRecords)
+  await writeJson(geocodedPath, enrichedRecords)
+  await writeJson(finalPath, finalRecords)
+  await writeJson(pendingPath, pendingRecords)
 
   console.log('')
-  console.log(`Total de escolas: ${stats.total}`)
-  console.log(`Ja tinham coordenadas: ${stats.alreadyHadCoordinates}`)
-  console.log(`Geocodificadas: ${stats.geocoded}`)
-  console.log(`Aproximadas: ${stats.approximated}`)
-  console.log(`Falharam: ${stats.failed}`)
-  console.log(`Sem endereco: ${stats.withoutAddress}`)
-  console.log(`Arquivo gerado em: ${outputPath}`)
-  console.log(`Cache em: ${cachePath}`)
+  console.log(`Fonte de entrada: ${sourceLabel} (${sourcePath})`)
+  console.log(`Total de registros: ${stats.total}`)
+  console.log(`Registros com latitude/longitude: ${stats.withCoordinates}`)
+  console.log(`Registros sem latitude/longitude: ${stats.withoutCoordinates}`)
+  console.log(`Registros com CEP: ${stats.withCep}`)
+  console.log(`Registros sem CEP: ${stats.withoutCep}`)
+  console.log(`Geocodificacoes confirmadas: ${stats.confirmed}`)
+  console.log(`Geocodificacoes aproximadas: ${stats.approximated}`)
+  console.log(`Falhas de geocodificacao: ${stats.failed}`)
+  console.log(`Registros sem endereco: ${stats.withoutAddress}`)
+  console.log(`Arquivo final gerado: ${finalPath}`)
+  console.log(`Arquivo de pendencias: ${pendingPath}`)
 }
 
 main().catch((error) => {

@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-<<<<<<< HEAD
 import { MapContainer, Marker, TileLayer, Tooltip, useMap, useMapEvents } from 'react-leaflet'
 import { CaraguatatubaBairrosLayer, bairroStyleDefaults } from '../components/CaraguatatubaBairrosLayer.jsx'
 import { CaraguatatubaBoundary } from '../components/Mapa_com_boundary.jsx'
 import { ocorrenciasAprovadas, statusValues } from '../data/mockData.js'
-import { Badge, Card, FilterSelect } from '../components/ui.jsx'
+import { Badge, Card, FilterSelect, Select } from '../components/ui.jsx'
 import { fetchEscolaOcorrencias, fetchHeatmapOcorrencias, getEscolaOcorrenciasFallback, getHeatmapFallback } from '../services/mapa.js'
 import { getAllSchools, loadSchoolCatalog } from '../utils/schools.js'
 import {
@@ -20,15 +19,6 @@ import {
   isValidSchoolCoordinate,
   normalizeName,
 } from '../utils/mapaBairros.js'
-=======
-import { MapContainer, Marker, TileLayer, Tooltip, useMap } from 'react-leaflet'
-import { statusValues } from '../data/mockData.js'
-import { CaraguatatubaBairrosLayer, bairroStyleDefaults } from '../components/CaraguatatubaBairrosLayer.jsx'
-import { CaraguatatubaBoundary } from '../components/Mapa_com_boundary.jsx'
-import { Badge, Card, FilterSelect, Select } from '../components/ui.jsx'
-import { fetchEscolaOcorrencias, fetchHeatmapOcorrencias, getEscolaOcorrenciasFallback, getHeatmapFallback } from '../services/mapa.js'
-import { listarEscolas } from '../services/api.js'
->>>>>>> 1dbd2e8cff8e3a8fd78d1deb9fd281366dee91d8
 
 const mapCenter = [-23.6203, -45.4131]
 const drawerFocusOffset = { x: -180, y: 0 }
@@ -453,7 +443,6 @@ export function Mapa({ onNavigate }) {
     dataInicial: '',
     dataFinal: '',
   })
-  const [escolas, setEscolas] = useState([])
   const [heatmapData, setHeatmapData] = useState([])
   const [schoolCatalog, setSchoolCatalog] = useState(() => getAllSchools())
   const [loadingMapa, setLoadingMapa] = useState(true)
@@ -486,7 +475,6 @@ export function Mapa({ onNavigate }) {
     }
   })
 
-<<<<<<< HEAD
   const drawerAberto = Boolean(modalContext)
 
   useEffect(() => {
@@ -506,17 +494,6 @@ export function Mapa({ onNavigate }) {
 
     return () => {
       active = false
-=======
-  const schoolOptions = useMemo(() => escolas.map((escola) => ({ value: escola.id, label: escola.nome })), [escolas])
-
-  useEffect(() => {
-    let ativo = true
-    listarEscolas()
-      .then((dados) => { if (ativo) setEscolas(dados) })
-      .catch(() => { if (ativo) setEscolas([]) })
-    return () => {
-      ativo = false
->>>>>>> 1dbd2e8cff8e3a8fd78d1deb9fd281366dee91d8
     }
   }, [])
 
@@ -1045,24 +1022,7 @@ export function Mapa({ onNavigate }) {
       <Card className="overflow-hidden p-0">
 
         <div className="relative h-[calc(100vh-16rem)] min-h-[560px]">
-<<<<<<< HEAD
           <MetricPanel context={metricContext} />
-=======
-          <div className="absolute left-4 top-4 z-[650] w-[240px] rounded-xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur">
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
-              {metricContext.title}
-            </p>
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <MetricCompact label="Ocorrências" value={metricContext.metrics.totalOcorrencias} />
-              <MetricCompact label="Críticas" value={metricContext.metrics.criticas} />
-              <MetricCompact label="Atencao" value={metricContext.metrics.atencao} />
-              <MetricCompact label="Baixas" value={metricContext.metrics.baixas} />
-              <div className="col-span-2">
-                <MetricCompact label="Intensidade" value={metricContext.metrics.intensidade} />
-              </div>
-            </div>
-          </div>
->>>>>>> 1dbd2e8cff8e3a8fd78d1deb9fd281366dee91d8
 
           <MapContainer center={mapCenter} zoom={13} scrollWheelZoom zoomControl={false} className="h-full w-full">
             <TileLayer
@@ -1097,7 +1057,6 @@ export function Mapa({ onNavigate }) {
             <ZoomControlPosition />
             <MapFocusController target={mapFocusTarget} />
 
-<<<<<<< HEAD
             {schoolMarkers.map((item) => {
               const showPermanentName = currentZoom >= schoolLabelZoom
 
@@ -1127,23 +1086,6 @@ export function Mapa({ onNavigate }) {
                 </Marker>
               )
             })}
-=======
-            {visibleSchools.map((item) => (
-              <Marker
-                key={item.escolaId}
-                icon={markerIconsById[item.escolaId]}
-                position={[item.latitude, item.longitude]}
-                eventHandlers={{ click: () => openDrawer(item.escolaId) }}
-              >
-                <Tooltip direction="top" offset={[0, -16]}>
-                  <div className="space-y-1">
-                    <strong>{item.escolaNome}</strong>
-                    <p>{item.totalOcorrencias} ocorrências</p>
-                  </div>
-                </Tooltip>
-              </Marker>
-            ))}
->>>>>>> 1dbd2e8cff8e3a8fd78d1deb9fd281366dee91d8
           </MapContainer>
 
           <MapColorScaleControl
@@ -1191,16 +1133,12 @@ export function Mapa({ onNavigate }) {
                 <p className="truncate text-[10px] font-bold uppercase tracking-wide text-slate-500">
                   Bairro: {selectedBairroStats.nome}
                 </p>
-<<<<<<< HEAD
                 <p className="mt-1 text-[11px] font-semibold text-slate-500">
                   {selectedBairroStats.totalEscolas > 0
                     ? `${selectedBairroStats.totalEscolas} escola${selectedBairroStats.totalEscolas > 1 ? 's' : ''} com ${selectedBairroStats.totalSolicitacoes} ocorrencia${selectedBairroStats.totalSolicitacoes === 1 ? '' : 's'}.`
                     : 'Sem escolas associadas no cadastro atual.'}
                 </p>
                 <button
-=======
-                <button className="cursor-pointer"
->>>>>>> 1dbd2e8cff8e3a8fd78d1deb9fd281366dee91d8
                   type="button"
                   onClick={clearSelectedBairro}
                   className="mt-2 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-50"
@@ -1395,7 +1333,6 @@ function MapContextDrawer({
       <div className="flex h-full flex-col">
         <div className="border-b border-slate-200 p-4">
           <div className="flex items-center gap-3">
-<<<<<<< HEAD
             {isEscolaMode ? (
               <button
                 type="button"
@@ -1411,18 +1348,6 @@ function MapContextDrawer({
               </div>
             )}
             <button type="button" onClick={onClose} className="shrink-0 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
-=======
-            <button
-              type="button"
-              onClick={onOpenSchoolRegistry}
-              className="cursor-pointer min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-4 py-2 text-left text-sm font-bold text-slate-700 hover:bg-slate-50"
-            >
-              <span className="block truncate">
-                {detalhe?.escolaNome || detalhe?.nome || 'Detalhe da escola'}
-              </span>
-            </button>
-            <button type="button" onClick={onClose} className="cursor-pointer shrink-0 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
->>>>>>> 1dbd2e8cff8e3a8fd78d1deb9fd281366dee91d8
               Fechar
             </button>
           </div>
@@ -1441,32 +1366,9 @@ function MapContextDrawer({
                 ]}
               />
 
-<<<<<<< HEAD
               {Number(bairroStats?.totalEscolas || 0) === 0 ? (
                 <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-semibold text-slate-500">
                   Nenhuma escola cadastrada neste bairro no contexto atual.
-=======
-                <div className="space-y-3">
-                  {ocorrencias.length > 0 ? ocorrencias.map((ocorrencia) => (
-                    <article key={ocorrencia.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                      <div className="flex items-start justify-between gap-3">
-                        <h5 className="font-bold text-slate-900">{ocorrencia.titulo}</h5>
-                        <Badge>{ocorrencia.criticidade}</Badge>
-                      </div>
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <Badge>{ocorrencia.status}</Badge>
-                        <span className="text-xs font-semibold text-slate-500">{ocorrencia.data || 'Sem data'}</span>
-                      </div>
-                      <p className="mt-3 text-sm leading-6 text-slate-600">
-                        {ocorrencia.descricao || 'Sem descrição resumida para esta ocorrência.'}
-                      </p>
-                    </article>
-                  )) : (
-                    <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-semibold text-slate-500">
-                      Nenhuma ocorrência encontrada para esta escola.
-                    </div>
-                  )}
->>>>>>> 1dbd2e8cff8e3a8fd78d1deb9fd281366dee91d8
                 </div>
               ) : bairroOcorrencias.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-semibold text-slate-500">
@@ -1480,7 +1382,6 @@ function MapContextDrawer({
                 </div>
               )}
             </>
-<<<<<<< HEAD
           ) : (
             <>
               {loadingDetalhe ? (
@@ -1515,13 +1416,6 @@ function MapContextDrawer({
               ) : null}
             </>
           )}
-=======
-          ) : !loadingDetalhe ? (
-            <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-semibold text-slate-500">
-              Não foi possível localizar os dados desta escola.
-            </div>
-          ) : null}
->>>>>>> 1dbd2e8cff8e3a8fd78d1deb9fd281366dee91d8
         </div>
       </div>
     </aside>
