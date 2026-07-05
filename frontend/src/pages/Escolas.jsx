@@ -260,10 +260,10 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
               Exibindo a escola selecionada no mapa de calor.
             </p>
           </div>
-          <button className="cursor-pointer"
+          <button
             type="button"
             onClick={() => onNavigate('/escolas')}
-            className="rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            className="cursor-pointer rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
           >
             Limpar filtro
           </button>
@@ -283,10 +283,10 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
             >
               Importar csv
             </button>
-            <button className="cursor-pointer"
+            <button
               type="button"
               onClick={() => setIsModalOpen(true)}
-              className="rounded-md bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-strong"
+              className="cursor-pointer rounded-md bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-strong"
             >
               Cadastrar escola
             </button>
@@ -311,44 +311,41 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
         {loadingSchools ? <p className="mt-1 text-xs font-semibold text-slate-400">Carregando escolas do banco...</p> : null}
       </Card>
 
-      <Card className="p-0">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-sm">
-            <thead className="bg-slate-50 text-left text-xs font-800 uppercase text-slate-500">
-              <tr>
-                {['Nome', 'Bairro', 'Endereço', 'Status', 'Ocorrências', 'Críticas', 'Cadastro'].map((head) => <th key={head} className="px-4 py-3">{head}</th>)}
-              </tr>
-            </thead>
-            <tbody>
-              {escolasFiltradas.map((escola) => {
-                const stats = getSchoolStats(escola.id, ocorrencias)
-                return (
-                  <tr
-                    key={escola.id}
-                    onClick={() => onNavigate(`/escolas/${escola.id}`)}
-                    className="cursor-pointer border-t border-slate-100 hover:bg-primary-50/40"
-                  >
-                    <td className="px-4 py-3 font-bold">{escola.nome}</td>
-                    <td className="px-4 py-3">{formatDisplayLabel(escola.bairro)}</td>
-                    <td className="px-4 py-3">{escola.endereco}</td>
-                    <td className="px-4 py-3"><Badge>{escola.status}</Badge></td>
-                    <td className="px-4 py-3">{stats.total}</td>
-                    <td className="px-4 py-3">{stats.criticas}</td>
-                    <td className="px-4 py-3">{escola.dataCadastro}</td>
-                  </tr>
-                )
-              })}
-              {!escolasFiltradas.length && (
-                <tr>
-                  <td colSpan="7" className="border-t border-slate-100 px-4 py-8 text-center text-sm font-semibold text-slate-500">
-                    Nenhuma escola encontrada com os filtros selecionados.
-                  </td>
+      <div className="w-full overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
+        <table className="w-full min-w-[1000px] border-collapse rounded-2 text-sm">
+          <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-extrabold tracking-wide text-slate-600">
+            <tr className="divide-x divide-slate-200">
+              {['Nome', 'Bairro', 'Endereço', 'Status', 'Ocorrências', 'Críticas', 'Cadastro'].map((head) => <th key={head} className="px-4 py-3">{head}</th>)}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-200">
+            {escolasFiltradas.map((escola) => {
+              const stats = getSchoolStats(escola.id, ocorrencias)
+              return (
+                <tr
+                  key={escola.id}
+                  onClick={() => onNavigate(`/escolas/${escola.id}`)}
+                  className="cursor-pointer divide-x divide-slate-200 border-x border-slate-200 hover:bg-primary-50/40"
+                >
+                  <td className="px-4 py-3 font-bold text-slate-800">{escola.nome}</td>
+                  <td className="px-4 py-3 text-slate-600">{formatDisplayLabel(escola.bairro)}</td>
+                  <td className="px-4 py-3 text-slate-600">{escola.endereco}</td>
+                  <td className="px-4 py-3"><Badge>{escola.status}</Badge></td>
+                  <td className="px-4 py-3 text-slate-600">{stats.total}</td>
+                  <td className="px-4 py-3 text-slate-600">{stats.criticas}</td>
+                  <td className="px-4 py-3 text-slate-600">{escola.dataCadastro}</td>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+              )
+            })}
+            {!escolasFiltradas.length && (
+              <tr>
+                <td colSpan="7" className="border-t border-slate-100 px-4 py-8 text-center text-sm font-semibold text-slate-500">
+                  Nenhuma escola encontrada com os filtros selecionados.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
       {isModalOpen && (
@@ -440,7 +437,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                     {novoCadastro.fotos.map((foto, index) => (
                       <div key={`${foto.nome}-${index}`} className="group relative aspect-video overflow-hidden rounded-md border border-slate-200">
                         <img src={foto.url} alt={`Prévia ${index + 1}`} className="h-full w-full object-cover" />
-                        <button
+                        <button className="cursor-pointer"
                           type="button"
                           onClick={() => removerFotoCadastro(index)}
                           aria-label={`Remover ${foto.nome}`}
@@ -532,6 +529,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
           </div>
         </div>
       )}
+      </div>
     </>
   )
 }

@@ -25,7 +25,7 @@ export function MetricCard({ label, value, tone = 'blue' }) {
 }
 
 export function Badge({ children, type = 'status' }) {
-  const text = String(children)
+  const text = Array.isArray(children) ? children.map((item) => String(item)).join('') : String(children)
   const classes = {
     Critica: 'bg-red-100 text-red-700',
     Alta: 'bg-orange-100 text-orange-700',

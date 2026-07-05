@@ -71,7 +71,7 @@ export function Sidebar({ route, onNavigate, user, open = false, onClose, collap
               || (path === '/ocorrencias' && route.startsWith('/ocorrencias/'))
               || (path === '/escolas' && route.startsWith('/escolas/'))
             return (
-              <button
+              <button className="cursor-pointer"
                 key={id}
                 type="button"
                 onClick={() => handleNavigate(path)}

@@ -55,7 +55,7 @@ export function OcorrenciaDetalhe({ id, onNavigate, user }) {
   if (erro || !ocorrencia) {
     return (
       <div className="space-y-4">
-        <button className="cursor-pointer" onClick={() => onNavigate('/ocorrencias')} className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold">Voltar para lista</button>
+        <button onClick={() => onNavigate('/ocorrencias')} className="cursor-pointer rounded-md border border-slate-200 px-4 py-2 text-sm font-bold">Voltar para lista</button>
         <Card><p className="text-sm font-semibold text-red-600">{erro || 'Ocorrência não encontrada.'}</p></Card>
       </div>
     )
@@ -390,17 +390,17 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
   return (
     <div className="space-y-5 xl:flex xl:h-[calc(100vh-8rem)] xl:flex-col xl:space-y-0 xl:gap-5 xl:overflow-hidden">
       <div className="flex gap-2 xl:shrink-0">
-        <button className="cursor-pointer"
+        <button
           onClick={() => onNavigate('/ocorrencias')}
-          className="flex flex-1 items-center justify-center gap-2 rounded-md border border-slate-200 px-4 py-2 text-sm font-bold xl:flex-none"
+          className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border border-slate-200 px-4 py-2 text-sm font-bold xl:flex-none"
         >
           <Icon name="arrow-left" className="h-4 w-4" />
           Voltar
         </button>
-        <button className="cursor-pointer"
+        <button
           type="button"
           onClick={() => setHistoricoAberto(true)}
-          className="flex flex-1 items-center justify-center gap-2 rounded-md border border-slate-200 px-4 py-2 text-sm font-bold xl:hidden"
+          className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border border-slate-200 px-4 py-2 text-sm font-bold xl:hidden"
         >
           <Icon name="history" className="h-4 w-4" />
           Histórico
@@ -422,9 +422,9 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
                 >
                   Exportar PDF
                 </button>
-                <button className="cursor-pointer"
+                <button
                   onClick={() => setModalEdicaoAberto(true)}
-                  className="flex-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 sm:flex-none"
+                  className="flex-1 cursor-pointer rounded-md border border-slate-300 px-3 py-1.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 sm:flex-none"
                 >
                   Editar
                 </button>
