@@ -146,7 +146,7 @@ export async function fetchHeatmapOcorrencias(filters = {}, signal) {
 
   const response = await fetch(`${endpoint}?${params.toString()}`, { signal })
   if (!response.ok) {
-    throw new Error('Nao foi possivel carregar o mapa de calor.')
+    throw new Error('Não foi possível carregar o mapa de calor.')
   }
 
   const data = await response.json()
@@ -156,7 +156,7 @@ export async function fetchHeatmapOcorrencias(filters = {}, signal) {
 export async function fetchEscolaOcorrencias(escolaId, signal) {
   const response = await fetch(`${API_URL}/escolas/${escolaId}/ocorrencias`, { signal })
   if (!response.ok) {
-    throw new Error('Nao foi possivel carregar o detalhe da escola.')
+    throw new Error('Não foi possível carregar o detalhe da escola.')
   }
 
   const data = await response.json()

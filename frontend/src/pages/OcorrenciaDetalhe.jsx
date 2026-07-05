@@ -3,6 +3,7 @@ import { categorias, criticidadeValues, locaisInternos, statusValues } from '../
 import { adicionarInteracao, atualizarOcorrencia, listarEscolas, obterOcorrencia, uploadFotosOcorrencia } from '../services/api.js'
 import { Card, Modal } from '../components/ui.jsx'
 import { Icon } from '../components/Icons.jsx'
+import { formatDisplayLabel } from '../utils/labels.js'
 
 function formatarDataBR(dataIso) {
   if (!dataIso) return ''
@@ -54,7 +55,7 @@ export function OcorrenciaDetalhe({ id, onNavigate, user }) {
   if (erro || !ocorrencia) {
     return (
       <div className="space-y-4">
-        <button onClick={() => onNavigate('/ocorrencias')} className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold">Voltar para lista</button>
+        <button onClick={() => onNavigate('/ocorrencias')} className="cursor-pointer rounded-md border border-slate-200 px-4 py-2 text-sm font-bold">Voltar para lista</button>
         <Card><p className="text-sm font-semibold text-red-600">{erro || 'Ocorrência não encontrada.'}</p></Card>
       </div>
     )
@@ -184,8 +185,8 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
       ['Status', status],
       ['Descrição', form.descricao],
       ['Endereço', escolaSelecionada.endereco],
-      ['Localização', form.localizacaoInterna],
-      ['Tipo', form.tipo],
+      ['Localização', formatDisplayLabel(form.localizacaoInterna)],
+      ['Tipo', formatDisplayLabel(form.tipo)],
       ['Envio', formatarDataBR(form.dataEnvio)],
       ['Aprovação', formatarDataBR(form.dataAprovacao)],
       ['Resolução', formatarDataBR(form.dataResolucao)],
@@ -391,7 +392,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
       <div className="flex gap-2 xl:shrink-0">
         <button
           onClick={() => onNavigate('/ocorrencias')}
-          className="flex flex-1 items-center justify-center gap-2 rounded-md border border-slate-200 px-4 py-2 text-sm font-bold xl:flex-none"
+          className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border border-slate-200 px-4 py-2 text-sm font-bold xl:flex-none"
         >
           <Icon name="arrow-left" className="h-4 w-4" />
           Voltar
@@ -399,7 +400,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
         <button
           type="button"
           onClick={() => setHistoricoAberto(true)}
-          className="flex flex-1 items-center justify-center gap-2 rounded-md border border-slate-200 px-4 py-2 text-sm font-bold xl:hidden"
+          className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border border-slate-200 px-4 py-2 text-sm font-bold xl:hidden"
         >
           <Icon name="history" className="h-4 w-4" />
           Histórico
@@ -417,13 +418,13 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
               <div className="flex w-full gap-2 sm:w-auto">
                 <button
                   onClick={exportarPdf}
-                  className="flex-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 sm:flex-none"
+                  className="cursor-pointer flex-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 sm:flex-none"
                 >
                   Exportar PDF
                 </button>
                 <button
                   onClick={() => setModalEdicaoAberto(true)}
-                  className="flex-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 sm:flex-none"
+                  className="flex-1 cursor-pointer rounded-md border border-slate-300 px-3 py-1.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 sm:flex-none"
                 >
                   Editar
                 </button>
@@ -440,16 +441,16 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
               <InfoField label="Título" value={form.titulo} />
             </div>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <InfoField label="Criticidade" value={criticidade} />
-              <InfoField label="Status" value={status} />
+              <InfoField label="Criticidade" value={formatDisplayLabel(criticidade)} />
+              <InfoField label="Status" value={formatDisplayLabel(status)} />
             </div>
             <div className="mt-4">
               <InfoField label="Descrição" value={form.descricao} />
             </div>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <InfoField label="Endereço" value={escolaSelecionada.endereco} />
-              <InfoField label="Localização" value={form.localizacaoInterna} />
-              <InfoField label="Tipo" value={form.tipo} />
+              <InfoField label="Localização" value={formatDisplayLabel(form.localizacaoInterna)} />
+              <InfoField label="Tipo" value={formatDisplayLabel(form.tipo)} />
               <InfoField label="Envio" value={formatarDataBR(form.dataEnvio)} />
               <InfoField label="Aprovação" value={formatarDataBR(form.dataAprovacao)} />
               <InfoField label="Resolução" value={formatarDataBR(form.dataResolucao)} />
@@ -465,14 +466,14 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
               )}
               {fotos.length > 1 && (
                 <>
-                  <button onClick={prevFoto} aria-label="Foto anterior" className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 px-2.5 py-1 text-lg font-bold text-slate-700 shadow hover:bg-white">&lsaquo;</button>
-                  <button onClick={nextFoto} aria-label="Próxima foto" className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 px-2.5 py-1 text-lg font-bold text-slate-700 shadow hover:bg-white">&rsaquo;</button>
+                  <button onClick={prevFoto} aria-label="Foto anterior" className="cursor-pointer absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 px-2.5 py-1 text-lg font-bold text-slate-700 shadow hover:bg-white">&lsaquo;</button>
+                  <button onClick={nextFoto} aria-label="Próxima foto" className="cursor-pointer absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 px-2.5 py-1 text-lg font-bold text-slate-700 shadow hover:bg-white">&rsaquo;</button>
                 </>
               )}
             </div>
             <div className="mt-3 flex justify-center gap-1.5">
               {fotos.map((foto, index) => (
-                <button key={foto} onClick={() => setFotoIndex(index)} aria-label={`Ir para foto ${index + 1}`} className={`h-1.5 w-1.5 rounded-full transition ${index === fotoIndex ? 'bg-primary' : 'bg-slate-300'}`} />
+                <button className="cursor-pointer" key={foto} onClick={() => setFotoIndex(index)} aria-label={`Ir para foto ${index + 1}`} className={`h-1.5 w-1.5 rounded-full transition ${index === fotoIndex ? 'bg-primary' : 'bg-slate-300'}`} />
               ))}
             </div>
           </Card>
@@ -483,7 +484,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
           }`}
         >
           <div className="flex justify-end border-b border-slate-200 px-2 py-2 shrink-0 xl:hidden">
-            <button
+            <button className="cursor-pointer"
               type="button"
               onClick={() => setHistoricoAberto(false)}
               aria-label="Fechar histórico"
@@ -498,7 +499,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
             <button
               onClick={exportarHistoricoPdf}
               aria-label="Exportar PDF"
-              className="flex w-full shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 sm:w-auto"
+              className="cursor-pointer flex w-full shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 sm:w-auto"
             >
               <Icon name="download" className="h-4 w-4" />
               <span>Exportar PDF</span>
@@ -547,7 +548,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
                   <span key={`${file.name}-${index}`} className="flex items-center gap-1.5 rounded bg-slate-100 px-2 py-1 text-xs font-bold text-slate-600">
                     <Icon name="paperclip" className="h-3.5 w-3.5" />
                     {file.name}
-                    <button onClick={() => removerAnexo(index)} aria-label={`Remover ${file.name}`} className="text-slate-400 hover:text-red-600">&times;</button>
+                    <button className="cursor-pointer" onClick={() => removerAnexo(index)} aria-label={`Remover ${file.name}`} className="text-slate-400 hover:text-red-600">&times;</button>
                   </span>
                 ))}
               </div>
@@ -556,7 +557,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
               <button
                 onClick={handleAnexarClick}
                 aria-label="Anexar arquivo"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100"
+                className="cursor-pointer flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100"
               >
                 <Icon name="paperclip" className="h-5 w-5" />
               </button>
@@ -578,7 +579,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
                 onClick={enviarMensagem}
                 disabled={enviandoMensagem || (!mensagem.trim() && anexos.length === 0)}
                 aria-label="Enviar mensagem"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-white hover:bg-primary-strong disabled:cursor-not-allowed disabled:opacity-40"
+                className="cursor-pointer flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-white hover:bg-primary-strong disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Icon name="send" className="h-4 w-4 -rotate-270 transition-transform" />
 
@@ -603,13 +604,13 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
             <label className="block">
               <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Criticidade</span>
               <select value={criticidade} onChange={(e) => setCriticidade(e.target.value)} className={campoClasse('h-9 text-sm font-semibold text-slate-800')}>
-                {criticidadeValues.map((item) => <option key={item}>{item}</option>)}
+                {criticidadeValues.map((item) => <option key={item} value={item}>{formatDisplayLabel(item)}</option>)}
               </select>
             </label>
             <label className="block">
               <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Status</span>
               <select value={status} onChange={(e) => setStatus(e.target.value)} className={campoClasse('h-9 text-sm font-semibold text-slate-800')}>
-                {statusValues.map((item) => <option key={item}>{item}</option>)}
+                {statusValues.map((item) => <option key={item} value={item}>{formatDisplayLabel(item)}</option>)}
               </select>
             </label>
           </div>
@@ -625,13 +626,13 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
             <label className="block">
               <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Localização</span>
               <select value={form.localizacaoInterna} onChange={(e) => updateForm('localizacaoInterna', e.target.value)} className={campoClasse('h-9 text-sm font-semibold text-slate-800')}>
-                {locaisInternos.map((item) => <option key={item} value={item}>{item}</option>)}
+                {locaisInternos.map((item) => <option key={item} value={item}>{formatDisplayLabel(item)}</option>)}
               </select>
             </label>
             <label className="block">
               <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Tipo</span>
               <select value={form.tipo} onChange={(e) => updateForm('tipo', e.target.value)} className={campoClasse('h-9 text-sm font-semibold text-slate-800')}>
-                {categorias.map((item) => <option key={item} value={item}>{item}</option>)}
+                {categorias.map((item) => <option key={item} value={item}>{formatDisplayLabel(item)}</option>)}
               </select>
             </label>
           </div>
@@ -646,7 +647,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
           <div>
             <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Fotos</span>
             <input ref={fotoInputRef} type="file" accept="image/*" multiple onChange={handleFotoChange} className="hidden" />
-            <button type="button" onClick={handleFotoInputClick} className="flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
+            <button type="button" onClick={handleFotoInputClick} className="cursor-pointer flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
               <Icon name="image" className="h-4 w-4" />
               Adicionar fotos
             </button>
@@ -659,7 +660,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
                     ) : (
                       <div className="flex h-full items-center justify-center p-1 text-center text-[10px] font-bold text-slate-500">{foto}</div>
                     )}
-                    <button
+                    <button className="cursor-pointer"
                       type="button"
                       onClick={() => removerFoto(index)}
                       aria-label={`Remover foto ${index + 1}`}
@@ -673,7 +674,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
                   <div key={`${arquivo.name}-${index}`} className="group relative aspect-square overflow-hidden rounded-md border border-blue-200 bg-slate-50">
                     <img src={previewsNovasFotos[index]} alt={arquivo.name} className="h-full w-full object-cover" />
                     <span className="absolute left-1 top-1 rounded bg-blue-600 px-1.5 py-0.5 text-[9px] font-bold text-white">Nova</span>
-                    <button
+                    <button className="cursor-pointer"
                       type="button"
                       onClick={() => removerNovaFoto(index)}
                       aria-label={`Remover ${arquivo.name}`}
@@ -690,8 +691,8 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
             <p className="rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{erroSalvar}</p>
           )}
           <div className="flex justify-end gap-2 pt-2">
-            <button onClick={() => setModalEdicaoAberto(false)} className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">Cancelar</button>
-            <button onClick={handleSalvar} disabled={salvando} className="rounded-md bg-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-primary-strong disabled:cursor-not-allowed disabled:opacity-60">
+            <button className="cursor-pointer" onClick={() => setModalEdicaoAberto(false)} className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">Cancelar</button>
+            <button onClick={handleSalvar} disabled={salvando} className="cursor-pointer rounded-md bg-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-primary-strong disabled:cursor-not-allowed disabled:opacity-60">
               {salvando ? 'Salvando...' : 'Salvar'}
             </button>
           </div>

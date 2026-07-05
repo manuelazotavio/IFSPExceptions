@@ -11,7 +11,7 @@ const items = [
   ['configuracoes', 'Configurações', '/configuracoes', 'settings'],
 ]
 
-export function Sidebar({ route, onNavigate, user, open = false, onClose, nomeExibido, roleLabel, onLogout }) {
+export function Sidebar({ route, onNavigate, user, open = false, onClose, collapsed = false, onToggleCollapsed, nomeExibido, roleLabel, onLogout }) {
   const isExterno = user?.role === 'EXTERNO'
   const isDiretor = user?.role === 'DIRETOR'
   const visibleItems = isExterno
@@ -38,17 +38,28 @@ export function Sidebar({ route, onNavigate, user, open = false, onClose, nomeEx
         />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-slate-200 bg-white px-5 py-6 transition-transform duration-200 ease-in-out lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-slate-200 bg-white px-5 py-6 transition-[width,transform,padding] duration-200 ease-in-out lg:translate-x-0 ${
+          collapsed ? 'lg:w-20 lg:px-3' : 'lg:w-64 lg:px-5'
+        } ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="mb-7 flex items-center justify-between gap-3 ps-2">
-        <img src="/geo/logo_fundo_branco.svg" alt="ZelaMais" className="h-8 w-auto" />
+        <div className={`mb-7 flex items-center gap-3 ${collapsed ? 'lg:justify-center lg:ps-0' : 'justify-between ps-2'}`}>
+          <img src="/geo/logo_fundo_branco.svg" alt="Escola em Dia" className={`h-8 w-auto transition-opacity ${collapsed ? 'lg:hidden' : ''}`} />
+          <button
+            type="button"
+            onClick={onToggleCollapsed}
+            aria-label={collapsed ? 'Expandir menu' : 'Recolher menu'}
+            title={collapsed ? 'Expandir menu' : 'Recolher menu'}
+            className="hidden h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-primary-strong lg:flex"
+          >
+            <Icon name="menu" className="h-4 w-4" />
+          </button>
           <button
             type="button"
             onClick={onClose}
             aria-label="Fechar menu"
-            className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 lg:hidden"
+            className="cursor-pointer rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 lg:hidden"
           >
             <Icon name="close" className="h-5 w-5" />
           </button>
@@ -60,16 +71,19 @@ export function Sidebar({ route, onNavigate, user, open = false, onClose, nomeEx
               || (path === '/ocorrencias' && route.startsWith('/ocorrencias/'))
               || (path === '/escolas' && route.startsWith('/escolas/'))
             return (
-              <button
+              <button className="cursor-pointer"
                 key={id}
                 type="button"
                 onClick={() => handleNavigate(path)}
-                className={`flex h-10 w-full items-center gap-3 rounded-md px-3 text-left text-sm font-semibold transition ${
+                title={collapsed ? label : undefined}
+                className={`flex h-10 w-full cursor-pointer items-center gap-3 rounded-md px-3 text-left text-sm font-semibold transition ${
+                  collapsed ? 'lg:justify-center lg:px-0' : ''
+                } ${
                   active ? 'bg-primary-50 text-primary-strong' : 'text-slate-600 hover:bg-slate-50 hover:text-primary-strong'
                 }`}
               >
                 <Icon name={icon} className="h-4 w-4" />
-                <span className="truncate">{label}</span>
+                <span className={`truncate ${collapsed ? 'lg:hidden' : ''}`}>{label}</span>
               </button>
             )
           })}

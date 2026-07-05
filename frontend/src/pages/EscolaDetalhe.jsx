@@ -1,51 +1,39 @@
 import { useEffect, useMemo, useState } from 'react'
 import { sortOcorrencias } from '../utils/metrics.js'
-import { isCustomSchool, loadCustomSchools, loadSchoolCatalog, removeCustomSchool } from '../utils/schools.js'
-import { listarOcorrencias } from '../services/api.js'
+import { isCustomSchool, loadCustomSchools, removeCustomSchool } from '../utils/schools.js'
+import { listarOcorrencias, obterEscola } from '../services/api.js'
 import { Badge, Card } from '../components/ui.jsx'
 import { SchoolLocationMap } from '../components/SchoolLocationMap.jsx'
-import schoolCorridor from '../assets/school-corridor.png'
-import schoolCourtyard from '../assets/school-courtyard.png'
-import schoolPhoto from '../assets/school-exterior.png'
-
-const salasPorEscola = {
-  'esc-001': ['Sala 1', 'Sala 2', 'Sala 3', 'Biblioteca', 'Laboratorio', 'Secretaria', 'Refeitorio'],
-  'esc-002': ['Maternal A', 'Maternal B', 'Pre I', 'Pre II', 'Brinquedoteca', 'Cozinha'],
-  'esc-003': ['Sala 1', 'Sala 2', 'Sala 3', 'Sala 4', 'Informatica', 'Quadra'],
-  'esc-004': ['Bercario', 'Maternal', 'Pre I', 'Pre II', 'Sala multiuso', 'Patio'],
-  'esc-005': ['Sala 1', 'Sala 2', 'Sala 3', 'Sala 4', 'Biblioteca', 'Refeitorio'],
-  'esc-006': ['Maternal A', 'Maternal B', 'Pre I', 'Pre II', 'Secretaria', 'Patio coberto'],
-  'esc-007': ['Sala 1', 'Sala 2', 'Sala 3', 'Laboratorio', 'Secretaria', 'Quadra'],
-  'esc-008': ['Sala 1', 'Sala 2', 'Sala 3', 'Sala 4', 'Diretoria', 'Area externa'],
-}
+import { formatDisplayLabel } from '../utils/labels.js'
+import { getComodoCodigo, getComodoNome, getSchoolRooms } from '../utils/comodos.js'
 
 const allSalasKey = 'Todos'
 
 export function EscolaDetalhe({ id, onNavigate }) {
   const [locationModalOpen, setLocationModalOpen] = useState(false)
-  const [schoolCatalog, setSchoolCatalog] = useState(loadCustomSchools)
-  const [loadingEscola, setLoadingEscola] = useState(false)
-  const escola = useMemo(
-    () => schoolCatalog.find((item) => item.id === id) || schoolCatalog[0] || null,
-    [id, schoolCatalog],
-  )
+  const [escola, setEscola] = useState(null)
+  const [loadingEscola, setLoadingEscola] = useState(true)
+  const [erroEscola, setErroEscola] = useState('')
   const canDeleteSchool = isCustomSchool(escola?.id)
   const salas = useMemo(() => getSchoolRooms(escola), [escola])
   const fotosEscola = useMemo(() => {
     if (!escola) return []
 
-    const defaultPhotos = [
-      { src: schoolPhoto, alt: `Fachada da ${escola.nome}`, label: 'Fachada principal' },
-      { src: schoolCourtyard, alt: `Patio interno da ${escola.nome}`, label: 'Patio interno' },
-      { src: schoolCorridor, alt: `Corredor da ${escola.nome}`, label: 'Corredor e salas' },
-    ]
+    const fotosCadastradas = Array.isArray(escola.fotos)
+      ? escola.fotos.filter((foto) => foto?.url)
+      : []
 
-    if (!escola.fotoUrl) return defaultPhotos
+    if (fotosCadastradas.length) {
+      return fotosCadastradas.map((foto, index) => ({
+        src: foto.url,
+        alt: foto.nome || `Foto cadastrada ${index + 1} da ${escola.nome}`,
+        label: index === 0 ? 'Foto cadastrada' : `Foto cadastrada ${index + 1}`,
+      }))
+    }
 
-    return [
-      { src: escola.fotoUrl, alt: `Foto cadastrada da ${escola.nome}`, label: 'Foto cadastrada' },
-      ...defaultPhotos,
-    ]
+    if (!escola.fotoUrl) return []
+
+    return [{ src: escola.fotoUrl, alt: `Foto cadastrada da ${escola.nome}`, label: 'Foto cadastrada' }]
   }, [escola])
   const [ocorrenciasDaEscola, setOcorrenciasDaEscola] = useState([])
 
@@ -79,7 +67,7 @@ export function EscolaDetalhe({ id, onNavigate }) {
   const ocorrenciasSala = useMemo(
     () => selectedSalaKey === allSalasKey
       ? ocorrenciasEscola
-      : ocorrenciasEscola.filter((item) => normalizeRoomText(item.localizacaoInterna) === normalizeRoomText(getRoomName(selectedSala))),
+      : ocorrenciasEscola.filter((item) => roomMatchesOccurrence(selectedSala, item.localizacaoInterna)),
     [ocorrenciasEscola, selectedSala, selectedSalaKey],
   )
 
@@ -92,20 +80,25 @@ export function EscolaDetalhe({ id, onNavigate }) {
   useEffect(() => {
     let active = true
 
-    async function refreshSchoolCatalog() {
+    async function carregarEscola() {
       setLoadingEscola(true)
+      setErroEscola('')
 
       try {
-        const nextCatalog = await loadSchoolCatalog()
-        if (active) setSchoolCatalog(nextCatalog)
-      } catch {
-        if (active) setSchoolCatalog(loadCustomSchools())
+        const dados = await obterEscola(id)
+        const complementoLocal = loadCustomSchools().find((item) => item.id === dados.id)
+        if (active) setEscola(formatSchoolDetailData(dados, complementoLocal))
+      } catch (error) {
+        if (active) {
+          setEscola(null)
+          setErroEscola(error.message || 'Escola não encontrada.')
+        }
       } finally {
         if (active) setLoadingEscola(false)
       }
     }
 
-    refreshSchoolCatalog()
+    carregarEscola()
     return () => {
       active = false
     }
@@ -158,21 +151,27 @@ export function EscolaDetalhe({ id, onNavigate }) {
   return (
     <>
       <div className="space-y-5">
+        {loadingEscola ? (
+          <Card>
+            <p className="text-sm font-semibold text-slate-500">Carregando dados da escola...</p>
+          </Card>
+        ) : null}
+
         {!escola && !loadingEscola ? (
           <Card>
-            <p className="text-sm font-semibold text-slate-700">Nenhuma escola encontrada no catalogo carregado.</p>
+            <p className="text-sm font-semibold text-slate-700">{erroEscola || 'Escola não encontrada.'}</p>
           </Card>
         ) : null}
 
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => onNavigate('/escolas')} className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">
+          <button onClick={() => onNavigate('/escolas')} className="cursor-pointer rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">
             Voltar para escolas
           </button>
-          <button onClick={() => setLocationModalOpen(true)} className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">
+          <button onClick={() => setLocationModalOpen(true)} disabled={!escola} className="cursor-pointer rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50">
             Ver no mapa
           </button>
           {canDeleteSchool ? (
-            <button onClick={handleDeleteSchool} className="rounded-md border border-red-200 bg-red-50 px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-100">
+            <button onClick={handleDeleteSchool} className="cursor-pointer rounded-md border border-red-200 bg-red-50 px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-100">
               Excluir escola
             </button>
           ) : null}
@@ -194,13 +193,13 @@ export function EscolaDetalhe({ id, onNavigate }) {
               </div>
               <Badge>{escola.status}</Badge>
             </div>
-            <p className="mt-4 text-sm leading-6 text-slate-700">
-              {escola.descricao?.trim() || 'Unidade escolar cadastrada para acompanhamento de manutencoes, vistoria de ambientes e registro de ocorrencias aprovadas pela direcao. A pagina consolida informacoes administrativas e salas cadastradas da escola.'}
-            </p>
+            {escola.descricao?.trim() ? (
+              <p className="mt-4 text-sm leading-6 text-slate-700">{escola.descricao}</p>
+            ) : null}
             <div className="mt-4 flex flex-wrap gap-2">
-              <Badge>{ocorrenciasEscola.length} ocorrencias</Badge>
+              <Badge>{ocorrenciasEscola.length} ocorrências</Badge>
               <Badge>{ocorrenciasEscola.filter((item) => item.status !== 'Resolvida').length} abertas</Badge>
-              <Badge>{ocorrenciasEscola.filter((item) => item.criticidade === 'Critica' && item.status !== 'Resolvida').length} criticas</Badge>
+              <Badge>{ocorrenciasEscola.filter((item) => item.criticidade === 'Critica' && item.status !== 'Resolvida').length} críticas</Badge>
             </div>
           </div>
         </Card>
@@ -210,10 +209,10 @@ export function EscolaDetalhe({ id, onNavigate }) {
         <Card>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 className="text-lg font-800 text-slate-950">Tabela de comodos cadastrados</h3>
+              <h3 className="text-lg font-800 text-slate-950">Tabela de cômodos cadastrados</h3>
               <p className="mt-1 text-sm text-slate-500">Resumo por tipo de ambiente cadastrado na unidade</p>
             </div>
-            <button onClick={exportRoomPdfReport} className="rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
+            <button onClick={exportRoomPdfReport} className="cursor-pointer rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
               Exportar PDF
             </button>
           </div>
@@ -242,13 +241,13 @@ export function EscolaDetalhe({ id, onNavigate }) {
         <Card>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 className="text-lg font-800 text-slate-950">Comodos cadastrados</h3>
-              <p className="mt-1 text-sm text-slate-500">Resumo dos ambientes cadastrados e acesso rapido para as ocorrencias</p>
+              <h3 className="text-lg font-800 text-slate-950">Cômodos cadastrados</h3>
+              <p className="mt-1 text-sm text-slate-500">Resumo dos ambientes cadastrados e acesso rápido para as ocorrências</p>
             </div>
             <div className="flex items-center gap-2">
               <Badge>{salas.length} ambientes</Badge>
-              <button onClick={exportRoomReport} className="rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
-                Exportar relatorio
+              <button onClick={exportRoomReport} className="cursor-pointer rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
+                Exportar relatório
               </button>
             </div>
           </div>
@@ -267,9 +266,9 @@ export function EscolaDetalhe({ id, onNavigate }) {
                   <RoomListButton
                     key={getRoomKey(sala)}
                     sala={formatRoomLabel(sala)}
-                    total={ocorrenciasEscola.filter((item) => normalizeRoomText(item.localizacaoInterna) === normalizeRoomText(getRoomName(sala))).length}
+                    total={ocorrenciasEscola.filter((item) => roomMatchesOccurrence(sala, item.localizacaoInterna)).length}
                     active={selectedSalaKey === getRoomKey(sala)}
-                    subtitle="Abrir ocorrencias do ambiente"
+                    subtitle="Abrir ocorrências do ambiente"
                     onClick={() => setSelectedSalaKey(getRoomKey(sala))}
                   />
                 ))}
@@ -279,12 +278,12 @@ export function EscolaDetalhe({ id, onNavigate }) {
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
                 <div>
                   <h3 className="text-lg font-800 text-slate-950">
-                    {selectedSalaKey === allSalasKey ? 'Todas as ocorrencias da unidade' : 'Demandas do local selecionado'}
+                    {selectedSalaKey === allSalasKey ? 'Todas as ocorrências da unidade' : 'Demandas do local selecionado'}
                   </h3>
                   <p className="mt-1 text-sm text-slate-500">
                     {selectedSalaKey === allSalasKey
-                      ? 'Lista completa da escola, incluindo ocorrencias finalizadas'
-                      : `${formatRoomLabel(selectedSala)} com historico completo da unidade`}
+                      ? 'Lista completa da escola, incluindo ocorrências finalizadas'
+                      : `${formatRoomLabel(selectedSala)} com histórico completo da unidade`}
                   </p>
                 </div>
                 <Badge>{ocorrenciasSala.length} registros</Badge>
@@ -293,7 +292,7 @@ export function EscolaDetalhe({ id, onNavigate }) {
                 {ocorrenciasSala.map((item) => <OcorrenciaItem key={item.id} item={item} onNavigate={onNavigate} />)}
                 {!ocorrenciasSala.length && (
                   <div className="rounded-md border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-500">
-                    {selectedSalaKey === allSalasKey ? 'Sem ocorrencias cadastradas para esta escola.' : 'Nao ha ocorrencias registradas para este comodo.'}
+                    {selectedSalaKey === allSalasKey ? 'Sem ocorrências cadastradas para esta escola.' : 'Não há ocorrências registradas para este cômodo.'}
                   </div>
                 )}
               </div>
@@ -309,10 +308,10 @@ export function EscolaDetalhe({ id, onNavigate }) {
           <div className="w-full max-w-3xl rounded-lg border border-slate-200 bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
               <div>
-                <h3 className="text-lg font-800 text-slate-950">Localizacao da escola</h3>
+                <h3 className="text-lg font-800 text-slate-950">Localização da escola</h3>
                 <p className="mt-1 text-sm text-slate-500">{escola.nome}</p>
               </div>
-              <button onClick={() => setLocationModalOpen(false)} className="rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700">
+              <button className="cursor-pointer" onClick={() => setLocationModalOpen(false)} className="rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700">
                 Fechar
               </button>
             </div>
@@ -320,7 +319,7 @@ export function EscolaDetalhe({ id, onNavigate }) {
               <div>
                 <dl className="grid gap-4 text-sm">
                   <Info label="Bairro" value={escola.bairro} />
-                  <Info label="Endereco" value={escola.endereco} />
+                  <Info label="Endereço" value={escola.endereco} />
                   <Info label="Latitude" value={formatCoordinate(escola.latitude)} />
                   <Info label="Longitude" value={formatCoordinate(escola.longitude)} />
                   <Info label="Cadastro" value={escola.dataCadastro} />
@@ -337,6 +336,27 @@ export function EscolaDetalhe({ id, onNavigate }) {
   )
 }
 
+function formatSchoolDetailData(escolaApi, complementoLocal) {
+  const local = complementoLocal || {}
+
+  return {
+    ...escolaApi,
+    status: local.status || escolaApi.status || 'Ativo',
+    dataCadastro: escolaApi.dataCadastro || escolaApi.criadoEm?.slice(0, 10) || local.dataCadastro || '',
+    descricao: local.descricao || escolaApi.descricao || '',
+    fotoNome: local.fotoNome || escolaApi.fotoNome || '',
+    fotoUrl: local.fotoUrl || escolaApi.fotoUrl || '',
+    fotos: Array.isArray(local.fotos) && local.fotos.length
+      ? local.fotos
+      : (Array.isArray(escolaApi.fotos) ? escolaApi.fotos : []),
+    comodos: Array.isArray(local.comodos) && local.comodos.length
+      ? local.comodos
+      : (Array.isArray(escolaApi.comodos) ? escolaApi.comodos : []),
+    x: local.x || escolaApi.x,
+    y: local.y || escolaApi.y,
+  }
+}
+
 function getRoomCategory(sala) {
   const value = getRoomName(sala).toLowerCase()
   if (value.includes('banheiro')) return 'banheiro'
@@ -348,15 +368,6 @@ function getRoomCategory(sala) {
   return 'outros'
 }
 
-function getSchoolRooms(escola) {
-  if (!escola) return []
-  if (Array.isArray(escola.comodos) && escola.comodos.length) {
-    return escola.comodos
-  }
-
-  return salasPorEscola[escola.id] || []
-}
-
 function getRoomCategoryLabel(category) {
   const labels = {
     banheiro: 'Banheiros',
@@ -365,9 +376,9 @@ function getRoomCategoryLabel(category) {
     alimentacao: 'Alimentacao',
     apoio_pedagogico: 'Apoio pedagogico',
     convivencia: 'Convivencia',
-    outros: 'Outros comodos',
+    outros: 'Outros cômodos',
   }
-  return labels[category] || 'Comodos'
+  return labels[category] || 'Cômodos'
 }
 
 function getRoomTypeLabel(sala) {
@@ -437,25 +448,25 @@ function buildSchoolRoomReport({ escola, salas, roomSummary, roomTypeSummary, oc
     `Gerado em: ${now}`,
     '',
     `Bairro: ${escola.bairro}`,
-    `Endereco: ${escola.endereco}`,
+    `Endereço: ${escola.endereco}`,
     `Latitude: ${formatCoordinate(escola.latitude)}`,
     `Longitude: ${formatCoordinate(escola.longitude)}`,
     `Status: ${escola.status}`,
     `Cadastro: ${escola.dataCadastro}`,
-    `Descricao: ${escola.descricao?.trim() || 'Nao informada.'}`,
+    `Descrição: ${escola.descricao?.trim() || 'Não informada.'}`,
     '',
-    `Total de comodos cadastrados: ${salas.length}`,
-    `Total de ocorrencias: ${ocorrenciasEscola.length}`,
-    `Ocorrencias abertas: ${ocorrenciasEscola.filter((item) => item.status !== 'Resolvida').length}`,
+    `Total de cômodos cadastrados: ${salas.length}`,
+    `Total de ocorrências: ${ocorrenciasEscola.length}`,
+    `Ocorrências abertas: ${ocorrenciasEscola.filter((item) => item.status !== 'Resolvida').length}`,
     '',
-    'Tabela de comodos cadastrados:',
-    roomTypeLines || '- Nenhum comodo cadastrado.',
+    'Tabela de cômodos cadastrados:',
+    roomTypeLines || '- Nenhum cômodo cadastrado.',
     '',
-    'Resumo de comodos:',
-    roomLines || '- Nenhum comodo cadastrado.',
+    'Resumo de cômodos:',
+    roomLines || '- Nenhum cômodo cadastrado.',
     '',
-    'Ocorrencias da unidade:',
-    occurrenceLines || '- Nenhuma ocorrencia cadastrada.',
+    'Ocorrências da unidade:',
+    occurrenceLines || '- Nenhuma ocorrência cadastrada.',
     '',
   ].join('\n')
 }
@@ -464,16 +475,16 @@ function buildSchoolPdfReport({ escola, roomTypeSummary, ocorrenciasEscola }) {
   const now = new Date().toLocaleString('pt-BR')
   const roomRows = roomTypeSummary.length
     ? roomTypeSummary.map((item) => `<tr><td>${escapeHtml(item.label)}</td><td>${item.count}</td></tr>`).join('')
-    : `<tr><td colspan="2">Nenhum comodo cadastrado.</td></tr>`
+    : `<tr><td colspan="2">Nenhum cômodo cadastrado.</td></tr>`
   const occurrenceRows = ocorrenciasEscola.length
     ? ocorrenciasEscola.map((item) => `<tr><td>${escapeHtml(item.titulo)}</td><td>${escapeHtml(item.localizacaoInterna)}</td><td>${escapeHtml(item.criticidade)}</td><td>${escapeHtml(item.status)}</td><td>${escapeHtml(item.dataEnvio)}</td></tr>`).join('')
-    : `<tr><td colspan="5">Nenhuma ocorrencia cadastrada.</td></tr>`
+    : `<tr><td colspan="5">Nenhuma ocorrência cadastrada.</td></tr>`
 
   return `<!doctype html>
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <title>Relatorio ${escapeHtml(escola.nome)}</title>
+  <title>Relatório ${escapeHtml(escola.nome)}</title>
   <style>
     body { font-family: Arial, sans-serif; color: #0f172a; margin: 32px; }
     h1, h2 { margin: 0 0 8px; }
@@ -490,18 +501,18 @@ function buildSchoolPdfReport({ escola, roomTypeSummary, ocorrenciasEscola }) {
 <body>
   <h1>${escapeHtml(escola.nome)}</h1>
   <div class="meta">
-    <p class="muted">Relatorio gerado em ${escapeHtml(now)}</p>
+    <p class="muted">Relatório gerado em ${escapeHtml(now)}</p>
     <p><strong>Bairro:</strong> ${escapeHtml(escola.bairro)}</p>
-    <p><strong>Endereco:</strong> ${escapeHtml(escola.endereco)}</p>
+    <p><strong>Endereço:</strong> ${escapeHtml(escola.endereco)}</p>
     <p><strong>Latitude:</strong> ${escapeHtml(formatCoordinate(escola.latitude))}</p>
     <p><strong>Longitude:</strong> ${escapeHtml(formatCoordinate(escola.longitude))}</p>
     <p><strong>Status:</strong> ${escapeHtml(escola.status)}</p>
     <p><strong>Cadastro:</strong> ${escapeHtml(escola.dataCadastro)}</p>
-    <p><strong>Descricao:</strong> ${escapeHtml(escola.descricao?.trim() || 'Nao informada.')}</p>
+    <p><strong>Descrição:</strong> ${escapeHtml(escola.descricao?.trim() || 'Não informada.')}</p>
   </div>
 
   <div class="section">
-    <h2>Tabela de comodos cadastrados</h2>
+    <h2>Tabela de cômodos cadastrados</h2>
     <table>
       <thead>
         <tr><th>Tipo</th><th>Quantidade</th></tr>
@@ -511,10 +522,10 @@ function buildSchoolPdfReport({ escola, roomTypeSummary, ocorrenciasEscola }) {
   </div>
 
   <div class="section">
-    <h2>Ocorrencias da unidade</h2>
+    <h2>Ocorrências da unidade</h2>
     <table>
       <thead>
-        <tr><th>Titulo</th><th>Comodo</th><th>Criticidade</th><th>Status</th><th>Envio</th></tr>
+        <tr><th>Título</th><th>Cômodo</th><th>Criticidade</th><th>Status</th><th>Envio</th></tr>
       </thead>
       <tbody>${occurrenceRows}</tbody>
     </table>
@@ -530,6 +541,16 @@ function buildSchoolPdfReport({ escola, roomTypeSummary, ocorrenciasEscola }) {
 }
 
 function SchoolPhotoCarousel({ photos, currentIndex, onChange }) {
+  if (!photos.length) {
+    return (
+      <div className="border-b border-slate-200 bg-slate-50 p-4">
+        <div className="flex h-52 items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white text-center text-sm font-bold text-slate-500">
+          Nenhuma foto cadastrada para esta escola
+        </div>
+      </div>
+    )
+  }
+
   const currentPhoto = photos[currentIndex] || photos[0]
 
   function showPrevious() {
@@ -550,10 +571,10 @@ function SchoolPhotoCarousel({ photos, currentIndex, onChange }) {
             <p className="text-xs font-semibold text-slate-200">{currentIndex + 1} de {photos.length}</p>
           </div>
           <div className="flex gap-2">
-            <button onClick={showPrevious} className="rounded-full bg-white/90 px-3 py-2 text-sm font-bold text-slate-800 shadow-sm hover:bg-white">
+            <button onClick={showPrevious} className="cursor-pointer rounded-full bg-white/90 px-3 py-2 text-sm font-bold text-slate-800 shadow-sm hover:bg-white">
               {'<'}
             </button>
-            <button onClick={showNext} className="rounded-full bg-white/90 px-3 py-2 text-sm font-bold text-slate-800 shadow-sm hover:bg-white">
+            <button onClick={showNext} className="cursor-pointer rounded-full bg-white/90 px-3 py-2 text-sm font-bold text-slate-800 shadow-sm hover:bg-white">
               {'>'}
             </button>
           </div>
@@ -561,7 +582,7 @@ function SchoolPhotoCarousel({ photos, currentIndex, onChange }) {
       </div>
       <div className="mt-3 grid gap-3 sm:grid-cols-3">
         {photos.map((photo, index) => (
-          <button
+          <button className="cursor-pointer"
             key={photo.label}
             onClick={() => onChange(index)}
             className={`overflow-hidden rounded-md border text-left transition ${index === currentIndex ? 'border-primary ring-2 ring-primary-500/40' : 'border-slate-200 hover:border-primary-300'}`}
@@ -579,7 +600,7 @@ function RoomListButton({ sala, total, subtitle, active, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`flex w-full items-center justify-between gap-3 rounded-md border px-4 py-3 text-left transition ${
+      className={`cursor-pointer flex w-full items-center justify-between gap-3 rounded-md border px-4 py-3 text-left transition ${
         active ? 'border-primary bg-primary text-white shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-primary-300 hover:bg-primary-50'
       }`}
     >
@@ -596,15 +617,18 @@ function RoomListButton({ sala, total, subtitle, active, onClick }) {
 
 function OcorrenciaItem({ item, onNavigate }) {
   return (
-    <button onClick={() => onNavigate(`/ocorrencias/${item.id}`)} className="w-full rounded-md border border-slate-200 bg-white p-4 text-left hover:bg-primary-50/40">
+    <button
+      onClick={() => onNavigate(`/ocorrencias/${item.id}`)}
+      className="w-full cursor-pointer rounded-md border border-slate-200 bg-white p-4 text-left transition hover:border-primary-200 hover:bg-primary-50/40"
+    >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="font-bold text-slate-800">{item.titulo}</p>
           <p className="mt-1 text-sm text-slate-500">{item.tipo} - {item.localizacaoInterna}</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Badge>{item.criticidade}</Badge>
-          <Badge>{item.status}</Badge>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-bold text-slate-600">
+          <OccurrenceSignal value={item.criticidade} variant="criticidade" />
+          <OccurrenceSignal value={item.status} variant="status" />
         </div>
       </div>
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm text-slate-500">
@@ -614,6 +638,35 @@ function OcorrenciaItem({ item, onNavigate }) {
       </div>
     </button>
   )
+}
+
+function OccurrenceSignal({ value, variant }) {
+  const color = getOccurrenceSignalColor(value, variant)
+
+  return (
+    <span className="inline-flex items-center gap-2 whitespace-nowrap">
+      <span className={`h-2.5 w-2.5 rounded-full ${color}`} aria-hidden="true" />
+      {formatDisplayLabel(value)}
+    </span>
+  )
+}
+
+function getOccurrenceSignalColor(value, variant) {
+  const normalized = String(value || '').toLowerCase()
+
+  if (variant === 'criticidade') {
+    if (normalized.includes('critica') || normalized.includes('crítica')) return 'bg-red-500'
+    if (normalized.includes('alta')) return 'bg-orange-500'
+    if (normalized.includes('media') || normalized.includes('média')) return 'bg-amber-400'
+    return 'bg-emerald-500'
+  }
+
+  if (normalized.includes('resolvida')) return 'bg-emerald-500'
+  if (normalized.includes('andamento')) return 'bg-blue-500'
+  if (normalized.includes('analise') || normalized.includes('análise')) return 'bg-indigo-500'
+  if (normalized.includes('orcamento') || normalized.includes('orçamento')) return 'bg-amber-500'
+  if (normalized.includes('visita')) return 'bg-violet-500'
+  return 'bg-slate-400'
 }
 
 function Info({ label, value }) {
@@ -626,14 +679,11 @@ function Info({ label, value }) {
 }
 
 function getRoomName(sala) {
-  if (!sala) return ''
-  if (typeof sala === 'string') return sala
-  return sala.nome || ''
+  return getComodoNome(sala)
 }
 
 function getRoomCode(sala) {
-  if (!sala || typeof sala === 'string') return ''
-  return sala.codigo || ''
+  return getComodoCodigo(sala)
 }
 
 function formatRoomLabel(sala) {
@@ -648,12 +698,19 @@ function getRoomKey(sala) {
   return codigo ? `${nome}::${codigo}` : nome
 }
 
+function roomMatchesOccurrence(sala, localizacaoInterna) {
+  const local = normalizeRoomText(localizacaoInterna)
+  const nome = normalizeRoomText(getRoomName(sala))
+  const codigo = normalizeRoomText(getRoomCode(sala))
+  return local === nome || (codigo && local === codigo) || (codigo && local === `${nome}::${codigo}`)
+}
+
 function normalizeRoomText(value) {
   return String(value || '').trim().toLowerCase()
 }
 
 function formatCoordinate(value) {
-  return Number.isFinite(Number(value)) ? Number(value).toFixed(6) : 'Nao informada'
+  return Number.isFinite(Number(value)) ? Number(value).toFixed(6) : 'Não informada'
 }
 
 function escapeHtml(value) {

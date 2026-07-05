@@ -141,7 +141,7 @@ export function Landing({ onNavigate, user }) {
         <div className="absolute inset-0 bg-gradient-to-r from-slate-950/92 via-slate-950/72 to-teal-950/20" />
 
         <header className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-5 py-5 lg:px-8">
-          <button
+          <button className="cursor-pointer"
             type="button"
             onClick={() => onNavigate('/publico')}
             className="flex cursor-pointer items-center gap-3 rounded-md px-1 py-1 text-left"
@@ -170,7 +170,7 @@ export function Landing({ onNavigate, user }) {
               melhorias concluidas e frentes de trabalho em movimento.
             </p>
             <div className="mx-auto mt-8 flex max-w-xl flex-col gap-3 sm:flex-row sm:justify-center">
-              <button
+              <button className="cursor-pointer"
                 type="button"
                 onClick={() => onNavigate(primaryRoute)}
                 className="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-md bg-cyan-300 px-6 text-sm font-800 text-slate-950 shadow-lg shadow-cyan-950/20 transition hover:bg-cyan-200"
@@ -178,7 +178,7 @@ export function Landing({ onNavigate, user }) {
                 <Icon name="chart" className="h-4 w-4" />
                 Entrar
               </button>
-              <button
+              <button className="cursor-pointer"
                 type="button"
                 onClick={() => onNavigate('/login')}
                 className="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-md border border-white/30 px-5 text-sm font-800 text-white transition hover:bg-white/10"
@@ -201,7 +201,7 @@ export function Landing({ onNavigate, user }) {
         <div className="mx-auto grid max-w-7xl gap-4 md:grid-cols-3">
           <SignalCard icon="school" label="Rede acompanhada" value={`${metrics.escolas} unidades`} text={`${metrics.bairros} bairros com escolas ativas no monitoramento.`} />
           <SignalCard icon="chart" label="Trabalho em movimento" value={`${metrics.emTratativa} tratativas`} text="Demandas ja analisadas, encaminhadas ou em execucao pelas equipes." />
-          <SignalCard icon="tag" label="Visao organizada" value={`${metrics.categorias} temas`} text="Categorias padronizadas para priorizar investimento e manutencao." />
+          <SignalCard icon="tag" label="Visão organizada" value={`${metrics.categorias} temas`} text="Categorias padronizadas para priorizar investimento e manutenção." />
         </div>
       </section>
 
@@ -214,7 +214,7 @@ export function Landing({ onNavigate, user }) {
             </h2>
             <p className="mt-4 text-base font-medium leading-7 text-slate-600">
               A area publica mostra apenas informacoes agregadas e construtivas. O detalhe operacional fica protegido
-              no painel interno, onde a equipe acompanha prioridades, mensagens e historico.
+              no painel interno, onde a equipe acompanha prioridades, mensagens e histórico.
             </p>
 
             <div className="mt-8 grid gap-3 sm:grid-cols-2">

@@ -20,7 +20,7 @@ export function Cadastro({ onNavigate }) {
   useEffect(() => {
     listarEscolas()
       .then(setEscolas)
-      .catch(() => setError('Nao foi possivel carregar as escolas'))
+      .catch(() => setError('Não foi possível carregar as escolas'))
   }, [])
 
   async function handleSubmit(event) {
@@ -43,7 +43,7 @@ export function Cadastro({ onNavigate }) {
         <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-8 text-center shadow-sm">
           <h1 className="text-xl font-800 text-slate-950">Cadastro concluido</h1>
           <p className="mt-2 text-sm text-slate-500">Sua conta foi criada. Voce ja pode entrar.</p>
-          <button
+          <button className="cursor-pointer"
             type="button"
             onClick={() => onNavigate('/login')}
             className="mt-6 h-11 w-full cursor-pointer rounded-md bg-primary text-sm font-800 text-white transition hover:bg-primary-strong"
@@ -136,7 +136,7 @@ export function Cadastro({ onNavigate }) {
 
         <p className="mt-6 text-center text-sm text-slate-500">
           Ja tem uma conta?{' '}
-          <button type="button" onClick={() => onNavigate('/login')} className="cursor-pointer font-bold text-primary-strong">
+          <button className="cursor-pointer" type="button" onClick={() => onNavigate('/login')} className="cursor-pointer font-bold text-primary-strong">
             Entrar
           </button>
         </p>
