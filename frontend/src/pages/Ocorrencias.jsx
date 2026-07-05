@@ -136,7 +136,7 @@ export function Ocorrencias({ onNavigate, user }) {
             placeholder="Buscar ocorrências..."
             value={busca}
             onChange={(e) => { setBusca(e.target.value); setPagina(1) }}
-            className="block w-full rounded-lg border-0 py-2 pl-10 pr-4 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 text-sm"
+            className="block w-full rounded-lg border-0 py-2 pl-10 pr-4 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary text-sm"
           />
         </div>
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
@@ -148,7 +148,7 @@ export function Ocorrencias({ onNavigate, user }) {
           </button>
           <button
             onClick={() => setModalAberto(true)}
-            className="w-full sm:w-auto rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center gap-2"
+            className="w-full sm:w-auto rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-primary-strong transition-colors duration-200 flex items-center justify-center gap-2"
           >
             <span className="text-sm leading-none">+</span> Nova ocorrência
           </button>
@@ -245,7 +245,7 @@ export function Ocorrencias({ onNavigate, user }) {
               <tr
                 key={item.id}
                 onClick={() => onNavigate(`/ocorrencias/${item.id}`)}
-                className={`cursor-pointer divide-x divide-slate-200 border-x border-slate-200 ${COR_LINHA_CRITICIDADE[item.criticidade] || 'hover:bg-blue-50/40'}`}
+                className={`cursor-pointer divide-x divide-slate-200 border-x border-slate-200 ${COR_LINHA_CRITICIDADE[item.criticidade] || 'hover:bg-primary-50/40'}`}
               >
                 <td className="px-4 py-3 font-bold text-slate-800">{item.protocolo}</td>
                 <td className="px-4 py-3 font-bold text-slate-800">{item.escola}</td>
@@ -265,26 +265,26 @@ export function Ocorrencias({ onNavigate, user }) {
         <div className="space-y-3">
           <label className="block">
             <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Escola <span className="text-red-500">*</span></span>
-            <select value={novaOcorrencia.escolaId} onChange={(e) => setCampo('escolaId', e.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-500">
+            <select value={novaOcorrencia.escolaId} onChange={(e) => setCampo('escolaId', e.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500">
               <option value="">Selecione...</option>
               {escolas.map((escola) => <option key={escola.id} value={escola.id}>{escola.nome} - {escola.bairro}</option>)}
             </select>
           </label>
           <label className="block">
             <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Titulo <span className="text-red-500">*</span></span>
-            <input value={novaOcorrencia.titulo} onChange={(e) => setCampo('titulo', e.target.value)} className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm text-slate-700 outline-none focus:border-blue-500" />
+            <input value={novaOcorrencia.titulo} onChange={(e) => setCampo('titulo', e.target.value)} className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm text-slate-700 outline-none focus:border-primary-500" />
           </label>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="block">
               <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Tipo <span className="text-red-500">*</span></span>
-              <select value={novaOcorrencia.tipo} onChange={(e) => setCampo('tipo', e.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-500">
+              <select value={novaOcorrencia.tipo} onChange={(e) => setCampo('tipo', e.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500">
                 <option value="">Selecione...</option>
                 {categorias.map((item) => <option key={item} value={item}>{item}</option>)}
               </select>
             </label>
             <label className="block">
               <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Criticidade <span className="text-red-500">*</span></span>
-              <select value={novaOcorrencia.criticidade} onChange={(e) => setCampo('criticidade', e.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-500">
+              <select value={novaOcorrencia.criticidade} onChange={(e) => setCampo('criticidade', e.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500">
                 <option value="">Selecione...</option>
                 {criticidadeValues.map((item) => <option key={item} value={item}>{item}</option>)}
               </select>
@@ -292,14 +292,14 @@ export function Ocorrencias({ onNavigate, user }) {
           </div>
           <label className="block">
             <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Localizacao interna <span className="text-red-500">*</span></span>
-            <select value={novaOcorrencia.localizacaoInterna} onChange={(e) => setCampo('localizacaoInterna', e.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-500">
+            <select value={novaOcorrencia.localizacaoInterna} onChange={(e) => setCampo('localizacaoInterna', e.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500">
               <option value="">Selecione...</option>
               {locaisInternos.map((item) => <option key={item} value={item}>{item}</option>)}
             </select>
           </label>
           <label className="block">
             <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Descrição <span className="text-red-500">*</span></span>
-            <textarea value={novaOcorrencia.descricao} onChange={(e) => setCampo('descrição', e.target.value)} className="min-h-20 w-full rounded-md border border-slate-200 p-3 text-sm text-slate-700 outline-none focus:border-blue-500" />
+            <textarea value={novaOcorrencia.descricao} onChange={(e) => setCampo('descrição', e.target.value)} className="min-h-20 w-full rounded-md border border-slate-200 p-3 text-sm text-slate-700 outline-none focus:border-primary-500" />
           </label>
           <div>
             <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Fotos <span className="text-red-500">*</span></span>
@@ -328,7 +328,7 @@ export function Ocorrencias({ onNavigate, user }) {
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <button onClick={cancelarNovaOcorrencia} className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">Cancelar</button>
-            <button onClick={cadastrarOcorrencia} disabled={!formularioValido} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50">Cadastrar</button>
+            <button onClick={cadastrarOcorrencia} disabled={!formularioValido} className="rounded-md bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-strong disabled:cursor-not-allowed disabled:opacity-50">Cadastrar</button>
           </div>
         </div>
       </Modal>

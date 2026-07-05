@@ -42,7 +42,7 @@ export function Usuarios() {
                 <select
                   value={user.role}
                   onChange={(event) => alterarPermissao(user.email, event.target.value)}
-                  className="h-10 cursor-pointer rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-500"
+                  className="h-10 cursor-pointer rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500"
                 >
                   {PERMISSOES.map((opcao) => <option key={opcao.value} value={opcao.value}>{opcao.label}</option>)}
                 </select>
@@ -81,7 +81,7 @@ export function Categorias() {
         <button
           type="button"
           onClick={() => setModalAberto(true)}
-          className="cursor-pointer rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-blue-700"
+          className="cursor-pointer rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-primary-strong"
         >
           + Nova categoria
         </button>
@@ -128,7 +128,7 @@ export function Categorias() {
             <input
               value={novaCategoria}
               onChange={(event) => setNovaCategoria(event.target.value)}
-              className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm text-slate-700 outline-none focus:border-blue-500"
+              className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm text-slate-700 outline-none focus:border-primary-500"
             />
           </label>
           <div className="flex justify-end gap-2 pt-2">
@@ -139,7 +139,7 @@ export function Categorias() {
               type="button"
               onClick={adicionarCategoria}
               disabled={!novaCategoria.trim()}
-              className="cursor-pointer rounded-md bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="cursor-pointer rounded-md bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-strong disabled:cursor-not-allowed disabled:opacity-50"
             >
               Adicionar
             </button>

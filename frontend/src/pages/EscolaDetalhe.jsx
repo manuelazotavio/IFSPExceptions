@@ -234,10 +234,10 @@ export function EscolaDetalhe({ id, onNavigate }) {
                   <Info label="Cadastro" value={escola.dataCadastro} />
                 </dl>
               </div>
-              <div className="h-72 rounded-md border border-blue-100 bg-blue-50/60 p-4">
-                <div className="relative h-full rounded-md border border-blue-200 bg-white">
+              <div className="h-72 rounded-md border border-primary-100 bg-primary-50/60 p-4">
+                <div className="relative h-full rounded-md border border-primary-200 bg-white">
                   <span
-                    className="absolute h-5 w-5 rounded-full border-2 border-white bg-blue-600 shadow"
+                    className="absolute h-5 w-5 rounded-full border-2 border-white bg-primary shadow"
                     style={{ left: `${escola.x}%`, top: `${escola.y}%`, transform: 'translate(-50%, -50%)' }}
                   />
                   <span className="absolute bottom-3 left-3 rounded-md bg-white px-3 py-2 text-xs font-bold text-slate-600 shadow-sm">
@@ -459,7 +459,7 @@ function SchoolPhotoCarousel({ photos, currentIndex, onChange }) {
           <button
             key={photo.label}
             onClick={() => onChange(index)}
-            className={`overflow-hidden rounded-md border text-left transition ${index === currentIndex ? 'border-blue-600 ring-2 ring-blue-500/40' : 'border-slate-200 hover:border-blue-300'}`}
+            className={`overflow-hidden rounded-md border text-left transition ${index === currentIndex ? 'border-primary ring-2 ring-primary-500/40' : 'border-slate-200 hover:border-primary-300'}`}
           >
             <img src={photo.src} alt={photo.alt} className="h-20 w-full object-cover" />
             <div className="px-3 py-2 text-xs font-bold text-slate-700">{photo.label}</div>
@@ -475,12 +475,12 @@ function RoomListButton({ sala, total, subtitle, active, onClick }) {
     <button
       onClick={onClick}
       className={`flex w-full items-center justify-between gap-3 rounded-md border px-4 py-3 text-left transition ${
-        active ? 'border-blue-600 bg-blue-600 text-white shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50'
+        active ? 'border-primary bg-primary text-white shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-primary-300 hover:bg-primary-50'
       }`}
     >
       <div>
         <p className="font-bold">{sala}</p>
-        <p className={`mt-1 text-xs font-semibold ${active ? 'text-blue-100' : 'text-slate-400'}`}>{subtitle}</p>
+        <p className={`mt-1 text-xs font-semibold ${active ? 'text-primary-100' : 'text-slate-400'}`}>{subtitle}</p>
       </div>
       <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>
         {total}
@@ -491,7 +491,7 @@ function RoomListButton({ sala, total, subtitle, active, onClick }) {
 
 function OcorrenciaItem({ item, onNavigate }) {
   return (
-    <button onClick={() => onNavigate(`/ocorrencias/${item.id}`)} className="w-full rounded-md border border-slate-200 bg-white p-4 text-left hover:bg-blue-50/40">
+    <button onClick={() => onNavigate(`/ocorrencias/${item.id}`)} className="w-full rounded-md border border-slate-200 bg-white p-4 text-left hover:bg-primary-50/40">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="font-bold text-slate-800">{item.titulo}</p>

@@ -43,7 +43,7 @@ export function NotificationBell({ notificacoes, onNavigate }) {
                 onClick={() => abrirOcorrencia(item.ocorrenciaId)}
                 className="flex w-full cursor-pointer items-start gap-2.5 border-b border-slate-50 px-3 py-2.5 text-left last:border-0 hover:bg-slate-50"
               >
-                <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${item.tipo === 'urgente' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
+                <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${item.tipo === 'urgente' ? 'bg-red-100 text-red-600' : 'bg-primary-100 text-primary'}`}>
                   <Icon name={item.tipo === 'urgente' ? 'alert' : 'bell'} className="h-3.5 w-3.5" />
                 </span>
                 <div className="min-w-0 flex-1">
