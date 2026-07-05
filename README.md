@@ -124,13 +124,13 @@ Isso cria (ou atualiza) as tabelas no MySQL de acordo com `prisma/schema.prisma`
 npm run prisma:seed
 ```
 
-Isso carrega as escolas reais da SEDUC (`frontend/public/geo/unidades_seduc_caraguatatuba.json`) e cria os usuários de teste abaixo (senha `123456` para todos):
+Isso carrega as escolas reais da SEDUC (`frontend/public/geo/unidades_seduc_caraguatatuba.json`) e cria os usuários de teste abaixo — um por papel (o seed também cria vários outros usuários `EXTERNO`, um por escola, todos com a mesma senha):
 
-| Papel | Email |
-| --- | --- |
-| SEDUC | `seduc@escola.gov.br` |
-| Diretor(a) | `diretor@escola.gov.br` |
-| Externo | `externo@escola.gov.br` |
+| Papel | Email | Senha |
+| --- | --- | --- |
+| SEDUC | `seduc@escola.gov.br` | `123456` |
+| Diretor(a) | `diretor@escola.gov.br` | `123456` |
+| Externo | `externo@escola.gov.br` | `123456` |
 
 ### 7. Suba o servidor
 
