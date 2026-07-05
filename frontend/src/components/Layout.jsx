@@ -6,7 +6,7 @@ import { buildNotificacoes } from '../utils/metrics.js'
 import { listarOcorrencias } from '../services/api.js'
 
 const titles = {
-  '/dashboard': 'Dashboard Geral',
+  '/dashboard': 'Dashboard',
   '/mapa': 'Mapa de calor de ocorrências por escola',
   '/ocorrencias': 'Lista de ocorrências',
   '/escolas': 'Escolas cadastradas',
@@ -87,13 +87,38 @@ export function Layout({ route, onNavigate, onExport, user, onLogout, children }
                 <h1 className="pt-11 text-xl font-extrabold text-slate-950 sm:pt-0">{title}</h1>
                
               </div>
-              <div className="md:hidden">
+              <div className="flex items-center gap-2 md:hidden">
+                {!isExterno && route === '/dashboard' && (
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setExportOpen((current) => !current)}
+                      className="cursor-pointer rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                      Exportar
+                    </button>
+                    {exportOpen && (
+                      <div className="absolute right-0 z-30 mt-2 w-40 rounded-md border border-slate-200 bg-white p-1 shadow-lg">
+                        {['csv', 'pdf', 'xlsx'].map((format) => (
+                          <button
+                            key={format}
+                            type="button"
+                            onClick={() => handleExport(format)}
+                            className="block w-full cursor-pointer rounded px-3 py-2 text-left text-sm font-semibold uppercase text-slate-700 hover:bg-blue-50 hover:text-blue-700"
+                          >
+                            {format}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
                 <NotificationBell notificacoes={notificacoes} onNavigate={onNavigate} />
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               {!isExterno && route === '/dashboard' && (
-                <div className="relative">
+                <div className="relative hidden md:block">
                   <button
                     type="button"
                     onClick={() => setExportOpen((current) => !current)}
