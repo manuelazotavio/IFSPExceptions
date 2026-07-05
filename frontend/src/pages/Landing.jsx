@@ -146,13 +146,10 @@ export function Landing({ onNavigate, user }) {
             onClick={() => onNavigate('/publico')}
             className="flex cursor-pointer items-center gap-3 rounded-md px-1 py-1 text-left"
           >
-            <span className="flex h-10 w-10 items-center justify-center rounded-md bg-white text-blue-700">
-              <Icon name="school" className="h-5 w-5" />
+            <span className="flex h-10 items-center rounded-md px-2.5">
+              <img src="/geo/logo_fundo_escuro.svg" alt="Escola em Dia" className="h-6 w-auto" />
             </span>
-            <span>
-              <strong className="block text-sm font-800">Escola em Dia</strong>
-              <span className="block text-xs font-semibold text-slate-200">Rede municipal monitorada</span>
-            </span>
+            <span className="block text-xs font-semibold text-slate-200">Rede municipal monitorada</span>
           </button>
 
           <nav className="flex items-center gap-2">
@@ -211,7 +208,7 @@ export function Landing({ onNavigate, user }) {
       <section className="px-5 py-16 lg:px-8">
         <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.95fr_1.05fr]">
           <div>
-            <p className="text-sm font-800 uppercase text-blue-700">Dados publicos selecionados</p>
+            <p className="text-sm font-800 uppercase text-primary-strong">Dados publicos selecionados</p>
             <h2 className="mt-3 text-3xl font-800 leading-tight text-slate-950 md:text-4xl">
               Indicadores que ajudam a comunidade a enxergar progresso.
             </h2>
@@ -297,7 +294,7 @@ function SignalCard({ icon, label, value, text }) {
   return (
     <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
       <div className="flex items-center gap-3">
-        <span className="flex h-10 w-10 items-center justify-center rounded-md bg-blue-50 text-blue-700">
+        <span className="flex h-10 w-10 items-center justify-center rounded-md bg-primary-50 text-primary-strong">
           <Icon name={icon} className="h-5 w-5" />
         </span>
         <div>
@@ -333,7 +330,7 @@ function GoodNewsChart({ data }) {
   const tones = {
     sky: 'from-sky-400 to-cyan-300',
     teal: 'from-teal-400 to-emerald-300',
-    blue: 'from-blue-500 to-sky-300',
+    blue: 'from-primary-500 to-sky-300',
     emerald: 'from-emerald-500 to-lime-300',
     amber: 'from-amber-400 to-orange-300',
   }

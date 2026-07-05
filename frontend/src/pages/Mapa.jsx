@@ -868,15 +868,9 @@ export function Mapa({ onNavigate }) {
 
   return (
     <div className="space-y-6">
-      {avisoGlobal ? (
-        <Card className="border-amber-200 bg-amber-50">
-          <p className="text-sm font-semibold text-amber-900">{avisoGlobal.title}</p>
-          <p className="mt-1 text-sm text-amber-800">{avisoGlobal.detail}</p>
-        </Card>
-      ) : null}
 
       <Card>
-        <div className="grid gap-3 md:grid-cols-6">
+        <div className="grid gap-3 md:grid-cols-4 xl:grid-cols-7">
           <label className="block md:col-span-2">
             <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Buscar escola</span>
             <div className="flex gap-2">
@@ -892,12 +886,12 @@ export function Mapa({ onNavigate }) {
                   }
                 }}
                 placeholder="Digite o nome da escola"
-                className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-500"
+                className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500"
               />
               <button
                 type="button"
                 onClick={handleSearchEscola}
-                className="h-10 shrink-0 rounded-md bg-blue-600 px-3 text-sm font-bold text-white hover:bg-blue-700"
+                className="h-10 shrink-0 rounded-md bg-primary px-3 text-sm font-bold text-white hover:bg-primary-strong"
               >
                 Buscar
               </button>
@@ -912,7 +906,7 @@ export function Mapa({ onNavigate }) {
           <FilterSelect label="Status" value={filters.status} onChange={(value) => setFilter('status', value)} options={statusValues} />
           <label className="block">
             <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Escola</span>
-            <select value={filters.escolaId} onChange={(event) => setFilter('escolaId', event.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-500">
+            <select value={filters.escolaId} onChange={(event) => setFilter('escolaId', event.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500">
               <option value="">Todas</option>
               {schoolOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
@@ -998,7 +992,7 @@ export function Mapa({ onNavigate }) {
               id="map-style-select"
               value={mapStyleKey}
               onChange={(event) => setMapStyleKey(event.target.value)}
-              className="mt-1 h-8 rounded-md border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 outline-none focus:border-blue-500"
+              className="mt-1 h-8 rounded-md border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 outline-none focus:border-primary-500"
             >
               {Object.entries(mapStyles).map(([styleKey, style]) => (
                 <option key={styleKey} value={styleKey}>
@@ -1012,7 +1006,7 @@ export function Mapa({ onNavigate }) {
                   type="checkbox"
                   checked={showBairrosLayer}
                   onChange={(event) => setShowBairrosLayer(event.target.checked)}
-                  className="h-3.5 w-3.5 rounded border border-slate-300 text-blue-600"
+                  className="h-3.5 w-3.5 rounded border border-slate-300 text-primary"
                 />
                 Divisao por bairros
               </label>
@@ -1021,7 +1015,7 @@ export function Mapa({ onNavigate }) {
                   type="checkbox"
                   checked={showMunicipioBoundary}
                   onChange={(event) => setShowMunicipioBoundary(event.target.checked)}
-                  className="h-3.5 w-3.5 rounded border border-slate-300 text-blue-600"
+                  className="h-3.5 w-3.5 rounded border border-slate-300 text-primary"
                 />
                 Limite da cidade
               </label>
@@ -1079,7 +1073,7 @@ function DateFilter({ label, value, onChange }) {
   return (
     <label className="block">
       <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">{label}</span>
-      <input type="date" value={value} onChange={(event) => onChange(event.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-500" />
+      <input type="date" value={value} onChange={(event) => onChange(event.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500" />
     </label>
   )
 }
@@ -1119,7 +1113,7 @@ function EscolaDrawer({ detalhe, drawerAberto, loadingDetalhe, ocorrencias, onCl
               <div>
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <h4 className="text-sm font-800 uppercase tracking-wide text-slate-500">Solicitacoes pendentes</h4>
-                  <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">
+                  <span className="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-bold text-primary-strong">
                     {ocorrencias.length}
                   </span>
                 </div>

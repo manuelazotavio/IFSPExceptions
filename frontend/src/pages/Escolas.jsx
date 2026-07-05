@@ -235,7 +235,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
       {escolaFiltrada ? (
         <Card className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-blue-600">Filtro aplicado pelo mapa</p>
+            <p className="text-xs font-bold uppercase tracking-wide text-primary">Filtro aplicado pelo mapa</p>
             <p className="text-sm font-semibold text-slate-700">
               Exibindo a escola selecionada no mapa de calor.
             </p>
@@ -266,7 +266,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
             <button
               type="button"
               onClick={() => setIsModalOpen(true)}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700"
+              className="rounded-md bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-strong"
             >
               Cadastrar escola
             </button>
@@ -279,7 +279,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
               value={filters.busca}
               onChange={(event) => setFilter('busca', event.target.value)}
               placeholder="Nome, bairro ou endereco"
-              className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-500"
+              className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500"
             />
           </label>
           <FilterSelect label="Bairro" value={filters.bairro} onChange={(value) => setFilter('bairro', value)} options={bairroOptions} />
@@ -306,7 +306,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                   <tr
                     key={escola.id}
                     onClick={() => onNavigate(`/escolas/${escola.id}`)}
-                    className="cursor-pointer border-t border-slate-100 hover:bg-blue-50/40"
+                    className="cursor-pointer border-t border-slate-100 hover:bg-primary-50/40"
                   >
                     <td className="px-4 py-3 font-bold">{escola.nome}</td>
                     <td className="px-4 py-3">{escola.bairro}</td>
@@ -346,7 +346,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
             <form onSubmit={handleCadastrarEscola} className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
               <label className="block">
                 <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Nome</span>
-                <input required value={novoCadastro.nome} onChange={(event) => updateNovoCadastro('nome', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500" />
+                <input required value={novoCadastro.nome} onChange={(event) => updateNovoCadastro('nome', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500" />
               </label>
               <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto]">
                 <label className="block">
@@ -376,11 +376,11 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
               {cepFeedback ? <p className="text-xs font-semibold text-slate-500">{cepFeedback}</p> : null}
               <label className="block">
                 <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Bairro</span>
-                <input required value={novoCadastro.bairro} onChange={(event) => updateNovoCadastro('bairro', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500" />
+                <input required value={novoCadastro.bairro} onChange={(event) => updateNovoCadastro('bairro', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500" />
               </label>
               <label className="block">
                 <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Endereco</span>
-                <input required value={novoCadastro.endereco} onChange={(event) => updateNovoCadastro('endereco', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500" />
+                <input required value={novoCadastro.endereco} onChange={(event) => updateNovoCadastro('endereco', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500" />
               </label>
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="block">
@@ -393,7 +393,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                     step="any"
                     value={novoCadastro.latitude}
                     onChange={(event) => updateNovoCadastro('latitude', event.target.value)}
-                    className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500"
+                    className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
                     placeholder="-23.633000"
                   />
                 </label>
@@ -407,11 +407,15 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                     step="any"
                     value={novoCadastro.longitude}
                     onChange={(event) => updateNovoCadastro('longitude', event.target.value)}
-                    className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500"
+                    className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
                     placeholder="-45.417000"
                   />
                 </label>
               </div>
+              <label className="block">
+                <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Descricao</span>
+                <textarea value={novoCadastro.descricao} onChange={(event) => updateNovoCadastro('descricao', event.target.value)} className="min-h-24 w-full rounded-md border border-slate-200 bg-white p-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500" placeholder="Descreva a escola e seus ambientes principais..." />
+              </label>
               <label className="block">
                 <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Foto</span>
                 <input type="file" accept="image/*" onChange={handleFotoSelecionada} className="block w-full text-sm font-semibold text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-bold file:text-slate-700 hover:file:bg-slate-200" />
@@ -434,7 +438,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                         addComodo()
                       }
                     }}
-                    className="h-11 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500"
+                    className="h-11 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
                     placeholder="Ex.: Sala, Biblioteca, Banheiro"
                   />
                   <input
@@ -446,7 +450,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                         addComodo()
                       }
                     }}
-                    className="h-11 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500"
+                    className="h-11 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
                     placeholder="Codigo"
                   />
                   <button type="button" onClick={addComodo} className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
@@ -472,7 +476,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                 <button type="button" onClick={() => setIsModalOpen(false)} className="w-full rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 sm:w-auto">
                   Cancelar
                 </button>
-                <button type="submit" disabled={salvandoEscola} className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
+                <button type="submit" disabled={salvandoEscola} className="w-full rounded-md bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-strong disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
                   {salvandoEscola ? 'Salvando...' : 'Salvar escola'}
                 </button>
               </div>

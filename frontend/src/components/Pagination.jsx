@@ -44,7 +44,7 @@ export function Pagination({ page, totalPages, onPageChange, totalItems, pageSiz
                   key={item}
                   onClick={() => onPageChange(item)}
                   aria-current={item === page ? 'page' : undefined}
-                  className={`h-8 w-8 rounded-md text-sm font-bold ${item === page ? 'bg-blue-600 text-white' : 'border border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                  className={`h-8 w-8 rounded-md text-sm font-bold ${item === page ? 'bg-primary text-white' : 'border border-slate-200 text-slate-600 hover:bg-slate-50'}`}
                 >
                   {item}
                 </button>

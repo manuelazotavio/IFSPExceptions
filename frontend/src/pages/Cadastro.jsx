@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { Icon } from '../components/Icons.jsx'
 import { listarEscolas, registro } from '../services/api.js'
 
 const roles = [
@@ -47,7 +46,7 @@ export function Cadastro({ onNavigate }) {
           <button
             type="button"
             onClick={() => onNavigate('/login')}
-            className="mt-6 h-11 w-full cursor-pointer rounded-md bg-blue-600 text-sm font-800 text-white transition hover:bg-blue-700"
+            className="mt-6 h-11 w-full cursor-pointer rounded-md bg-primary text-sm font-800 text-white transition hover:bg-primary-strong"
           >
             Ir para o login
           </button>
@@ -60,13 +59,7 @@ export function Cadastro({ onNavigate }) {
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">
       <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
         <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-white">
-            <Icon name="school" className="h-5 w-5" />
-          </div>
-          <div>
-            <strong className="block text-sm font-800 text-slate-950">Zela+</strong>
-      
-          </div>
+          <img src="/geo/logo_fundo_branco.svg" alt="Escola em Dia" className="h-8 w-auto" />
         </div>
 
         <h1 className="text-xl font-800 text-slate-950">Criar conta</h1>
@@ -79,7 +72,7 @@ export function Cadastro({ onNavigate }) {
               required
               value={nome}
               onChange={(event) => setNome(event.target.value)}
-              className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500"
+              className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
             />
           </label>
           <label className="block">
@@ -89,7 +82,7 @@ export function Cadastro({ onNavigate }) {
               required
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500"
+              className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
             />
           </label>
           <label className="block">
@@ -100,7 +93,7 @@ export function Cadastro({ onNavigate }) {
               minLength={6}
               value={senha}
               onChange={(event) => setSenha(event.target.value)}
-              className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500"
+              className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
             />
           </label>
           <label className="block">
@@ -108,7 +101,7 @@ export function Cadastro({ onNavigate }) {
             <select
               value={role}
               onChange={(event) => setRole(event.target.value)}
-              className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500"
+              className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
             >
               {roles.map((item) => (
                 <option key={item.value} value={item.value}>{item.label}</option>
@@ -121,7 +114,7 @@ export function Cadastro({ onNavigate }) {
               required
               value={escolaId}
               onChange={(event) => setEscolaId(event.target.value)}
-              className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500"
+              className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
             >
               <option value="">Selecione</option>
               {escolas.map((escola) => (
@@ -135,7 +128,7 @@ export function Cadastro({ onNavigate }) {
           <button
             type="submit"
             disabled={loading}
-            className="h-11 w-full cursor-pointer rounded-md bg-blue-600 text-sm font-800 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="h-11 w-full cursor-pointer rounded-md bg-primary text-sm font-800 text-white transition hover:bg-primary-strong disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? 'Criando conta...' : 'Criar conta'}
           </button>
@@ -143,7 +136,7 @@ export function Cadastro({ onNavigate }) {
 
         <p className="mt-6 text-center text-sm text-slate-500">
           Ja tem uma conta?{' '}
-          <button type="button" onClick={() => onNavigate('/login')} className="cursor-pointer font-bold text-blue-700">
+          <button type="button" onClick={() => onNavigate('/login')} className="cursor-pointer font-bold text-primary-strong">
             Entrar
           </button>
         </p>

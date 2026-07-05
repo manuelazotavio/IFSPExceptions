@@ -52,7 +52,7 @@ export function NotificationBell({ notificacoes, onAbrir, onLimpar }) {
                 onClick={() => abrirNotificacao(item)}
                 className={`flex w-full cursor-pointer items-start gap-2.5 border-b border-slate-50 px-3 py-2.5 text-left last:border-0 hover:bg-slate-50 ${item.lida ? 'opacity-60' : ''}`}
               >
-                <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${item.tipo === 'URGENTE' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
+                <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${item.tipo === 'URGENTE' ? 'bg-red-100 text-red-600' : 'bg-primary-100 text-primary'}`}>
                   <Icon name={item.tipo === 'URGENTE' ? 'alert' : 'bell'} className="h-3.5 w-3.5" />
                 </span>
                 <div className="min-w-0 flex-1">

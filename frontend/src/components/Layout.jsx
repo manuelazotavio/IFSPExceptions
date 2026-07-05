@@ -99,18 +99,20 @@ export function Layout({ route, onNavigate, onExport, user, onLogout, children }
         <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-5 pt-4 pb-0 backdrop-blur sm:pb-4 lg:px-8">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="flex items-start justify-between gap-2 sm:items-center">
-              <div className="relative flex flex-col sm:flex-row sm:items-center sm:gap-2">
-                <button
-                  type="button"
-                  onClick={() => setSidebarOpen(true)}
-                  aria-label="Abrir menu"
-                  className="absolute -left-2 top-0 rounded-md p-2 text-slate-500 hover:bg-slate-100 sm:static sm:-ml-2 lg:hidden"
-                >
-                  <Icon name="menu" className="h-5 w-5" />
-                </button>
-             
-                <h1 className="pt-11 text-xl font-extrabold text-slate-950 sm:pt-0">{title}</h1>
-               
+              <div className="flex items-center gap-3">
+                <img src="/geo/logo_fundo_branco.svg" alt="Escola em Dia" className="hidden h-8 w-auto sm:block lg:hidden" />
+                <div className="relative flex flex-col sm:flex-row sm:items-center sm:gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSidebarOpen(true)}
+                    aria-label="Abrir menu"
+                    className="absolute -left-2 top-0 rounded-md p-2 text-slate-500 hover:bg-slate-100 sm:static sm:-ml-2 lg:hidden"
+                  >
+                    <Icon name="menu" className="h-5 w-5" />
+                  </button>
+
+                  <h1 className="pt-11 text-xl font-extrabold text-slate-950 sm:pt-0">{title}</h1>
+                </div>
               </div>
               <div className="flex items-center gap-2 md:hidden">
                 {!isExterno && route === '/dashboard' && (
@@ -129,7 +131,7 @@ export function Layout({ route, onNavigate, onExport, user, onLogout, children }
                             key={format}
                             type="button"
                             onClick={() => handleExport(format)}
-                            className="block w-full cursor-pointer rounded px-3 py-2 text-left text-sm font-semibold uppercase text-slate-700 hover:bg-blue-50 hover:text-blue-700"
+                            className="block w-full cursor-pointer rounded px-3 py-2 text-left text-sm font-semibold uppercase text-slate-700 hover:bg-primary-50 hover:text-primary-strong"
                           >
                             {format}
                           </button>
@@ -158,7 +160,7 @@ export function Layout({ route, onNavigate, onExport, user, onLogout, children }
                           key={format}
                           type="button"
                           onClick={() => handleExport(format)}
-                          className="block w-full cursor-pointer rounded px-3 py-2 text-left text-sm font-semibold uppercase text-slate-700 hover:bg-blue-50 hover:text-blue-700"
+                          className="block w-full cursor-pointer rounded px-3 py-2 text-left text-sm font-semibold uppercase text-slate-700 hover:bg-primary-50 hover:text-primary-strong"
                         >
                           {format}
                         </button>

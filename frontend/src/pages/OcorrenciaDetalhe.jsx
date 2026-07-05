@@ -11,7 +11,7 @@ function formatarDataBR(dataIso) {
 }
 
 function campoClasse(extra = '') {
-  return `w-full rounded-md border border-slate-300 bg-white px-3 outline-none transition-colors hover:border-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 ${extra}`
+  return `w-full rounded-md border border-slate-300 bg-white px-3 outline-none transition-colors hover:border-slate-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 ${extra}`
 }
 
 function isFotoImagem(foto) {
@@ -411,7 +411,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
           <Card>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-md font-bold text-blue-600">Protocolo {ocorrencia.protocolo}</p>
+                <p className="text-md font-bold text-primary">Protocolo {ocorrencia.protocolo}</p>
                 {savedAt && <p className="mt-1 text-xs font-semibold text-emerald-600">Salvo às {savedAt}</p>}
               </div>
               <div className="flex w-full gap-2 sm:w-auto">
@@ -472,7 +472,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
             </div>
             <div className="mt-3 flex justify-center gap-1.5">
               {fotos.map((foto, index) => (
-                <button key={foto} onClick={() => setFotoIndex(index)} aria-label={`Ir para foto ${index + 1}`} className={`h-1.5 w-1.5 rounded-full transition ${index === fotoIndex ? 'bg-blue-600' : 'bg-slate-300'}`} />
+                <button key={foto} onClick={() => setFotoIndex(index)} aria-label={`Ir para foto ${index + 1}`} className={`h-1.5 w-1.5 rounded-full transition ${index === fotoIndex ? 'bg-primary' : 'bg-slate-300'}`} />
               ))}
             </div>
           </Card>
@@ -513,7 +513,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
                 return (
                   <div key={entry.id || index} className={`relative ${ultimo && fechado ? 'pb-0' : 'pb-5'}`}>
                     {mostrarLinha && <span className="absolute left-[4px] top-1 bottom-0 w-0.5 bg-slate-200" />}
-                    <span className="absolute left-0 top-1 h-2.5 w-2.5 rounded-full border-2 border-white bg-blue-600 ring-1 ring-blue-200" />
+                    <span className="absolute left-0 top-1 h-2.5 w-2.5 rounded-full border-2 border-white bg-primary ring-1 ring-primary-200" />
                     <div className="min-w-0 pl-5">
                       <p className="break-words text-base font-bold text-slate-700">
                         {index === 0 ? `Cadastro da ocorrência por ${ocorrencia.criadoPorNome}` : entry.origem === 'sistema' ? 'Sistema' : entry.autor}
@@ -521,7 +521,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
                       <p className="break-words text-sm text-slate-500">
                         Em {formatarDataBR(entry.data)}{entry.hora ? ` às ${entry.hora}` : ''}
                       </p>
-                      {entry.status && <p className="mt-0.5 text-sm font-semibold text-blue-600">Status: {entry.status}</p>}
+                      {entry.status && <p className="mt-0.5 text-sm font-semibold text-primary">Status: {entry.status}</p>}
                       {entry.mensagem && <p className="mt-0.5 break-words text-sm text-slate-600">{entry.mensagem}</p>}
                       {entry.anexos?.length > 0 && (
                         <div className="mt-1.5 flex flex-wrap gap-1.5">
@@ -552,7 +552,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
                 ))}
               </div>
             )}
-            <div className="flex items-end gap-1.5 rounded-2xl border border-slate-300 bg-white p-1.5 focus-within:border-blue-500">
+            <div className="flex items-end gap-1.5 rounded-2xl border border-slate-300 bg-white p-1.5 focus-within:border-primary-500">
               <button
                 onClick={handleAnexarClick}
                 aria-label="Anexar arquivo"
@@ -578,7 +578,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
                 onClick={enviarMensagem}
                 disabled={enviandoMensagem || (!mensagem.trim() && anexos.length === 0)}
                 aria-label="Enviar mensagem"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-white hover:bg-primary-strong disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Icon name="send" className="h-4 w-4 -rotate-270 transition-transform" />
 
@@ -691,7 +691,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
           )}
           <div className="flex justify-end gap-2 pt-2">
             <button onClick={() => setModalEdicaoAberto(false)} className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">Cancelar</button>
-            <button onClick={handleSalvar} disabled={salvando} className="rounded-md bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">
+            <button onClick={handleSalvar} disabled={salvando} className="rounded-md bg-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-primary-strong disabled:cursor-not-allowed disabled:opacity-60">
               {salvando ? 'Salvando...' : 'Salvar'}
             </button>
           </div>
