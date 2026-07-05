@@ -23,6 +23,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
     longitude: '',
     fotoNome: '',
     fotoUrl: '',
+    fotos: [],
     comodos: [],
   })
   const [novoComodo, setNovoComodo] = useState({ nome: '', codigo: '' })
@@ -136,19 +137,35 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
     }
   }
 
-  function handleFotoSelecionada(event) {
-    const file = event.target.files?.[0]
-    if (!file) return
+  async function handleFotoSelecionada(event) {
+    const files = Array.from(event.target.files || [])
+    if (!files.length) return
 
-    const reader = new FileReader()
-    reader.onload = () => {
-      setNovoCadastro((prev) => ({
+    const novasFotos = await Promise.all(files.map((file) => readImageFile(file)))
+    setNovoCadastro((prev) => {
+      const fotos = [...prev.fotos, ...novasFotos]
+      const capa = fotos[0] || { nome: '', url: '' }
+      return {
         ...prev,
-        fotoNome: file.name,
-        fotoUrl: typeof reader.result === 'string' ? reader.result : '',
-      }))
-    }
-    reader.readAsDataURL(file)
+        fotoNome: capa.nome,
+        fotoUrl: capa.url,
+        fotos,
+      }
+    })
+    event.target.value = ''
+  }
+
+  function removerFotoCadastro(index) {
+    setNovoCadastro((prev) => {
+      const fotos = prev.fotos.filter((_, itemIndex) => itemIndex !== index)
+      const capa = fotos[0] || { nome: '', url: '' }
+      return {
+        ...prev,
+        fotoNome: capa.nome,
+        fotoUrl: capa.url,
+        fotos,
+      }
+    })
   }
 
   function addComodo() {
@@ -202,6 +219,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
       status: 'Ativo',
       fotoNome: novoCadastro.fotoNome,
       fotoUrl: novoCadastro.fotoUrl,
+      fotos: novoCadastro.fotos,
       comodos: novoCadastro.comodos,
       dataCadastro: escolaCriada.criadoEm?.slice(0, 10) || new Date().toISOString().slice(0, 10),
       x: 50,
@@ -222,6 +240,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
       longitude: '',
       fotoNome: '',
       fotoUrl: '',
+      fotos: [],
       comodos: [],
     })
     setNovoComodo({ nome: '', codigo: '' })
@@ -236,7 +255,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
       {escolaFiltrada ? (
         <Card className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-primary">Filtro aplicado pelo mapa</p>
+            <p className="text-xs font-bold tracking-wide text-primary">Filtro aplicado pelo mapa</p>
             <p className="text-sm font-semibold text-slate-700">
               Exibindo a escola selecionada no mapa de calor.
             </p>
@@ -275,7 +294,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
         </div>
         <div className="grid gap-3 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
           <label className="block">
-            <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Busca</span>
+            <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Busca</span>
             <input
               value={filters.busca}
               onChange={(event) => setFilter('busca', event.target.value)}
@@ -340,18 +359,18 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                 <h3 className="text-lg font-800 text-slate-950">Cadastrar escola</h3>
                 <p className="mt-1 text-sm text-slate-500">Adicione uma nova unidade para aparecer na listagem.</p>
               </div>
-              <button className="cursor-pointer" type="button" onClick={() => setIsModalOpen(false)} className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 sm:w-auto">
+              <button type="button" onClick={() => setIsModalOpen(false)} className="w-full cursor-pointer rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 sm:w-auto">
                 Fechar
               </button>
             </div>
             <form onSubmit={handleCadastrarEscola} className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
               <label className="block">
-                <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Nome</span>
+                <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Nome <span className="text-red-500">*</span></span>
                 <input required value={novoCadastro.nome} onChange={(event) => updateNovoCadastro('nome', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500" />
               </label>
               <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto]">
                 <label className="block">
-                  <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">CEP</span>
+                  <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">CEP <span className="text-red-500">*</span></span>
                   <input
                     required
                     value={novoCadastro.cep}
@@ -376,16 +395,16 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
               </div>
               {cepFeedback ? <p className="text-xs font-semibold text-slate-500">{cepFeedback}</p> : null}
               <label className="block">
-                <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Bairro</span>
+                <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Bairro <span className="text-red-500">*</span></span>
                 <input required value={novoCadastro.bairro} onChange={(event) => updateNovoCadastro('bairro', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500" />
               </label>
               <label className="block">
-                <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Endereço</span>
+                <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Endereço <span className="text-red-500">*</span></span>
                 <input required value={novoCadastro.endereco} onChange={(event) => updateNovoCadastro('endereco', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500" />
               </label>
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="block">
-                  <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Latitude</span>
+                  <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Latitude <span className="text-red-500">*</span></span>
                   <input
                     required
                     type="number"
@@ -399,7 +418,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                   />
                 </label>
                 <label className="block">
-                  <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Longitude</span>
+                  <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Longitude <span className="text-red-500">*</span></span>
                   <input
                     required
                     type="number"
@@ -414,63 +433,95 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                 </label>
               </div>
               <label className="block">
-                <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Foto</span>
-                <input type="file" accept="image/*" onChange={handleFotoSelecionada} className="block w-full text-sm font-semibold text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-bold file:text-slate-700 hover:file:bg-slate-200" />
-                {novoCadastro.fotoNome ? <p className="mt-2 text-xs font-semibold text-slate-500">Arquivo selecionado: {novoCadastro.fotoNome}</p> : null}
-                {novoCadastro.fotoUrl ? (
-                  <div className="mt-3 overflow-hidden rounded-md border border-slate-200">
-                    <img src={novoCadastro.fotoUrl} alt="Prévia da escola" className="h-40 w-full object-cover" />
+                <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Fotos</span>
+                <input type="file" accept="image/*" multiple onChange={handleFotoSelecionada} className="block w-full text-sm font-semibold text-slate-600 file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-bold file:text-slate-700 hover:file:bg-slate-200" />
+                {novoCadastro.fotos.length ? (
+                  <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {novoCadastro.fotos.map((foto, index) => (
+                      <div key={`${foto.nome}-${index}`} className="group relative aspect-video overflow-hidden rounded-md border border-slate-200">
+                        <img src={foto.url} alt={`Prévia ${index + 1}`} className="h-full w-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removerFotoCadastro(index)}
+                          aria-label={`Remover ${foto.nome}`}
+                          className="absolute right-1 top-1 cursor-pointer rounded-full bg-black/60 px-1.5 text-xs font-bold text-white hover:bg-black/80"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 ) : null}
               </label>
-              <div className="block">
-                <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Cômodos cadastrados</span>
-                <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_140px_auto]">
-                  <input
-                    value={novoComodo.nome}
-                    onChange={(event) => setNovoComodo((prev) => ({ ...prev, nome: event.target.value }))}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        event.preventDefault()
-                        addComodo()
-                      }
-                    }}
-                    className="h-11 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
-                    placeholder="Ex.: Sala, Biblioteca, Banheiro"
-                  />
-                  <input
-                    value={novoComodo.codigo}
-                    onChange={(event) => setNovoComodo((prev) => ({ ...prev, codigo: event.target.value }))}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        event.preventDefault()
-                        addComodo()
-                      }
-                    }}
-                    className="h-11 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
-                    placeholder="Código"
-                  />
-                  <button type="button" onClick={addComodo} className="cursor-pointer rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
+              <div className="rounded-lg border border-slate-200 bg-slate-50/60 p-4">
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div>
+                    <span className="block text-sm font-800 text-slate-800">Cômodos cadastrados</span>
+                    <p className="mt-1 text-xs font-semibold text-slate-500">Adicione os ambientes da escola para organizar ocorrências por local.</p>
+                  </div>
+                  <span className="rounded-full bg-white px-2.5 py-1 text-xs font-800 text-slate-500 ring-1 ring-slate-200">
+                    {novoCadastro.comodos.length}
+                  </span>
+                </div>
+                <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_120px_auto]">
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-bold text-slate-500">Ambiente</span>
+                    <input
+                      value={novoComodo.nome}
+                      onChange={(event) => setNovoComodo((prev) => ({ ...prev, nome: event.target.value }))}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault()
+                          addComodo()
+                        }
+                      }}
+                      className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
+                      placeholder="Ex.: Biblioteca"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-xs font-bold text-slate-500">Código</span>
+                    <input
+                      value={novoComodo.codigo}
+                      onChange={(event) => setNovoComodo((prev) => ({ ...prev, codigo: event.target.value }))}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault()
+                          addComodo()
+                        }
+                      }}
+                      className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
+                      placeholder="A01"
+                    />
+                  </label>
+                  <button type="button" onClick={addComodo} className="h-11 cursor-pointer self-end rounded-md bg-primary px-4 text-sm font-bold text-white hover:bg-primary-strong">
                     Adicionar
                   </button>
                 </div>
-                <p className="mt-2 text-xs font-semibold text-slate-500">
-                  Cadastre cada ambiente como "Cômodo - Código". No relatório, cômodos iguais são somados automaticamente.
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-3 space-y-2">
                   {novoCadastro.comodos.map((comodo) => (
-                    <button className="cursor-pointer" key={`${comodo.nome}-${comodo.codigo}`} type="button" onClick={() => removeComodo(comodo)} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-700 hover:bg-slate-100">
-                      {comodo.nome} - {comodo.codigo} x
-                    </button>
+                    <div key={`${comodo.nome}-${comodo.codigo}`} className="flex items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-3 py-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-bold text-slate-800">{comodo.nome}</p>
+                        <p className="text-xs font-semibold text-slate-500">Código {comodo.codigo}</p>
+                      </div>
+                      <button type="button" onClick={() => removeComodo(comodo)} className="cursor-pointer rounded-md px-2 py-1 text-xs font-bold text-red-600 hover:bg-red-50">
+                        Remover
+                      </button>
+                    </div>
                   ))}
-                  {!novoCadastro.comodos.length && <p className="text-xs font-semibold text-slate-500">Nenhum cômodo adicionado ainda.</p>}
+                  {!novoCadastro.comodos.length && (
+                    <div className="rounded-md border border-dashed border-slate-200 bg-white px-3 py-4 text-center text-sm font-semibold text-slate-400">
+                      Nenhum cômodo adicionado ainda.
+                    </div>
+                  )}
                 </div>
               </div>
               {erroCadastro && (
                 <p className="rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{erroCadastro}</p>
               )}
               <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
-                <button className="cursor-pointer" type="button" onClick={() => setIsModalOpen(false)} className="w-full rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 sm:w-auto">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="w-full cursor-pointer rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 sm:w-auto">
                   Cancelar
                 </button>
                 <button type="submit" disabled={salvandoEscola} className="cursor-pointer w-full rounded-md bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-strong disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
@@ -491,6 +542,17 @@ function normalizeRoomKey(value) {
 
 function normalizeCep(value) {
   return String(value || '').replace(/\D/g, '').slice(0, 8)
+}
+
+function readImageFile(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve({
+      nome: file.name,
+      url: typeof reader.result === 'string' ? reader.result : '',
+    })
+    reader.readAsDataURL(file)
+  })
 }
 
 function formatCepInput(value) {

@@ -40,6 +40,21 @@ export function EscolaDetalhe({ id, onNavigate }) {
       { src: schoolCorridor, alt: `Corredor da ${escola.nome}`, label: 'Corredor e salas' },
     ]
 
+    const fotosCadastradas = Array.isArray(escola.fotos)
+      ? escola.fotos.filter((foto) => foto?.url)
+      : []
+
+    if (fotosCadastradas.length) {
+      return [
+        ...fotosCadastradas.map((foto, index) => ({
+          src: foto.url,
+          alt: foto.nome || `Foto cadastrada ${index + 1} da ${escola.nome}`,
+          label: index === 0 ? 'Foto cadastrada' : `Foto cadastrada ${index + 1}`,
+        })),
+        ...defaultPhotos,
+      ]
+    }
+
     if (!escola.fotoUrl) return defaultPhotos
 
     return [
