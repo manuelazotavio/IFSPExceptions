@@ -1,4 +1,4 @@
-[
+export const ocorrenciasSeed = JSON.parse(String.raw`[
   {
     "id": "OCO-0001",
     "escolaId": "cei-emei-adi-adriana-aparecida-cassiano",
@@ -1763,4 +1763,4 @@
     "dataAtualizacao": "2026-08-15",
     "fotos": []
   }
-]
+]`)
