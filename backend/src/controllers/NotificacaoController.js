@@ -3,7 +3,8 @@ import { NotificacaoModel } from '../models/NotificacaoModel.js'
 export class NotificacaoController {
   static async getAll(request, response) {
     const { escolaId, criadoPorEmail } = request.query
-    const notificacoes = await NotificacaoModel.findAll({ escolaId, criadoPorEmail })
+    const ocultarAguardandoAprovacao = request.user?.role !== 'DIRETOR' && request.user?.role !== 'EXTERNO'
+    const notificacoes = await NotificacaoModel.findAll({ escolaId, criadoPorEmail, ocultarAguardandoAprovacao })
     return response.json(notificacoes)
   }
 

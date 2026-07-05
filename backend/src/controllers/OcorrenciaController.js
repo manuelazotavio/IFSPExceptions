@@ -10,11 +10,14 @@ function estaCriticaEmAberto(ocorrencia) {
 }
 
 function assertOcorrenciaAccess(user, ocorrencia) {
-  if (user.role === 'DIRETOR' && ocorrencia.escolaId !== user.escolaId) {
+  if (user?.role === 'DIRETOR' && ocorrencia.escolaId !== user.escolaId) {
     throw new AppError('Voce nao tem permissao para esta ocorrencia', 403)
   }
-  if (user.role === 'EXTERNO' && ocorrencia.criadoPorEmail !== user.email) {
+  if (user?.role === 'EXTERNO' && ocorrencia.criadoPorEmail !== user.email) {
     throw new AppError('Voce nao tem permissao para esta ocorrencia', 403)
+  }
+  if (user?.role !== 'DIRETOR' && user?.role !== 'EXTERNO' && ocorrencia.status === 'Aguardando aprovacao') {
+    throw new AppError('Ocorrencia aguardando aprovacao da escola', 403)
   }
 }
 
@@ -86,13 +89,17 @@ export class OcorrenciaController {
       filters.criadoPorEmail = request.user.email
     }
 
+    if (request.user?.role !== 'DIRETOR' && request.user?.role !== 'EXTERNO') {
+      filters.ocultarAguardandoAprovacao = true
+    }
+
     const lista = await OcorrenciaModel.findAll(filters)
     return response.json(lista)
   }
 
   static async get(request, response) {
     const ocorrencia = await OcorrenciaModel.findById(request.params.id)
-    if (request.user) assertOcorrenciaAccess(request.user, ocorrencia)
+    assertOcorrenciaAccess(request.user, ocorrencia)
     return response.json(ocorrencia)
   }
 

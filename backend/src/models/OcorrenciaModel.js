@@ -49,11 +49,12 @@ async function proximoProtocolo() {
 }
 
 export class OcorrenciaModel {
-  static async findAll({ escolaId, criadoPorEmail } = {}) {
+  static async findAll({ escolaId, criadoPorEmail, ocultarAguardandoAprovacao } = {}) {
     const lista = await prisma.ocorrencia.findMany({
       where: {
         ...(escolaId ? { escolaId } : {}),
         ...(criadoPorEmail ? { criadoPorEmail } : {}),
+        ...(ocultarAguardandoAprovacao ? { status: { not: 'Aguardando aprovacao' } } : {}),
       },
       include: includeRelacoes,
       orderBy: { dataEnvio: 'desc' },

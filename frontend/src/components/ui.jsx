@@ -93,7 +93,7 @@ function normalizeOption(option) {
   return { value: option, label: formatDisplayLabel(option) }
 }
 
-export function Select({ value, onChange, options, placeholder = 'Selecione...', disabled = false, className = '', size = 'md' }) {
+export function Select({ value, onChange, options, placeholder = 'Selecione...', disabled = false, className = '', size = 'md', direction = 'down' }) {
   const [open, setOpen] = useState(false)
   const containerRef = useRef(null)
   const normalized = options.map(normalizeOption)
@@ -147,7 +147,7 @@ export function Select({ value, onChange, options, placeholder = 'Selecione...',
       </button>
 
       {open && !disabled && (
-        <ul role="listbox" className="absolute z-[5000] mt-1 max-h-60 w-full overflow-auto rounded-md border border-slate-200 bg-white p-1 shadow-lg">
+        <ul role="listbox" className={`absolute z-[5000] max-h-60 w-full overflow-auto rounded-md border border-slate-200 bg-white p-1 shadow-lg ${direction === 'up' ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
           {normalized.map((item) => {
             const active = item.value === value
             return (
