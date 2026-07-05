@@ -4,6 +4,7 @@ import { isCustomSchool, loadCustomSchools, loadSchoolCatalog, removeCustomSchoo
 import { listarOcorrencias } from '../services/api.js'
 import { Badge, Card } from '../components/ui.jsx'
 import { SchoolLocationMap } from '../components/SchoolLocationMap.jsx'
+import { formatDisplayLabel } from '../utils/labels.js'
 import schoolCorridor from '../assets/school-corridor.png'
 import schoolCourtyard from '../assets/school-courtyard.png'
 import schoolPhoto from '../assets/school-exterior.png'
@@ -611,15 +612,18 @@ function RoomListButton({ sala, total, subtitle, active, onClick }) {
 
 function OcorrenciaItem({ item, onNavigate }) {
   return (
-    <button className="cursor-pointer" onClick={() => onNavigate(`/ocorrencias/${item.id}`)} className="w-full rounded-md border border-slate-200 bg-white p-4 text-left hover:bg-primary-50/40">
+    <button
+      onClick={() => onNavigate(`/ocorrencias/${item.id}`)}
+      className="w-full cursor-pointer rounded-md border border-slate-200 bg-white p-4 text-left transition hover:border-primary-200 hover:bg-primary-50/40"
+    >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="font-bold text-slate-800">{item.titulo}</p>
           <p className="mt-1 text-sm text-slate-500">{item.tipo} - {item.localizacaoInterna}</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Badge>{item.criticidade}</Badge>
-          <Badge>{item.status}</Badge>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-bold text-slate-600">
+          <OccurrenceSignal value={item.criticidade} variant="criticidade" />
+          <OccurrenceSignal value={item.status} variant="status" />
         </div>
       </div>
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm text-slate-500">
@@ -629,6 +633,35 @@ function OcorrenciaItem({ item, onNavigate }) {
       </div>
     </button>
   )
+}
+
+function OccurrenceSignal({ value, variant }) {
+  const color = getOccurrenceSignalColor(value, variant)
+
+  return (
+    <span className="inline-flex items-center gap-2 whitespace-nowrap">
+      <span className={`h-2.5 w-2.5 rounded-full ${color}`} aria-hidden="true" />
+      {formatDisplayLabel(value)}
+    </span>
+  )
+}
+
+function getOccurrenceSignalColor(value, variant) {
+  const normalized = String(value || '').toLowerCase()
+
+  if (variant === 'criticidade') {
+    if (normalized.includes('critica') || normalized.includes('crítica')) return 'bg-red-500'
+    if (normalized.includes('alta')) return 'bg-orange-500'
+    if (normalized.includes('media') || normalized.includes('média')) return 'bg-amber-400'
+    return 'bg-emerald-500'
+  }
+
+  if (normalized.includes('resolvida')) return 'bg-emerald-500'
+  if (normalized.includes('andamento')) return 'bg-blue-500'
+  if (normalized.includes('analise') || normalized.includes('análise')) return 'bg-indigo-500'
+  if (normalized.includes('orcamento') || normalized.includes('orçamento')) return 'bg-amber-500'
+  if (normalized.includes('visita')) return 'bg-violet-500'
+  return 'bg-slate-400'
 }
 
 function Info({ label, value }) {

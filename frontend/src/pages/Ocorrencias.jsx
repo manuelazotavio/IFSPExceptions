@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { bairros, categorias, criticidadeValues, locaisInternos, statusValues } from '../data/mockData.js'
+import { bairros, categorias, criticidadeValues, statusValues } from '../data/mockData.js'
 import { diasEmAberto, sortOcorrencias } from '../utils/metrics.js'
 import { Card, FilterSelect, Modal, Toast } from '../components/ui.jsx'
 import { Pagination } from '../components/Pagination.jsx'
 import { Icon } from '../components/Icons.jsx'
-import { atualizarOcorrencia, criarOcorrencia, listarEscolas, listarOcorrencias, uploadFotosOcorrencia } from '../services/api.js'
+import { atualizarOcorrencia, criarOcorrencia, listarOcorrencias, uploadFotosOcorrencia } from '../services/api.js'
 import { formatDisplayLabel } from '../utils/labels.js'
+import { loadSchoolCatalog } from '../utils/schools.js'
 
 const CAMPOS_VAZIOS = { escolaId: '', titulo: '', tipo: '', criticidade: '', localizacaoInterna: '', descricao: '' }
 const ITENS_POR_PAGINA = 10
@@ -83,7 +84,7 @@ export function Ocorrencias({ onNavigate, user }) {
 
   useEffect(() => {
     let ativo = true
-    listarEscolas()
+    loadSchoolCatalog()
       .then((dados) => { if (ativo) setEscolas(dados) })
       .catch(() => { if (ativo) setEscolas([]) })
     return () => {
@@ -115,6 +116,17 @@ export function Ocorrencias({ onNavigate, user }) {
     e.target.value = ''
   }
   const removerFoto = (index) => setNovasFotos((prev) => prev.filter((_, i) => i !== index))
+  const escolaSelecionada = useMemo(
+    () => escolas.find((escola) => escola.id === novaOcorrencia.escolaId) || null,
+    [escolas, novaOcorrencia.escolaId],
+  )
+  const comodosDaEscola = useMemo(
+    () => Array.isArray(escolaSelecionada?.comodos) ? escolaSelecionada.comodos : [],
+    [escolaSelecionada],
+  )
+  const alterarEscolaNovaOcorrencia = (escolaId) => {
+    setNovaOcorrencia((prev) => ({ ...prev, escolaId, localizacaoInterna: '' }))
+  }
 
   const lista = useMemo(() => sortOcorrencias(ocorrencias).filter((item) => {
     if (filters.bairro && item.bairro !== filters.bairro) return false
@@ -247,9 +259,9 @@ export function Ocorrencias({ onNavigate, user }) {
           >
             Exportar
           </button>
-          <button className="cursor-pointer"
+          <button
             onClick={() => setModalAberto(true)}
-            className="w-full sm:w-auto rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-primary-strong transition-colors duration-200 flex items-center justify-center gap-2"
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white shadow-sm transition-colors duration-200 hover:bg-primary-strong sm:w-auto"
           >
             <span className="text-sm leading-none">+</span> Nova ocorrência
           </button>
@@ -392,7 +404,7 @@ export function Ocorrencias({ onNavigate, user }) {
         <div className="space-y-3">
           <label className="block">
             <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Escola <span className="text-red-500">*</span></span>
-            <select value={novaOcorrencia.escolaId} onChange={(e) => setCampo('escolaId', e.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500">
+            <select value={novaOcorrencia.escolaId} onChange={(e) => alterarEscolaNovaOcorrencia(e.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500">
               <option value="">Selecione...</option>
               {escolas.map((escola) => <option key={escola.id} value={escola.id}>{escola.nome} - {formatDisplayLabel(escola.bairro)}</option>)}
             </select>
@@ -419,9 +431,24 @@ export function Ocorrencias({ onNavigate, user }) {
           </div>
           <label className="block">
             <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Localização interna <span className="text-red-500">*</span></span>
-            <select value={novaOcorrencia.localizacaoInterna} onChange={(e) => setCampo('localizacaoInterna', e.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500">
-              <option value="">Selecione...</option>
-              {locaisInternos.map((item) => <option key={item} value={item}>{item}</option>)}
+            <select
+              value={novaOcorrencia.localizacaoInterna}
+              onChange={(e) => setCampo('localizacaoInterna', e.target.value)}
+              disabled={!novaOcorrencia.escolaId || comodosDaEscola.length === 0}
+              className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+            >
+              <option value="">
+                {!novaOcorrencia.escolaId
+                  ? 'Selecione uma escola primeiro'
+                  : comodosDaEscola.length === 0
+                    ? 'Nenhum cômodo cadastrado para esta escola'
+                    : 'Selecione...'}
+              </option>
+              {comodosDaEscola.map((comodo) => (
+                <option key={getComodoChave(comodo)} value={getComodoChave(comodo)}>
+                  {getComodoRotulo(comodo)}
+                </option>
+              ))}
             </select>
           </label>
           <label className="block">
@@ -488,6 +515,16 @@ export function Ocorrencias({ onNavigate, user }) {
   )
 }
 
+function getComodoChave(comodo) {
+  if (!comodo || typeof comodo === 'string') return String(comodo || '')
+  return comodo.codigo || comodo.nome || ''
+}
+
+function getComodoRotulo(comodo) {
+  if (!comodo || typeof comodo === 'string') return String(comodo || '')
+  return comodo.codigo ? `${comodo.nome} - ${comodo.codigo}` : comodo.nome
+}
+
 function KanbanOcorrencias({ lista, onNavigate, onStatusChange }) {
   const [arrastandoId, setArrastandoId] = useState('')
   const [statusDestino, setStatusDestino] = useState('')
@@ -525,7 +562,7 @@ function KanbanOcorrencias({ lista, onNavigate, onStatusChange }) {
             </div>
             <div className="space-y-3 p-3">
               {itens.map((item) => (
-                <button
+                <button className="cursor-pointer"
                   key={item.id}
                   type="button"
                   draggable
