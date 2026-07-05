@@ -44,7 +44,7 @@ export function Sidebar({ route, onNavigate, user, open = false, onClose, collap
         }`}
       >
         <div className={`mb-7 flex items-center gap-3 ${collapsed ? 'lg:justify-center lg:ps-0' : 'justify-between ps-2'}`}>
-          <img src="/geo/logo_fundo_branco.svg" alt="Escola em Dia" className={`h-8 w-auto transition-opacity ${collapsed ? 'lg:hidden' : ''}`} />
+          <img src="/geo/logo_fundo_branco.svg" alt="Zela+" className={`h-8 w-auto transition-opacity ${collapsed ? 'lg:hidden' : ''}`} />
           <button
             type="button"
             onClick={onToggleCollapsed}
@@ -81,7 +81,7 @@ export function Sidebar({ route, onNavigate, user, open = false, onClose, collap
                   active ? 'bg-primary-50 text-primary-strong' : 'text-slate-600 hover:bg-slate-50 hover:text-primary-strong'
                 }`}
               >
-                <Icon name={icon} className="h-4 w-4" />
+                <Icon name={icon} className="h-5 w-5 shrink-0" />
                 <span className={`truncate ${collapsed ? 'lg:hidden' : ''}`}>{label}</span>
               </button>
             )

@@ -97,7 +97,7 @@ export function Layout({ route, onNavigate, onExport, user, onLogout, children }
         roleLabel={roleLabel}
         onLogout={onLogout}
       />
-      <div className={`transition-[padding] duration-200 ${sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}`}>
+      <div className={`flex min-h-screen flex-col transition-[padding] duration-200 ${sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}`}>
         <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-5 pt-4 pb-0 backdrop-blur sm:pb-4 lg:px-8">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="flex items-start justify-between gap-2 sm:items-center">
@@ -189,7 +189,7 @@ export function Layout({ route, onNavigate, onExport, user, onLogout, children }
             </div>
           </div>
         </header>
-        <main className="px-5 py-6 lg:px-8">{children}</main>
+        <main className="flex-1 px-5 py-6 lg:px-8">{children}</main>
         <footer className="border-t border-slate-200 bg-white px-5 py-5 text-center text-xs font-semibold text-slate-400 lg:px-8">
           IFSP Exceptions © {new Date().getFullYear()} — Todos os direitos reservados.
         </footer>

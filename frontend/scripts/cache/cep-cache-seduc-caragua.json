@@ -1,0 +1,106 @@
+{
+  "avenida regina margareth passos": {
+    "version": 1,
+    "logradouro": "Avenida Regina Margareth Passos",
+    "cep": "11677-340",
+    "bairro": "Massaguaçu",
+    "logradouroEncontrado": "Avenida Regina Margareth Passos",
+    "observation": "CEP encontrado pelo ViaCEP com boa correspondencia de logradouro e bairro."
+  },
+  "rua sebastiao nepomuceno": {
+    "version": 1,
+    "logradouro": "Rua Sebastião Nepomuceno",
+    "cep": "11661-160",
+    "bairro": "Ipiranga",
+    "logradouroEncontrado": "Rua Sebastião Nepomuceno",
+    "observation": "CEP encontrado pelo ViaCEP com boa correspondencia de logradouro."
+  },
+  "travessa manoel severino de castro": {
+    "version": 1,
+    "logradouro": "Travessa Manoel Severino de Castro",
+    "cep": null,
+    "bairro": null,
+    "logradouroEncontrado": null,
+    "observation": null
+  },
+  "rua manoel francisco ricardo": {
+    "version": 1,
+    "logradouro": "Rua Manoel Francisco Ricardo",
+    "cep": "11677-180",
+    "bairro": "Massaguaçu",
+    "logradouroEncontrado": "Rua Manoel Francisco Ricardo",
+    "observation": "CEP encontrado pelo ViaCEP com boa correspondencia de logradouro."
+  },
+  "rua jose geraldo fernandes da silva filho": {
+    "version": 1,
+    "logradouro": "Rua José Geraldo Fernandes da Silva Filho",
+    "cep": "11669-470",
+    "bairro": "Travessão",
+    "logradouroEncontrado": "Rua José Geraldo Fernandes da Silva Filho",
+    "observation": "CEP encontrado pelo ViaCEP com boa correspondencia de logradouro."
+  },
+  "avenida pedro goncalves leite": {
+    "version": 1,
+    "logradouro": "Avenida Pedro Gonçalves Leite",
+    "cep": "11668-015",
+    "bairro": "Parque Balneário Maria Helena",
+    "logradouroEncontrado": "Avenida Pedro Gonçalves Leite",
+    "observation": "CEP encontrado pelo ViaCEP com boa correspondencia de logradouro."
+  },
+  "rua benedito severino de castro": {
+    "version": 1,
+    "logradouro": "Rua Benedito Severino de Castro",
+    "cep": null,
+    "bairro": null,
+    "logradouroEncontrado": null,
+    "observation": null
+  },
+  "estrada antonio francisco paschoal peliciare": {
+    "version": 1,
+    "logradouro": "Estrada Antonio Francisco Paschoal Peliciare",
+    "cep": null,
+    "bairro": null,
+    "logradouroEncontrado": null,
+    "observation": null
+  },
+  "rua oziel egidio de farias": {
+    "version": 1,
+    "logradouro": "Rua Oziel Egídio de Farias",
+    "cep": null,
+    "bairro": null,
+    "logradouroEncontrado": null,
+    "observation": null
+  },
+  "travessa caminho grande": {
+    "version": 1,
+    "logradouro": "Travessa Caminho Grande",
+    "cep": "11667-842",
+    "bairro": "Pegorelli",
+    "logradouroEncontrado": "Travessa Caminho Grande",
+    "observation": "CEP encontrado pelo ViaCEP com boa correspondencia de logradouro e bairro."
+  },
+  "rua antonio teles de souza": {
+    "version": 1,
+    "logradouro": "Rua Antônio Teles de Souza",
+    "cep": "11671-470",
+    "bairro": "Morro do Algodão",
+    "logradouroEncontrado": "Rua Antonio Teles de Souza",
+    "observation": "CEP encontrado pelo ViaCEP com boa correspondencia de logradouro e bairro."
+  },
+  "avenida azaleias": {
+    "version": 1,
+    "logradouro": "Avenida Azaleias",
+    "cep": null,
+    "bairro": null,
+    "logradouroEncontrado": null,
+    "observation": null
+  },
+  "avenida pedro goncalves": {
+    "version": 1,
+    "logradouro": "Avenida Pedro Gonçalves",
+    "cep": "11668-015",
+    "bairro": "Parque Balneário Maria Helena",
+    "logradouroEncontrado": "Avenida Pedro Gonçalves Leite",
+    "observation": "CEP encontrado pelo ViaCEP com boa correspondencia de logradouro."
+  }
+}
