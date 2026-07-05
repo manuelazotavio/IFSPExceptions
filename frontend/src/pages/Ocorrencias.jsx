@@ -4,6 +4,8 @@ import { diasEmAberto, sortOcorrencias } from '../utils/metrics.js'
 import { Card, FilterSelect, Modal, Select, Toast } from '../components/ui.jsx'
 import { Pagination } from '../components/Pagination.jsx'
 import { Icon } from '../components/Icons.jsx'
+import { ImageCropper } from '../components/ImageCropper.jsx'
+import { FotoThumbnail } from '../components/FotoThumbnail.jsx'
 import { atualizarOcorrencia, criarOcorrencia, listarOcorrencias, uploadFotosOcorrencia } from '../services/api.js'
 import { formatDisplayLabel } from '../utils/labels.js'
 import { loadSchoolCatalog } from '../utils/schools.js'
@@ -43,6 +45,8 @@ export function Ocorrencias({ onNavigate, user }) {
   const setCampo = (key, value) => setNovaOcorrencia((prev) => ({ ...prev, [key]: value }))
   const [novasFotos, setNovasFotos] = useState([])
   const fotoInputRef = useRef(null)
+  const [filaCorte, setFilaCorte] = useState([])
+  const [arquivoEmCorte, setArquivoEmCorte] = useState(null)
   const [busca, setBusca] = useState('')
   const [pagina, setPagina] = useState(1)
   const [visualizacao, setVisualizacao] = useState('listagem')
@@ -116,10 +120,37 @@ export function Ocorrencias({ onNavigate, user }) {
   const handleFotoInputClick = () => fotoInputRef.current?.click()
   const handleFotoChange = (e) => {
     const files = Array.from(e.target.files || [])
-    setNovasFotos((prev) => [...prev, ...files])
     e.target.value = ''
+    if (files.length) setFilaCorte((prev) => [...prev, ...files])
   }
   const removerFoto = (index) => setNovasFotos((prev) => prev.filter((_, i) => i !== index))
+  const handleRecortarFoto = (index) => {
+    const file = novasFotos[index]
+    setArquivoEmCorte({ file, src: URL.createObjectURL(file), indexParaSubstituir: index })
+  }
+
+  useEffect(() => {
+    if (!arquivoEmCorte && filaCorte.length > 0) {
+      const [proximo, ...resto] = filaCorte
+      setArquivoEmCorte({ file: proximo, src: URL.createObjectURL(proximo) })
+      setFilaCorte(resto)
+    }
+  }, [filaCorte, arquivoEmCorte])
+
+  function handleCropConfirm(arquivoCortado) {
+    if (arquivoEmCorte.indexParaSubstituir != null) {
+      setNovasFotos((prev) => prev.map((file, i) => (i === arquivoEmCorte.indexParaSubstituir ? arquivoCortado : file)))
+    } else {
+      setNovasFotos((prev) => [...prev, arquivoCortado])
+    }
+    URL.revokeObjectURL(arquivoEmCorte.src)
+    setArquivoEmCorte(null)
+  }
+
+  function handleCropCancel() {
+    URL.revokeObjectURL(arquivoEmCorte.src)
+    setArquivoEmCorte(null)
+  }
   const escolaSelecionada = useMemo(
     () => escolas.find((escola) => escola.id === novaOcorrencia.escolaId) || null,
     [escolas, novaOcorrencia.escolaId],
@@ -409,7 +440,15 @@ export function Ocorrencias({ onNavigate, user }) {
       {visualizacao === 'kanban' && !isExterno && (
         <KanbanOcorrencias lista={lista} onNavigate={onNavigate} onStatusChange={alterarStatusKanban} />
       )}
-      <Modal open={modalAberto} onClose={() => setModalAberto(false)} title="Nova ocorrência">
+      <Modal open={modalAberto} onClose={() => setModalAberto(false)} title={arquivoEmCorte ? 'Cortar imagem' : 'Nova ocorrência'}>
+        {arquivoEmCorte ? (
+          <ImageCropper
+            imageSrc={arquivoEmCorte.src}
+            fileName={arquivoEmCorte.file?.name}
+            onCancel={handleCropCancel}
+            onConfirm={handleCropConfirm}
+          />
+        ) : (
         <div className="space-y-3">
           <label className="block">
             <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Escola <span className="text-red-500">*</span></span>
@@ -463,17 +502,26 @@ export function Ocorrencias({ onNavigate, user }) {
             {novasFotos.length > 0 && (
               <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {novasFotos.map((file, index) => (
-                  <div key={`${file.name}-${index}`} className="group relative aspect-square overflow-hidden rounded-md border border-slate-200">
-                    <img src={previewsFotos[index]} alt={file.name} className="h-full w-full object-cover" />
-                    <button className="cursor-pointer"
-                      type="button"
-                      onClick={() => removerFoto(index)}
-                      aria-label={`Remover ${file.name}`}
-                      className="absolute right-1 top-1 rounded-full bg-black/60 px-1.5 text-xs font-bold text-white hover:bg-black/80"
-                    >
-                      &times;
-                    </button>
-                  </div>
+                  <FotoThumbnail key={`${file.name}-${index}`} src={previewsFotos[index]} alt={file.name}>
+                    <div className="absolute inset-x-1 top-1 flex justify-end gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleRecortarFoto(index)}
+                        aria-label={`Recortar ${file.name}`}
+                        className="cursor-pointer rounded-full bg-black/60 p-1 text-white hover:bg-black/80"
+                      >
+                        <Icon name="crop" className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removerFoto(index)}
+                        aria-label={`Remover ${file.name}`}
+                        className="cursor-pointer rounded-full bg-black/60 px-1.5 text-xs font-bold text-white hover:bg-black/80"
+                      >
+                        &times;
+                      </button>
+                    </div>
+                  </FotoThumbnail>
                 ))}
               </div>
             )}
@@ -488,6 +536,7 @@ export function Ocorrencias({ onNavigate, user }) {
             </button>
           </div>
         </div>
+        )}
       </Modal>
     </div>
   )

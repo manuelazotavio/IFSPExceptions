@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { sortOcorrencias } from '../utils/metrics.js'
+import { diasEmAberto, sortOcorrencias } from '../utils/metrics.js'
 import { isCustomSchool, loadCustomSchools, removeCustomSchool } from '../utils/schools.js'
 import { listarOcorrencias, obterEscola } from '../services/api.js'
-import { Badge, Card } from '../components/ui.jsx'
+import { Badge, Card, MetricCard, Modal } from '../components/ui.jsx'
+import { Icon } from '../components/Icons.jsx'
 import { SchoolLocationMap } from '../components/SchoolLocationMap.jsx'
 import { formatDisplayLabel } from '../utils/labels.js'
 import { getComodoCodigo, getComodoNome, getSchoolRooms } from '../utils/comodos.js'
@@ -163,156 +164,147 @@ export function EscolaDetalhe({ id, onNavigate }) {
           </Card>
         ) : null}
 
-        <div className="flex flex-wrap gap-2">
-          <button onClick={() => onNavigate('/escolas')} className="cursor-pointer rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">
-            Voltar para escolas
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => onNavigate('/escolas')}
+            className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-md border border-slate-200 px-4 py-2 text-sm font-bold xl:flex-none"
+          >
+            <Icon name="arrow-left" className="h-4 w-4" />
+            Voltar
           </button>
-          <button onClick={() => setLocationModalOpen(true)} disabled={!escola} className="cursor-pointer rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50">
-            Ver no mapa
-          </button>
-          {canDeleteSchool ? (
-            <button onClick={handleDeleteSchool} className="cursor-pointer rounded-md border border-red-200 bg-red-50 px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-100">
-              Excluir escola
+          <div className="ml-auto flex flex-wrap gap-2">
+            <button
+              onClick={() => setLocationModalOpen(true)}
+              disabled={!escola}
+              className="flex cursor-pointer items-center gap-2 rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Icon name="map" className="h-4 w-4" />
+              Ver no mapa
             </button>
-          ) : null}
+            {canDeleteSchool ? (
+              <button onClick={handleDeleteSchool} className="cursor-pointer rounded-md border border-red-200 bg-red-50 px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-100">
+                Excluir escola
+              </button>
+            ) : null}
+          </div>
         </div>
 
         {escola ? (
-        <Card className="overflow-hidden p-0">
-          <SchoolPhotoCarousel
-            photos={fotosEscola}
-            currentIndex={photoIndex}
-            onChange={setPhotoIndex}
-          />
-          <div className="p-5">
-            <div className="flex flex-wrap items-start justify-between gap-3">
+          <Card className="overflow-hidden p-0">
+            <SchoolPhotoCarousel
+              photos={fotosEscola}
+              currentIndex={photoIndex}
+              onChange={setPhotoIndex}
+            />
+            <div className="">
               <div>
-                <h2 className="text-2xl font-800 text-slate-950">{escola.nome}</h2>
+                <h2 className="text-2xl font-800 mt-4 text-slate-950">{escola.nome}</h2>
                 <p className="mt-1 text-sm font-semibold text-slate-500">{escola.bairro} - {escola.endereco}</p>
                 {loadingEscola ? <p className="mt-2 text-xs font-semibold text-slate-400">Sincronizando dados da escola com o banco...</p> : null}
               </div>
-              <Badge>{escola.status}</Badge>
-            </div>
-            {escola.descricao?.trim() ? (
-              <p className="mt-4 text-sm leading-6 text-slate-700">{escola.descricao}</p>
-            ) : null}
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Badge>{ocorrenciasEscola.length} ocorrências</Badge>
-              <Badge>{ocorrenciasEscola.filter((item) => item.status !== 'Resolvida').length} abertas</Badge>
-              <Badge>{ocorrenciasEscola.filter((item) => item.criticidade === 'Critica' && item.status !== 'Resolvida').length} críticas</Badge>
-            </div>
-          </div>
-        </Card>
-        ) : null}
-
-        {escola ? (
-        <Card>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h3 className="text-lg font-800 text-slate-950">Tabela de cômodos cadastrados</h3>
-              <p className="mt-1 text-sm text-slate-500">Resumo por tipo de ambiente cadastrado na unidade</p>
-            </div>
-            <button onClick={exportRoomPdfReport} className="cursor-pointer rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
-              Exportar PDF
-            </button>
-          </div>
-          <div className="mt-5 overflow-x-auto">
-            <table className="w-full min-w-[420px] text-sm">
-              <thead className="bg-slate-50 text-left text-xs font-800 uppercase text-slate-500">
-                <tr>
-                  <th className="px-4 py-3">Tipo</th>
-                  <th className="px-4 py-3 text-right">Quantidade</th>
-                </tr>
-              </thead>
-              <tbody>
-                {roomTypeSummary.map((item) => (
-                  <tr key={item.label} className="border-t border-slate-100">
-                    <td className="px-4 py-3 font-bold text-slate-800">{item.label}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-slate-700">{item.count}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-        ) : null}
-
-        {escola ? (
-        <Card>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h3 className="text-lg font-800 text-slate-950">Cômodos cadastrados</h3>
-              <p className="mt-1 text-sm text-slate-500">Resumo dos ambientes cadastrados e acesso rápido para as ocorrências</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge>{salas.length} ambientes</Badge>
-              <button onClick={exportRoomReport} className="cursor-pointer rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
-                Exportar relatório
-              </button>
-            </div>
-          </div>
-          
-          <div className="mt-5 grid gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-              <div className="space-y-2">
-                <RoomListButton
-                  sala={allSalasKey}
-                  total={ocorrenciasEscola.length}
-                  active={selectedSalaKey === allSalasKey}
-                  subtitle="Visualizar a escola inteira"
-                  onClick={() => setSelectedSalaKey(allSalasKey)}
-                />
-                {salas.map((sala) => (
-                  <RoomListButton
-                    key={getRoomKey(sala)}
-                    sala={formatRoomLabel(sala)}
-                    total={ocorrenciasEscola.filter((item) => roomMatchesOccurrence(sala, item.localizacaoInterna)).length}
-                    active={selectedSalaKey === getRoomKey(sala)}
-                    subtitle="Abrir ocorrências do ambiente"
-                    onClick={() => setSelectedSalaKey(getRoomKey(sala))}
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="rounded-lg border border-slate-200 bg-white p-4">
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
-                <div>
-                  <h3 className="text-lg font-800 text-slate-950">
-                    {selectedSalaKey === allSalasKey ? 'Todas as ocorrências da unidade' : 'Demandas do local selecionado'}
-                  </h3>
-                  <p className="mt-1 text-sm text-slate-500">
-                    {selectedSalaKey === allSalasKey
-                      ? 'Lista completa da escola, incluindo ocorrências finalizadas'
-                      : `${formatRoomLabel(selectedSala)} com histórico completo da unidade`}
-                  </p>
+              {escola.descricao?.trim() ? (
+                <p className="mt-4 text-sm leading-6 text-slate-700">{escola.descricao}</p>
+              ) : null}
+              <div className="mt-5 border-t border-slate-200 pt-5">
+                <span className="text-xs font-bold uppercase tracking-wide text-slate-400">Indicadores</span>
+                <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <MetricCard label="Ocorrências" value={ocorrenciasEscola.length} tone="slate" />
+                  <MetricCard label="Abertas" value={ocorrenciasEscola.filter((item) => item.status !== 'Resolvida').length} tone="blue" />
+                  <MetricCard label="Críticas" value={ocorrenciasEscola.filter((item) => item.criticidade === 'Critica' && item.status !== 'Resolvida').length} tone="critical" />
                 </div>
-                <Badge>{ocorrenciasSala.length} registros</Badge>
               </div>
-              <div className="mt-5 space-y-3">
-                {ocorrenciasSala.map((item) => <OcorrenciaItem key={item.id} item={item} onNavigate={onNavigate} />)}
-                {!ocorrenciasSala.length && (
-                  <div className="rounded-md border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-500">
-                    {selectedSalaKey === allSalasKey ? 'Sem ocorrências cadastradas para esta escola.' : 'Não há ocorrências registradas para este cômodo.'}
+
+              <div className="mt-6 border-t border-slate-200 pt-6">
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wide text-slate-400">Cômodos</span>
+                  <h3 className="mt-1 text-lg font-800 text-slate-950">Detalhamento das quantidades de cômodos cadastrados da escola "{escola.nome}"</h3>
+                </div>
+                <div className="mt-3">
+                  <span className="flex w-full items-center justify-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">
+                    {salas.length} ambientes cadastrados
+                  </span>
+                </div>
+                <div className="mt-3">
+                  <button onClick={exportRoomPdfReport} className="cursor-pointer w-full rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
+                    Exportar PDF
+                  </button>
+                </div>
+                <div className="mt-3 flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible">
+                  {buildRoomNameCounts(salas).map((grupo) => (
+                    <span key={grupo.nome} className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-700">
+                      {grupo.nome}
+                      <span className="rounded-full bg-white px-1.5 text-slate-500 ring-1 ring-slate-200">{grupo.quantidade}</span>
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-5 grid gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-2 sm:p-3">
+                    <p className="mb-2 px-1 text-xs font-bold uppercase tracking-wide text-slate-500">Ambientes</p>
+                    <div className="space-y-1.5 sm:space-y-2">
+                      <RoomListButton
+                        sala={allSalasKey}
+                        total={ocorrenciasEscola.length}
+                        active={selectedSalaKey === allSalasKey}
+                        subtitle="Visualizar a escola inteira"
+                        onClick={() => setSelectedSalaKey(allSalasKey)}
+                      />
+                      {salas.map((sala) => (
+                        <RoomListButton
+                          key={getRoomKey(sala)}
+                          sala={formatRoomLabel(sala)}
+                          total={ocorrenciasEscola.filter((item) => roomMatchesOccurrence(sala, item.localizacaoInterna)).length}
+                          active={selectedSalaKey === getRoomKey(sala)}
+                          subtitle="Abrir ocorrências do ambiente"
+                          onClick={() => setSelectedSalaKey(getRoomKey(sala))}
+                        />
+                      ))}
+                    </div>
                   </div>
-                )}
+                  <div className="rounded-lg border border-slate-200 bg-white p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
+                      <div>
+                        <h3 className="text-lg font-800 text-slate-950">
+                          {selectedSalaKey === allSalasKey ? 'Todas as ocorrências da unidade detalhadas por cômodos' : `Demandas do "${formatRoomLabel(selectedSala)}"`}
+                        </h3>
+                       
+                      </div>
+                      <Badge>{ocorrenciasSala.length} registros</Badge>
+                    </div>
+                    <div className="mt-5 space-y-3">
+                      {ocorrenciasSala.map((item) => <OcorrenciaItem key={item.id} item={item} onNavigate={onNavigate} />)}
+                      {!ocorrenciasSala.length && (
+                        <div className="rounded-md border border-slate-200 bg-slate-50 p-4 text-sm font-semibold text-slate-500">
+                          {selectedSalaKey === allSalasKey ? 'Sem ocorrências cadastradas para esta escola.' : 'Não há ocorrências registradas para este cômodo.'}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </Card>
+          </Card>
         ) : null}
 
       </div>
 
       {locationModalOpen && escola && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/45 px-4 py-8">
-          <div className="w-full max-w-3xl rounded-lg border border-slate-200 bg-white shadow-2xl">
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/45 px-4 py-8"
+          onClick={() => setLocationModalOpen(false)}
+        >
+          <div className="w-full max-w-3xl rounded-lg border border-slate-200 bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
               <div>
                 <h3 className="text-lg font-800 text-slate-950">Localização da escola</h3>
                 <p className="mt-1 text-sm text-slate-500">{escola.nome}</p>
               </div>
-              <button className="cursor-pointer" onClick={() => setLocationModalOpen(false)} className="rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700">
-                Fechar
+              <button
+                type="button"
+                onClick={() => setLocationModalOpen(false)}
+                aria-label="Fechar"
+                className="cursor-pointer rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+              >
+                <Icon name="close" className="h-5 w-5" />
               </button>
             </div>
             <div className="grid gap-5 p-5 md:grid-cols-[.8fr_1.2fr]">
@@ -435,6 +427,18 @@ function buildRoomTypeSummary(salas) {
     .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
 }
 
+function buildRoomNameCounts(salas) {
+  const summary = salas.reduce((acc, sala) => {
+    const nome = formatDisplayLabel(getRoomName(sala))
+    acc[nome] = (acc[nome] || 0) + 1
+    return acc
+  }, {})
+
+  return Object.entries(summary)
+    .map(([nome, quantidade]) => ({ nome, quantidade }))
+    .sort((a, b) => b.quantidade - a.quantidade || a.nome.localeCompare(b.nome, 'pt-BR'))
+}
+
 function buildSchoolRoomReport({ escola, salas, roomSummary, roomTypeSummary, ocorrenciasEscola }) {
   const now = new Date().toLocaleString('pt-BR')
   const roomLines = roomSummary.map((group) => `- ${group.description}`).join('\n')
@@ -541,6 +545,8 @@ function buildSchoolPdfReport({ escola, roomTypeSummary, ocorrenciasEscola }) {
 }
 
 function SchoolPhotoCarousel({ photos, currentIndex, onChange }) {
+  const [telaCheia, setTelaCheia] = useState(false)
+
   if (!photos.length) {
     return (
       <div className="border-b border-slate-200 bg-slate-50 p-4">
@@ -565,6 +571,14 @@ function SchoolPhotoCarousel({ photos, currentIndex, onChange }) {
     <div className="border-b border-slate-200 bg-slate-950/5 p-4">
       <div className="relative overflow-hidden rounded-lg bg-slate-100">
         <img src={currentPhoto.src} alt={currentPhoto.alt} className="h-80 w-full object-cover" />
+        <button
+          type="button"
+          onClick={() => setTelaCheia(true)}
+          className="cursor-pointer absolute right-3 top-3 hidden items-center gap-1.5 rounded-md bg-black/60 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-black/80 sm:flex"
+        >
+          <Icon name="expand" className="h-3.5 w-3.5" />
+          Tela cheia
+        </button>
         <div className="absolute inset-x-0 bottom-0 flex items-end justify-between bg-gradient-to-t from-slate-950/60 to-transparent p-4">
           <div>
             <p className="text-sm font-bold text-white">{currentPhoto.label}</p>
@@ -580,18 +594,70 @@ function SchoolPhotoCarousel({ photos, currentIndex, onChange }) {
           </div>
         </div>
       </div>
+      <div className="mt-3 flex justify-center sm:hidden">
+        <button
+          type="button"
+          onClick={() => setTelaCheia(true)}
+          className="cursor-pointer flex items-center gap-1.5 rounded-md bg-black/60 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-black/80"
+        >
+          <Icon name="expand" className="h-3.5 w-3.5" />
+          Tela cheia
+        </button>
+      </div>
       <div className="mt-3 grid gap-3 sm:grid-cols-3">
         {photos.map((photo, index) => (
-          <button className="cursor-pointer"
+          <button
             key={photo.label}
             onClick={() => onChange(index)}
-            className={`overflow-hidden rounded-md border text-left transition ${index === currentIndex ? 'border-primary ring-2 ring-primary-500/40' : 'border-slate-200 hover:border-primary-300'}`}
+            className={`cursor-pointer overflow-hidden rounded-md border text-left transition ${index === currentIndex ? 'border-primary ring-2 ring-primary-500/40' : 'border-slate-200 hover:border-primary-300'}`}
           >
             <img src={photo.src} alt={photo.alt} className="h-20 w-full object-cover" />
             <div className="px-3 py-2 text-xs font-bold text-slate-700">{photo.label}</div>
           </button>
         ))}
       </div>
+
+      {telaCheia && (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/90 p-2 sm:p-4"
+          onClick={() => setTelaCheia(false)}
+        >
+          <img
+            src={currentPhoto.src}
+            alt={currentPhoto.alt}
+            className="max-h-full max-w-full object-contain"
+            onClick={(event) => event.stopPropagation()}
+          />
+          <button
+            type="button"
+            onClick={() => setTelaCheia(false)}
+            aria-label="Fechar"
+            className="cursor-pointer absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full text-white hover:bg-white/10 sm:right-4 sm:top-4"
+          >
+            <Icon name="close" className="h-5 w-5 sm:h-6 sm:w-6" />
+          </button>
+          {photos.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={(event) => { event.stopPropagation(); showPrevious() }}
+                aria-label="Foto anterior"
+                className="cursor-pointer absolute left-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-2xl font-bold text-white hover:bg-white/20 sm:left-4"
+              >
+                &lsaquo;
+              </button>
+              <button
+                type="button"
+                onClick={(event) => { event.stopPropagation(); showNext() }}
+                aria-label="Próxima foto"
+                className="cursor-pointer absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-2xl font-bold text-white hover:bg-white/20 sm:right-4"
+              >
+                &rsaquo;
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -600,15 +666,14 @@ function RoomListButton({ sala, total, subtitle, active, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`cursor-pointer flex w-full items-center justify-between gap-3 rounded-md border px-4 py-3 text-left transition ${
-        active ? 'border-primary bg-primary text-white shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-primary-300 hover:bg-primary-50'
-      }`}
+      className={`cursor-pointer flex w-full items-center justify-between gap-2 rounded-md border px-3 py-2 text-left transition sm:gap-3 sm:px-4 sm:py-3 ${active ? 'border-primary bg-primary text-white shadow-sm' : 'border-slate-200 bg-white text-slate-700 hover:border-primary-300 hover:bg-primary-50'
+        }`}
     >
-      <div>
-        <p className="font-bold">{sala}</p>
-        <p className={`mt-1 text-xs font-semibold ${active ? 'text-primary-100' : 'text-slate-400'}`}>{subtitle}</p>
+      <div className="min-w-0">
+        <p className="truncate text-sm font-bold sm:text-base">{sala}</p>
+        <p className={`mt-0.5 truncate text-[10px] font-semibold sm:mt-1 sm:text-xs ${active ? 'text-primary-100' : 'text-slate-400'}`}>{subtitle}</p>
       </div>
-      <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>
+      <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>
         {total}
       </span>
     </button>
@@ -616,57 +681,53 @@ function RoomListButton({ sala, total, subtitle, active, onClick }) {
 }
 
 function OcorrenciaItem({ item, onNavigate }) {
-  return (
-    <button
-      onClick={() => onNavigate(`/ocorrencias/${item.id}`)}
-      className="w-full cursor-pointer rounded-md border border-slate-200 bg-white p-4 text-left transition hover:border-primary-200 hover:bg-primary-50/40"
-    >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="font-bold text-slate-800">{item.titulo}</p>
-          <p className="mt-1 text-sm text-slate-500">{item.tipo} - {item.localizacaoInterna}</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs font-bold text-slate-600">
-          <OccurrenceSignal value={item.criticidade} variant="criticidade" />
-          <OccurrenceSignal value={item.status} variant="status" />
-        </div>
-      </div>
-      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm text-slate-500">
-        <span>Envio: {item.dataEnvio}</span>
-        <span>Atualizacao: {item.ultimaAtualizacao}</span>
-        {item.dataResolucao && <span>Resolucao: {item.dataResolucao}</span>}
-      </div>
-    </button>
-  )
-}
-
-function OccurrenceSignal({ value, variant }) {
-  const color = getOccurrenceSignalColor(value, variant)
+  const [modalAberto, setModalAberto] = useState(false)
 
   return (
-    <span className="inline-flex items-center gap-2 whitespace-nowrap">
-      <span className={`h-2.5 w-2.5 rounded-full ${color}`} aria-hidden="true" />
-      {formatDisplayLabel(value)}
-    </span>
+    <>
+      <div className="rounded-md border border-slate-200 bg-white p-3">
+        <p className="truncate text-xs text-slate-500">Título: <strong className="text-lg font-bold text-slate-800">{item.titulo}</strong></p>
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+          <span>Tipo: <strong className="font-bold text-slate-700">{formatDisplayLabel(item.tipo)}</strong></span>
+          <span>Localização: <strong className="font-bold text-slate-700">{formatDisplayLabel(item.localizacaoInterna)}</strong></span>
+        </div>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+            <span>Criticidade: <strong className="font-bold text-slate-700">{formatDisplayLabel(item.criticidade)}</strong></span>
+            <span>Status: <strong className="font-bold text-slate-700">{formatDisplayLabel(item.status)}</strong></span>
+            <span>Dias em aberto: <strong className="font-bold text-slate-700">{diasEmAberto(item.dataEnvio)}</strong></span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setModalAberto(true)}
+            className="cursor-pointer rounded-md border border-slate-200 px-2.5 py-1 text-xs font-bold text-slate-700 hover:bg-slate-50"
+          >
+            Detalhar
+          </button>
+        </div>
+      </div>
+
+      <Modal open={modalAberto} onClose={() => setModalAberto(false)} title={item.titulo}>
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <Info label="Tipo" value={formatDisplayLabel(item.tipo)} />
+          <Info label="Localização" value={formatDisplayLabel(item.localizacaoInterna)} />
+          <Info label="Criticidade" value={formatDisplayLabel(item.criticidade)} />
+          <Info label="Status" value={formatDisplayLabel(item.status)} />
+          <Info label="Dias em aberto" value={diasEmAberto(item.dataEnvio)} />
+          <Info label="Atualização" value={item.ultimaAtualizacao} />
+          {item.dataResolucao && <Info label="Resolução" value={item.dataResolucao} />}
+        </div>
+        <div className="mt-5 flex justify-end gap-2">
+          <button type="button" onClick={() => setModalAberto(false)} className="cursor-pointer rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
+            Fechar
+          </button>
+          <button type="button" onClick={() => onNavigate(`/ocorrencias/${item.id}`)} className="cursor-pointer rounded-md bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-strong">
+            Ir até ocorrência
+          </button>
+        </div>
+      </Modal>
+    </>
   )
-}
-
-function getOccurrenceSignalColor(value, variant) {
-  const normalized = String(value || '').toLowerCase()
-
-  if (variant === 'criticidade') {
-    if (normalized.includes('critica') || normalized.includes('crítica')) return 'bg-red-500'
-    if (normalized.includes('alta')) return 'bg-orange-500'
-    if (normalized.includes('media') || normalized.includes('média')) return 'bg-amber-400'
-    return 'bg-emerald-500'
-  }
-
-  if (normalized.includes('resolvida')) return 'bg-emerald-500'
-  if (normalized.includes('andamento')) return 'bg-blue-500'
-  if (normalized.includes('analise') || normalized.includes('análise')) return 'bg-indigo-500'
-  if (normalized.includes('orcamento') || normalized.includes('orçamento')) return 'bg-amber-500'
-  if (normalized.includes('visita')) return 'bg-violet-500'
-  return 'bg-slate-400'
 }
 
 function Info({ label, value }) {

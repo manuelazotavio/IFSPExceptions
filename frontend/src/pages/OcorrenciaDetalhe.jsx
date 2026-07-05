@@ -3,6 +3,8 @@ import { categorias, criticidadeValues, locaisInternos, statusValues } from '../
 import { adicionarInteracao, atualizarOcorrencia, listarEscolas, obterOcorrencia, uploadFotosOcorrencia } from '../services/api.js'
 import { Card, Modal, Select } from '../components/ui.jsx'
 import { Icon } from '../components/Icons.jsx'
+import { ImageCropper } from '../components/ImageCropper.jsx'
+import { FotoThumbnail } from '../components/FotoThumbnail.jsx'
 import { formatDisplayLabel } from '../utils/labels.js'
 
 function formatarDataBR(dataIso) {
@@ -330,6 +332,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
 
   const [fotoIndex, setFotoIndex] = useState(0)
   const [fotos, setFotos] = useState(ocorrencia.fotos)
+  const [fotoTelaCheia, setFotoTelaCheia] = useState(false)
   const prevFoto = () => setFotoIndex((i) => (i - 1 + fotos.length) % fotos.length)
   const nextFoto = () => setFotoIndex((i) => (i + 1) % fotos.length)
   const fotoInputRef = useRef(null)
@@ -341,10 +344,39 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
 
   const [novosArquivosFotos, setNovosArquivosFotos] = useState([])
   const previewsNovasFotos = useMemo(() => novosArquivosFotos.map((file) => URL.createObjectURL(file)), [novosArquivosFotos])
+  const [filaCorte, setFilaCorte] = useState([])
+  const [arquivoEmCorte, setArquivoEmCorte] = useState(null)
   const handleFotoChange = (e) => {
     const files = Array.from(e.target.files || [])
     e.target.value = ''
-    setNovosArquivosFotos((prev) => [...prev, ...files])
+    if (files.length) setFilaCorte((prev) => [...prev, ...files])
+  }
+  const handleRecortarNovaFoto = (index) => {
+    const file = novosArquivosFotos[index]
+    setArquivoEmCorte({ file, src: URL.createObjectURL(file), indexParaSubstituir: index })
+  }
+
+  useEffect(() => {
+    if (!arquivoEmCorte && filaCorte.length > 0) {
+      const [proximo, ...resto] = filaCorte
+      setArquivoEmCorte({ file: proximo, src: URL.createObjectURL(proximo) })
+      setFilaCorte(resto)
+    }
+  }, [filaCorte, arquivoEmCorte])
+
+  function handleCropConfirm(arquivoCortado) {
+    if (arquivoEmCorte.indexParaSubstituir != null) {
+      setNovosArquivosFotos((prev) => prev.map((file, i) => (i === arquivoEmCorte.indexParaSubstituir ? arquivoCortado : file)))
+    } else {
+      setNovosArquivosFotos((prev) => [...prev, arquivoCortado])
+    }
+    URL.revokeObjectURL(arquivoEmCorte.src)
+    setArquivoEmCorte(null)
+  }
+
+  function handleCropCancel() {
+    URL.revokeObjectURL(arquivoEmCorte.src)
+    setArquivoEmCorte(null)
   }
   const removerNovaFoto = (index) => setNovosArquivosFotos((prev) => prev.filter((_, i) => i !== index))
 
@@ -460,19 +492,29 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
               <InfoField label="Resolução" value={formatarDataBR(form.dataResolucao)} />
             </div>
             <h3 className="mb-3 mt-4 text-lg font-800 text-slate-950">Fotos</h3>
-            <div className="relative">
+            <div className="relative flex h-80 items-center justify-center rounded-md border border-slate-200 bg-white sm:h-[28rem]">
               {fotos.length === 0 ? (
-                <div className="flex h-48 items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 text-center text-sm font-bold text-slate-500">Nenhuma foto</div>
+                <div className="flex h-full w-full items-center justify-center text-center text-sm font-bold text-slate-500">Nenhuma foto</div>
               ) : isFotoImagem(fotos[fotoIndex]) ? (
-                <img src={fotos[fotoIndex]} alt={`Foto ${fotoIndex + 1}`} className="h-48 w-full rounded-md border border-slate-300 object-cover" />
+                <img src={fotos[fotoIndex]} alt={`Foto ${fotoIndex + 1}`} className="h-full w-auto max-w-full rounded-md object-contain" />
               ) : (
-                <div className="flex h-48 items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 text-center text-sm font-bold text-slate-500">{fotos[fotoIndex]}</div>
+                <div className="flex h-full w-full items-center justify-center text-center text-sm font-bold text-slate-500">{fotos[fotoIndex]}</div>
               )}
               {fotos.length > 1 && (
                 <>
                   <button onClick={prevFoto} aria-label="Foto anterior" className="cursor-pointer absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 px-2.5 py-1 text-lg font-bold text-slate-700 shadow hover:bg-white">&lsaquo;</button>
                   <button onClick={nextFoto} aria-label="Próxima foto" className="cursor-pointer absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 px-2.5 py-1 text-lg font-bold text-slate-700 shadow hover:bg-white">&rsaquo;</button>
                 </>
+              )}
+              {fotos.length > 0 && isFotoImagem(fotos[fotoIndex]) && (
+                <button
+                  type="button"
+                  onClick={() => setFotoTelaCheia(true)}
+                  className="cursor-pointer absolute right-2 top-2 flex items-center gap-1.5 rounded-md bg-black/60 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-black/80"
+                >
+                  <Icon name="expand" className="h-3.5 w-3.5" />
+                  Tela cheia
+                </button>
               )}
             </div>
             <div className="mt-3 flex justify-center gap-1.5">
@@ -592,7 +634,19 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
           </div>
         </Card>
       </div>
-      <Modal open={modalEdicaoAberto && podeEditarOcorrencia} onClose={() => setModalEdicaoAberto(false)} title="Editar ocorrência">
+      <Modal
+        open={modalEdicaoAberto && podeEditarOcorrencia}
+        onClose={() => setModalEdicaoAberto(false)}
+        title={arquivoEmCorte ? 'Cortar imagem' : 'Editar ocorrência'}
+      >
+        {arquivoEmCorte ? (
+          <ImageCropper
+            imageSrc={arquivoEmCorte.src}
+            fileName={arquivoEmCorte.file?.name}
+            onCancel={handleCropCancel}
+            onConfirm={handleCropConfirm}
+          />
+        ) : (
         <div className="space-y-4">
           <label className="block">
             <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Escola</span>
@@ -653,35 +707,53 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
             {(fotos.length > 0 || novosArquivosFotos.length > 0) && (
               <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {fotos.map((foto, index) => (
-                  <div key={foto} className="group relative aspect-square overflow-hidden rounded-md border border-slate-200 bg-slate-50">
-                    {isFotoImagem(foto) ? (
-                      <img src={foto} alt={`Foto ${index + 1}`} className="h-full w-full object-cover" />
-                    ) : (
+                  isFotoImagem(foto) ? (
+                    <FotoThumbnail key={foto} src={foto} alt={`Foto ${index + 1}`}>
+                      <button
+                        type="button"
+                        onClick={() => removerFoto(index)}
+                        aria-label={`Remover foto ${index + 1}`}
+                        className="cursor-pointer absolute right-1 top-1 rounded-full bg-black/60 px-1.5 text-xs font-bold text-white hover:bg-black/80"
+                      >
+                        &times;
+                      </button>
+                    </FotoThumbnail>
+                  ) : (
+                    <div key={foto} className="group relative aspect-square overflow-hidden rounded-md border border-slate-200 bg-slate-50">
                       <div className="flex h-full items-center justify-center p-1 text-center text-[10px] font-bold text-slate-500">{foto}</div>
-                    )}
-                    <button className="cursor-pointer"
-                      type="button"
-                      onClick={() => removerFoto(index)}
-                      aria-label={`Remover foto ${index + 1}`}
-                      className="absolute right-1 top-1 rounded-full bg-black/60 px-1.5 text-xs font-bold text-white hover:bg-black/80"
-                    >
-                      &times;
-                    </button>
-                  </div>
+                      <button
+                        type="button"
+                        onClick={() => removerFoto(index)}
+                        aria-label={`Remover foto ${index + 1}`}
+                        className="cursor-pointer absolute right-1 top-1 rounded-full bg-black/60 px-1.5 text-xs font-bold text-white hover:bg-black/80"
+                      >
+                        &times;
+                      </button>
+                    </div>
+                  )
                 ))}
                 {novosArquivosFotos.map((arquivo, index) => (
-                  <div key={`${arquivo.name}-${index}`} className="group relative aspect-square overflow-hidden rounded-md border border-blue-200 bg-slate-50">
-                    <img src={previewsNovasFotos[index]} alt={arquivo.name} className="h-full w-full object-cover" />
-                    <span className="absolute left-1 top-1 rounded bg-blue-600 px-1.5 py-0.5 text-[9px] font-bold text-white">Nova</span>
-                    <button className="cursor-pointer"
-                      type="button"
-                      onClick={() => removerNovaFoto(index)}
-                      aria-label={`Remover ${arquivo.name}`}
-                      className="absolute right-1 top-1 rounded-full bg-black/60 px-1.5 text-xs font-bold text-white hover:bg-black/80"
-                    >
-                      &times;
-                    </button>
-                  </div>
+                  <FotoThumbnail key={`${arquivo.name}-${index}`} src={previewsNovasFotos[index]} alt={arquivo.name} className="border-primary-200">
+                    <span className="absolute left-1 top-1 rounded bg-primary px-1.5 py-0.5 text-[9px] font-bold text-white">Nova</span>
+                    <div className="absolute inset-x-1 top-1 flex justify-end gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleRecortarNovaFoto(index)}
+                        aria-label={`Recortar ${arquivo.name}`}
+                        className="cursor-pointer rounded-full bg-black/60 p-1 text-white hover:bg-black/80"
+                      >
+                        <Icon name="crop" className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removerNovaFoto(index)}
+                        aria-label={`Remover ${arquivo.name}`}
+                        className="cursor-pointer rounded-full bg-black/60 px-1.5 text-xs font-bold text-white hover:bg-black/80"
+                      >
+                        &times;
+                      </button>
+                    </div>
+                  </FotoThumbnail>
                 ))}
               </div>
             )}
@@ -690,13 +762,55 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
             <p className="rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{erroSalvar}</p>
           )}
           <div className="flex justify-end gap-2 pt-2">
-            <button className="cursor-pointer" onClick={() => setModalEdicaoAberto(false)} className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">Cancelar</button>
+            <button onClick={() => setModalEdicaoAberto(false)} className="cursor-pointer rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">Cancelar</button>
             <button onClick={handleSalvar} disabled={salvando} className="cursor-pointer rounded-md bg-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-primary-strong disabled:cursor-not-allowed disabled:opacity-60">
               {salvando ? 'Salvando...' : 'Salvar'}
             </button>
           </div>
         </div>
+        )}
       </Modal>
+      {fotoTelaCheia && fotos.length > 0 && isFotoImagem(fotos[fotoIndex]) && (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/90 p-4"
+          onClick={() => setFotoTelaCheia(false)}
+        >
+          <img
+            src={fotos[fotoIndex]}
+            alt={`Foto ${fotoIndex + 1}`}
+            className="max-h-full max-w-full object-contain"
+            onClick={(event) => event.stopPropagation()}
+          />
+          <button
+            type="button"
+            onClick={() => setFotoTelaCheia(false)}
+            aria-label="Fechar"
+            className="cursor-pointer absolute right-4 top-4 rounded-md p-2 text-white hover:bg-white/10"
+          >
+            <Icon name="close" className="h-6 w-6" />
+          </button>
+          {fotos.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={(event) => { event.stopPropagation(); prevFoto() }}
+                aria-label="Foto anterior"
+                className="cursor-pointer absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 px-3 py-2 text-2xl font-bold text-white hover:bg-white/20"
+              >
+                &lsaquo;
+              </button>
+              <button
+                type="button"
+                onClick={(event) => { event.stopPropagation(); nextFoto() }}
+                aria-label="Próxima foto"
+                className="cursor-pointer absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 px-3 py-2 text-2xl font-bold text-white hover:bg-white/20"
+              >
+                &rsaquo;
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   )
 }

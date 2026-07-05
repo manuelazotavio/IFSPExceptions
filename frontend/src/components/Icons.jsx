@@ -20,6 +20,8 @@ export function Icon({ name, className = 'h-4 w-4' }) {
     download: 'M12 4v11m0 0 4-4m-4 4-4-4M4 20h16',
     close: 'M18 6 6 18M6 6l12 12',
     check: 'm5 12 5 5 9-9',
+    crop: 'M6 2v14a2 2 0 0 0 2 2h14M18 22V8a2 2 0 0 0-2-2H2',
+    expand: 'M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3',
   }
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
