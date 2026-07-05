@@ -13,6 +13,10 @@ const drawerFocusOffset = { x: -180, y: 0 }
 const criticidadeOptions = ['Baixa', 'Atencao', 'Critica']
 const schoolOptions = escolas.map((escola) => ({ value: escola.id, label: escola.nome }))
 const mapStyleStorageKey = 'seduc-map-style'
+const BAIRROS_GEOJSON_URLS = [
+  '/geo/caraguatatuba-bairros-atualizado-v2.geojson',
+  '/geo/caraguatatuba-bairros.geojson',
+]
 const bairroStyleConfig = {
   ...bairroStyleDefaults,
   strokeColor: '#334155',
@@ -60,6 +64,32 @@ function normalizeText(value) {
     .toLowerCase()
 }
 
+function isFeatureCollectionGeoJson(data) {
+  return data?.type === 'FeatureCollection' && Array.isArray(data.features)
+}
+
+async function fetchFirstAvailableGeoJson(urls) {
+  for (const url of urls) {
+    try {
+      const response = await fetch(url)
+      if (!response.ok) {
+        throw new Error(`Falha ao carregar ${url}`)
+      }
+
+      const data = await response.json()
+      if (isFeatureCollectionGeoJson(data)) {
+        return data
+      }
+
+      throw new Error(`GeoJSON invalido em ${url}`)
+    } catch (error) {
+      console.warn(error.message)
+    }
+  }
+
+  return null
+}
+
 function hasValidCoordinates(item) {
   const latitude = Number(item?.latitude)
   const longitude = Number(item?.longitude)
@@ -67,7 +97,12 @@ function hasValidCoordinates(item) {
 }
 
 function getFeatureBairroName(feature) {
-  return feature?.properties?.nome_bairro || feature?.properties?.nome_bairr || feature?.properties?.nome || ''
+  return feature?.properties?.NM_BAIRRO
+    || feature?.properties?.nome_bairro
+    || feature?.properties?.nome_bairr
+    || feature?.properties?.nome
+    || feature?.properties?.name
+    || 'Bairro sem nome'
 }
 
 function getSchoolPendingScore(item) {
@@ -404,20 +439,13 @@ export function Mapa({ onNavigate }) {
   useEffect(() => {
     let active = true
 
-    fetch('/geo/caraguatatuba-bairros.geojson')
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Falha ao carregar bairros')
-        }
-        return response.json()
-      })
+    fetchFirstAvailableGeoJson(BAIRROS_GEOJSON_URLS)
       .then((data) => {
         if (active) {
           setBairrosGeoJson(data)
         }
       })
-      .catch((error) => {
-        console.warn(error.message)
+      .catch(() => {
         if (active) {
           setBairrosGeoJson(null)
         }
