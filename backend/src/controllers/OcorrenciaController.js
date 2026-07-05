@@ -92,7 +92,7 @@ export class OcorrenciaController {
   static async update(request, response) {
     const payload = parseOrThrow(atualizarOcorrenciaSchema, request.body)
     const anterior = await OcorrenciaModel.findById(request.params.id)
-    const ocorrencia = await OcorrenciaModel.update(request.params.id, payload)
+    let ocorrencia = await OcorrenciaModel.update(request.params.id, payload)
     await LogAuditoriaModel.registrar({
       acao: 'ATUALIZAR',
       entidade: 'Ocorrencia',
@@ -101,6 +101,15 @@ export class OcorrenciaController {
       escolaId: ocorrencia.escolaId,
       actor: request.actor,
     })
+
+    if (payload.status !== undefined && payload.status !== anterior.status) {
+      ocorrencia = await OcorrenciaModel.addInteracao(ocorrencia.id, {
+        origem: 'sistema',
+        autor: 'Sistema',
+        mensagem: `Status atualizado para "${ocorrencia.status}".`,
+        status: ocorrencia.status,
+      })
+    }
 
     if (estaCriticaEmAberto(ocorrencia) && !estaCriticaEmAberto(anterior)) {
       await NotificacaoModel.criar({

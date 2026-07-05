@@ -56,6 +56,31 @@ export function Modal({ open, onClose, title, children }) {
   )
 }
 
+export function Toast({ toast, onClose }) {
+  if (!toast) return null
+  const styles = {
+    success: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+    error: 'border-red-200 bg-red-50 text-red-800',
+    info: 'border-blue-200 bg-blue-50 text-blue-800',
+  }
+
+  return (
+    <div className="fixed right-4 top-4 z-[60] w-[calc(100vw-2rem)] max-w-sm">
+      <div className={`rounded-lg border px-4 py-3 shadow-lg ${styles[toast.type] || styles.info}`}>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <strong className="block text-sm font-800">{toast.title}</strong>
+            {toast.message && <p className="mt-1 text-sm font-semibold opacity-80">{toast.message}</p>}
+          </div>
+          <button type="button" onClick={onClose} aria-label="Fechar aviso" className="cursor-pointer rounded px-1 text-lg font-bold leading-none opacity-60 hover:opacity-100">
+            &times;
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function FilterSelect({ label, value, onChange, options }) {
   return (
     <label className="block">

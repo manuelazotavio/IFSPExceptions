@@ -124,6 +124,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
       }
       onAtualizar(atualizada)
       setFotos(atualizada.fotos)
+      setInteracoes(atualizada.interacoes)
       setNovosArquivosFotos([])
       setSavedAt(new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }))
       setModalEdicaoAberto(false)
@@ -492,15 +493,15 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
             </button>
           </div>
         
-          <div className="flex flex-nowrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-4 shrink-0">
-            <h3 className="min-w-0 flex-1 truncate text-lg font-800 text-slate-950">Histórico da ocorrência</h3>
+          <div className="flex shrink-0 flex-col items-stretch gap-3 border-b border-slate-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <h3 className="min-w-0 text-lg font-800 leading-tight text-slate-950">Histórico da ocorrência</h3>
             <button
               onClick={exportarHistoricoPdf}
               aria-label="Exportar PDF"
-              className="flex shrink-0 items-center gap-2 rounded-md border border-slate-300 px-2 py-1.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 xl:px-3"
+              className="flex w-full shrink-0 items-center justify-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 sm:w-auto"
             >
               <Icon name="download" className="h-4 w-4" />
-              <span className="hidden xl:inline">Exportar PDF</span>
+              <span>Exportar PDF</span>
             </button>
           </div>
           <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
@@ -513,15 +514,15 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
                   <div key={entry.id || index} className={`relative ${ultimo && fechado ? 'pb-0' : 'pb-5'}`}>
                     {mostrarLinha && <span className="absolute left-[4px] top-1 bottom-0 w-0.5 bg-slate-200" />}
                     <span className="absolute left-0 top-1 h-2.5 w-2.5 rounded-full border-2 border-white bg-blue-600 ring-1 ring-blue-200" />
-                    <div className="pl-5">
-                      <p className="text-base font-bold text-slate-700">
+                    <div className="min-w-0 pl-5">
+                      <p className="break-words text-base font-bold text-slate-700">
                         {index === 0 ? `Cadastro da ocorrência por ${ocorrencia.criadoPorNome}` : entry.origem === 'sistema' ? 'Sistema' : entry.autor}
                       </p>
-                      <p className="text-sm text-slate-500">
+                      <p className="break-words text-sm text-slate-500">
                         Em {formatarDataBR(entry.data)}{entry.hora ? ` às ${entry.hora}` : ''}
                       </p>
                       {entry.status && <p className="mt-0.5 text-sm font-semibold text-blue-600">Status: {entry.status}</p>}
-                      {entry.mensagem && <p className="mt-0.5 text-sm text-slate-600">{entry.mensagem}</p>}
+                      {entry.mensagem && <p className="mt-0.5 break-words text-sm text-slate-600">{entry.mensagem}</p>}
                       {entry.anexos?.length > 0 && (
                         <div className="mt-1.5 flex flex-wrap gap-1.5">
                           {entry.anexos.map((nome) => (

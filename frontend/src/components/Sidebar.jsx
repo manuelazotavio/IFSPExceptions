@@ -1,8 +1,8 @@
 import { Icon } from './Icons.jsx'
 
 const items = [
-  ['dashboard', 'Dashboard geral', '/dashboard', 'dashboard'],
   ['mapa', 'Mapa de calor', '/mapa', 'map'],
+  ['dashboard', 'Dashboard geral', '/dashboard', 'dashboard'],
   ['ocorrencias', 'Lista de ocorrências', '/ocorrencias', 'alert'],
   ['escolas', 'Escolas cadastradas', '/escolas', 'school'],
   ['usuarios', 'Usuários', '/usuarios', 'users'],

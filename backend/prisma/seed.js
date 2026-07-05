@@ -48,6 +48,15 @@ function addDays(dateStr, days) {
   return date.toISOString().slice(0, 10)
 }
 
+function gerarProtocolo(usados) {
+  let protocolo
+  do {
+    protocolo = String(Math.floor(Math.random() * 1_000_000)).padStart(6, '0')
+  } while (usados.has(protocolo))
+  usados.add(protocolo)
+  return protocolo
+}
+
 async function main() {
   for (const escola of escolasSeed) {
     await prisma.escola.upsert({ where: { id: escola.id }, update: escola, create: escola })
@@ -72,6 +81,8 @@ async function main() {
   const totalExistentes = await prisma.ocorrencia.count()
   if (totalExistentes > 0) return
 
+  const protocolosUsados = new Set()
+
   for (const [index, [escolaId, titulo, tipo, criticidade, status, localizacaoInterna, dataEnvio, aprovadaPelaEscola]] of ocorrenciasSeed.entries()) {
     const escola = escolasSeed.find((item) => item.id === escolaId)
     const dataResolucao = status === 'Resolvida' ? addDays(dataEnvio, 8) : null
@@ -90,7 +101,7 @@ async function main() {
 
     await prisma.ocorrencia.create({
       data: {
-        protocolo: `2026-${String(index + 1).padStart(4, '0')}`,
+        protocolo: gerarProtocolo(protocolosUsados),
         escolaId,
         titulo,
         descricao: `${titulo}. Registro aprovado pela unidade escolar e encaminhado para acompanhamento da SEDUC.`,

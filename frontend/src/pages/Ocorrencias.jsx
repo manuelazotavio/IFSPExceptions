@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { bairros, categorias, criticidadeValues, locaisInternos, statusValues } from '../data/mockData.js'
 import { diasEmAberto, sortOcorrencias } from '../utils/metrics.js'
-import { Card, FilterSelect, Modal } from '../components/ui.jsx'
+import { Card, FilterSelect, Modal, Toast } from '../components/ui.jsx'
 import { Pagination } from '../components/Pagination.jsx'
 import { Icon } from '../components/Icons.jsx'
 import { criarOcorrencia, listarEscolas, listarOcorrencias, uploadFotosOcorrencia } from '../services/api.js'
@@ -35,6 +35,8 @@ export function Ocorrencias({ onNavigate, user }) {
   const [erroCadastro, setErroCadastro] = useState('')
   const [salvandoOcorrencia, setSalvandoOcorrencia] = useState(false)
   const [modalAberto, setModalAberto] = useState(false)
+  const [protocoloCriado, setProtocoloCriado] = useState('')
+  const [toast, setToast] = useState(null)
   const [novaOcorrencia, setNovaOcorrencia] = useState(CAMPOS_VAZIOS)
   const setCampo = (key, value) => setNovaOcorrencia((prev) => ({ ...prev, [key]: value }))
   const [novasFotos, setNovasFotos] = useState([])
@@ -86,6 +88,22 @@ export function Ocorrencias({ onNavigate, user }) {
     return () => {
       ativo = false
     }
+  }, [])
+
+  useEffect(() => {
+    if (!toast) return undefined
+    const timer = setTimeout(() => setToast(null), 4200)
+    return () => clearTimeout(timer)
+  }, [toast])
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 639px)')
+    const handleChange = () => {
+      if (media.matches) setVisualizacao('listagem')
+    }
+    handleChange()
+    media.addEventListener('change', handleChange)
+    return () => media.removeEventListener('change', handleChange)
   }, [])
 
   const previewsFotos = useMemo(() => novasFotos.map((file) => URL.createObjectURL(file)), [novasFotos])
@@ -143,8 +161,19 @@ export function Ocorrencias({ onNavigate, user }) {
       setNovaOcorrencia(CAMPOS_VAZIOS)
       setNovasFotos([])
       setModalAberto(false)
+      setProtocoloCriado(ocorrenciaCriada.protocolo || '')
+      setToast({
+        type: 'success',
+        title: 'Ocorrência criada com sucesso',
+        message: `Protocolo ${ocorrenciaCriada.protocolo || 'gerado'}`,
+      })
     } catch (error) {
       setErroCadastro(error.message)
+      setToast({
+        type: 'error',
+        title: 'Erro ao criar ocorrência',
+        message: error.message,
+      })
     } finally {
       setSalvandoOcorrencia(false)
     }
@@ -164,6 +193,7 @@ export function Ocorrencias({ onNavigate, user }) {
 
   return (
     <div className="space-y-5">
+      <Toast toast={toast} onClose={() => setToast(null)} />
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-center w-full mb-4">
         <div className="relative w-full flex-1">
           <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
@@ -208,7 +238,7 @@ export function Ocorrencias({ onNavigate, user }) {
       {carregando && (
         <p className="text-sm font-semibold text-slate-500">Carregando ocorrências...</p>
       )}
-      <div className="grid w-full grid-cols-2 gap-2">
+      <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
         {[
           ['listagem', 'Listagem'],
           ['kanban', 'Kanban'],
@@ -217,7 +247,7 @@ export function Ocorrencias({ onNavigate, user }) {
             key={valor}
             type="button"
             onClick={() => setVisualizacao(valor)}
-            className={`w-full cursor-pointer rounded-md px-4 py-2 text-sm font-bold transition-colors ${visualizacao === valor ? 'bg-blue-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}
+            className={`w-full cursor-pointer rounded-md px-4 py-2 text-sm font-bold transition-colors ${valor === 'kanban' ? 'hidden sm:block' : ''} ${visualizacao === valor ? 'bg-blue-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}
           >
             {label}
           </button>
@@ -399,6 +429,26 @@ export function Ocorrencias({ onNavigate, user }) {
             <button onClick={cancelarNovaOcorrencia} className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">Cancelar</button>
             <button onClick={cadastrarOcorrencia} disabled={!formularioValido || salvandoOcorrencia} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50">
               {salvandoOcorrencia ? 'Salvando...' : 'Cadastrar'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+      <Modal open={Boolean(protocoloCriado)} onClose={() => setProtocoloCriado('')} title="Ocorrência criada">
+        <div className="space-y-5">
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-4">
+            <p className="text-sm font-bold text-emerald-700">Protocolo gerado</p>
+            <strong className="mt-2 block text-3xl font-800 text-emerald-900">{protocoloCriado}</strong>
+          </div>
+          <p className="text-sm font-semibold text-slate-600">
+            A ocorrência foi registrada com sucesso e já está disponível na listagem.
+          </p>
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => setProtocoloCriado('')}
+              className="cursor-pointer rounded-md bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700"
+            >
+              Entendi
             </button>
           </div>
         </div>

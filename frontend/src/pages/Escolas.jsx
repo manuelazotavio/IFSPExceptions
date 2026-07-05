@@ -20,7 +20,6 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
     endereco: '',
     latitude: '',
     longitude: '',
-    descricao: '',
     fotoNome: '',
     fotoUrl: '',
     comodos: [],
@@ -198,7 +197,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
     saveCustomSchool({
       ...escolaCriada,
       cep: normalizeCep(novoCadastro.cep),
-      descricao: novoCadastro.descricao.trim(),
+      descricao: '',
       status: 'Ativo',
       fotoNome: novoCadastro.fotoNome,
       fotoUrl: novoCadastro.fotoUrl,
@@ -220,7 +219,6 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
       endereco: '',
       latitude: '',
       longitude: '',
-      descricao: '',
       fotoNome: '',
       fotoUrl: '',
       comodos: [],
@@ -334,18 +332,18 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/45 px-4 py-8">
-          <div className="w-full max-w-lg rounded-lg border border-slate-200 bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+        <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-slate-950/45 px-3 py-4 sm:items-center sm:px-4 sm:py-8">
+          <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl sm:max-h-[calc(100vh-4rem)]">
+            <div className="flex shrink-0 flex-col gap-3 border-b border-slate-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
               <div>
                 <h3 className="text-lg font-800 text-slate-950">Cadastrar escola</h3>
                 <p className="mt-1 text-sm text-slate-500">Adicione uma nova unidade para aparecer na listagem.</p>
               </div>
-              <button type="button" onClick={() => setIsModalOpen(false)} className="rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700">
+              <button type="button" onClick={() => setIsModalOpen(false)} className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 sm:w-auto">
                 Fechar
               </button>
             </div>
-            <form onSubmit={handleCadastrarEscola} className="space-y-4 p-5">
+            <form onSubmit={handleCadastrarEscola} className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
               <label className="block">
                 <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Nome</span>
                 <input required value={novoCadastro.nome} onChange={(event) => updateNovoCadastro('nome', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500" />
@@ -415,10 +413,6 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                 </label>
               </div>
               <label className="block">
-                <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Descricao</span>
-                <textarea value={novoCadastro.descricao} onChange={(event) => updateNovoCadastro('descricao', event.target.value)} className="min-h-24 w-full rounded-md border border-slate-200 bg-white p-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500" placeholder="Descreva a escola e seus ambientes principais..." />
-              </label>
-              <label className="block">
                 <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Foto</span>
                 <input type="file" accept="image/*" onChange={handleFotoSelecionada} className="block w-full text-sm font-semibold text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-bold file:text-slate-700 hover:file:bg-slate-200" />
                 {novoCadastro.fotoNome ? <p className="mt-2 text-xs font-semibold text-slate-500">Arquivo selecionado: {novoCadastro.fotoNome}</p> : null}
@@ -474,11 +468,11 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
               {erroCadastro && (
                 <p className="rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{erroCadastro}</p>
               )}
-              <div className="flex justify-end gap-2 pt-2">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">
+              <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="w-full rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 sm:w-auto">
                   Cancelar
                 </button>
-                <button type="submit" disabled={salvandoEscola} className="rounded-md bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">
+                <button type="submit" disabled={salvandoEscola} className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
                   {salvandoEscola ? 'Salvando...' : 'Salvar escola'}
                 </button>
               </div>

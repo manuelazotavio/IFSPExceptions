@@ -923,9 +923,6 @@ export function Mapa({ onNavigate }) {
       </Card>
 
       <Card className="overflow-hidden p-0">
-        <div className="border-b border-slate-200 px-5 py-4">
-          <h2 className="text-xl font-800 text-slate-950">Mapa de calor de ocorrencias por escola</h2>
-        </div>
 
         <div className="relative h-[calc(100vh-16rem)] min-h-[560px]">
           <div className="absolute left-4 top-4 z-[650] w-[240px] rounded-xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur">
