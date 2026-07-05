@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "geocode:schools": "node scripts/geocode-seduc-schools.mjs"
   },
   "devDependencies": {
     "vite": "^8.1.3"

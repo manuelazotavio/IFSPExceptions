@@ -1,24 +1,9 @@
 import { GeoJSON } from 'react-leaflet'
+import { getBairroKey } from '../utils/mapaBairros.js'
 
 function hasValidBoundaryGeometry(feature) {
   const geometryType = feature?.geometry?.type
   return geometryType === 'Polygon' || geometryType === 'MultiPolygon'
-}
-
-function getFeatureKey(feature) {
-  return String(
-    feature?.properties?.NM_BAIRRO
-    || feature?.properties?.nome_bairro
-    || feature?.properties?.nome_bairr
-    || feature?.properties?.nome
-    || feature?.properties?.name
-    || feature?.properties?.id
-    || 'bairro-sem-nome',
-  )
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim()
-    .toLowerCase()
 }
 
 export const bairroStyleDefaults = {
@@ -51,25 +36,31 @@ export function CaraguatatubaBairrosLayer({
       data={{ ...data, features: validFeatures }}
       interactive={Boolean(onSelectBairro)}
       style={(feature) => {
-        const bairroKey = getFeatureKey(feature)
+        const bairroKey = getBairroKey(feature)
         const stats = bairroStats[bairroKey]
         const isSelected = selectedBairro === bairroKey
+        const hasSchools = Number(stats?.totalEscolas || 0) > 0
+        const baseFillOpacity = hasSchools
+          ? (selectedSchoolId ? styleConfig.fillOpacitySelected : styleConfig.fillOpacity)
+          : 0
+        const selectedFillOpacity = hasSchools
+          ? (selectedSchoolId ? styleConfig.fillOpacitySelected + 0.05 : styleConfig.fillOpacity + 0.06)
+          : 0
 
         return {
-          color: styleConfig.strokeColor,
+          color: isSelected ? '#0f172a' : styleConfig.strokeColor,
           weight: isSelected ? styleConfig.strokeWeight + 0.8 : styleConfig.strokeWeight,
-          opacity: styleConfig.strokeOpacity,
+          opacity: hasSchools ? styleConfig.strokeOpacity : Math.min(0.55, styleConfig.strokeOpacity),
           dashArray: styleConfig.dashArray,
-          fillColor: stats?.fillColor || styleConfig.defaultFillColor,
-          fillOpacity: isSelected
-            ? (selectedSchoolId ? styleConfig.fillOpacitySelected + 0.04 : styleConfig.fillOpacity + 0.05)
-            : (selectedSchoolId ? styleConfig.fillOpacitySelected : styleConfig.fillOpacity),
+          fillColor: hasSchools ? (stats?.fillColor || styleConfig.defaultFillColor) : 'transparent',
+          fillOpacity: isSelected ? selectedFillOpacity : baseFillOpacity,
         }
       }}
       onEachFeature={(feature, layer) => {
         if (!onSelectBairro) return
 
         layer.on('click', () => {
+          layer.bringToFront()
           onSelectBairro(feature)
         })
       }}

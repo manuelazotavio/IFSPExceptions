@@ -1,6 +1,26 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+<<<<<<< HEAD
+import { MapContainer, Marker, TileLayer, Tooltip, useMap, useMapEvents } from 'react-leaflet'
+import { CaraguatatubaBairrosLayer, bairroStyleDefaults } from '../components/CaraguatatubaBairrosLayer.jsx'
+import { CaraguatatubaBoundary } from '../components/Mapa_com_boundary.jsx'
+import { ocorrenciasAprovadas, statusValues } from '../data/mockData.js'
+import { Badge, Card, FilterSelect } from '../components/ui.jsx'
+import { fetchEscolaOcorrencias, fetchHeatmapOcorrencias, getEscolaOcorrenciasFallback, getHeatmapFallback } from '../services/mapa.js'
+import { getAllSchools, loadSchoolCatalog } from '../utils/schools.js'
+import {
+  buildBairroStats,
+  buildFeatureEntries,
+  buildSchoolBairroIndex,
+  defaultColorScale,
+  getBairroKey,
+  getScaledColor,
+  getSchoolPendingScore,
+  isValidSchoolCoordinate,
+  normalizeName,
+} from '../utils/mapaBairros.js'
+=======
 import { MapContainer, Marker, TileLayer, Tooltip, useMap } from 'react-leaflet'
 import { statusValues } from '../data/mockData.js'
 import { CaraguatatubaBairrosLayer, bairroStyleDefaults } from '../components/CaraguatatubaBairrosLayer.jsx'
@@ -8,15 +28,19 @@ import { CaraguatatubaBoundary } from '../components/Mapa_com_boundary.jsx'
 import { Badge, Card, FilterSelect, Select } from '../components/ui.jsx'
 import { fetchEscolaOcorrencias, fetchHeatmapOcorrencias, getEscolaOcorrenciasFallback, getHeatmapFallback } from '../services/mapa.js'
 import { listarEscolas } from '../services/api.js'
+>>>>>>> 1dbd2e8cff8e3a8fd78d1deb9fd281366dee91d8
 
 const mapCenter = [-23.6203, -45.4131]
 const drawerFocusOffset = { x: -180, y: 0 }
 const criticidadeOptions = ['Baixa', 'Atencao', 'Critica']
 const mapStyleStorageKey = 'seduc-map-style'
+const colorScaleStorageKey = 'seduc-map-color-scale'
+const schoolLabelZoom = 15
 const BAIRROS_GEOJSON_URLS = [
   '/geo/caraguatatuba-bairros-atualizado-v2.geojson',
   '/geo/caraguatatuba-bairros.geojson',
 ]
+
 const bairroStyleConfig = {
   ...bairroStyleDefaults,
   strokeColor: '#334155',
@@ -28,10 +52,16 @@ const bairroStyleConfig = {
   fillOpacity: 0.16,
   fillOpacitySelected: 0.1,
 }
+
 const mapStyles = {
   cartoLight: {
     label: 'Claro',
     url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+  },
+  cartoLightNoLabels: {
+    label: 'Claro sem rotulos',
+    url: 'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',
     attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
   },
   cartoVoyager: {
@@ -54,14 +84,6 @@ const mapStyles = {
     url: 'https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png',
     attribution: '&copy; Stadia Maps &copy; OpenMapTiles &copy; OpenStreetMap contributors',
   },
-}
-
-function normalizeText(value) {
-  return String(value || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim()
-    .toLowerCase()
 }
 
 function isFeatureCollectionGeoJson(data) {
@@ -90,288 +112,337 @@ async function fetchFirstAvailableGeoJson(urls) {
   return null
 }
 
-function hasValidCoordinates(item) {
-  const latitude = Number(item?.latitude)
-  const longitude = Number(item?.longitude)
-  return Number.isFinite(latitude) && Number.isFinite(longitude)
+function isHexColor(value) {
+  return /^#[0-9a-fA-F]{6}$/.test(String(value || ''))
 }
 
-function getFeatureBairroName(feature) {
-  return feature?.properties?.NM_BAIRRO
-    || feature?.properties?.nome_bairro
-    || feature?.properties?.nome_bairr
-    || feature?.properties?.nome
-    || feature?.properties?.name
-    || 'Bairro sem nome'
-}
-
-function getSchoolPendingScore(item) {
-  if (Number.isFinite(Number(item?.scoreRiscoPendente))) {
-    return Number(item.scoreRiscoPendente)
+function readStoredColorScale() {
+  if (typeof window === 'undefined') {
+    return defaultColorScale
   }
 
-  if (Number.isFinite(Number(item?.intensidade))) {
-    return Number(item.intensidade)
-  }
-
-  const weightedScore = calcularScorePendenciaEscola(item)
-  if (weightedScore > 0) {
-    return weightedScore
-  }
-
-  if (Number.isFinite(Number(item?.totalOcorrencias))) {
-    return Number(item.totalOcorrencias)
-  }
-
-  return 0
-}
-
-function isPointInsideRing([longitude, latitude], ring) {
-  let inside = false
-
-  for (let index = 0, previous = ring.length - 1; index < ring.length; previous = index, index += 1) {
-    const [x1, y1] = ring[index]
-    const [x2, y2] = ring[previous]
-    const intersects = ((y1 > latitude) !== (y2 > latitude))
-      && (longitude < ((x2 - x1) * (latitude - y1)) / ((y2 - y1) || Number.EPSILON) + x1)
-
-    if (intersects) inside = !inside
-  }
-
-  return inside
-}
-
-function isPointInsidePolygon([longitude, latitude], polygonCoordinates) {
-  if (!Array.isArray(polygonCoordinates) || polygonCoordinates.length === 0) return false
-
-  const [outerRing, ...holes] = polygonCoordinates
-  if (!isPointInsideRing([longitude, latitude], outerRing)) return false
-
-  return !holes.some((hole) => isPointInsideRing([longitude, latitude], hole))
-}
-
-function featureContainsCoordinates(feature, latitude, longitude) {
-  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return false
-
-  const geometry = feature?.geometry
-  if (!geometry) return false
-
-  const point = [longitude, latitude]
-
-  if (geometry.type === 'Polygon') {
-    return isPointInsidePolygon(point, geometry.coordinates)
-  }
-
-  if (geometry.type === 'MultiPolygon') {
-    return geometry.coordinates.some((polygonCoordinates) => isPointInsidePolygon(point, polygonCoordinates))
-  }
-
-  return false
-}
-
-function getBairroFillColor(score, maximumScore) {
-  if (maximumScore <= 0) {
-    return '#16a34a'
-  }
-
-  return getSchoolIconColor(score, 0, maximumScore)
-}
-
-function getBairroSchools({ bairroKey, heatmapData, bairroStats }) {
-  if (!bairroKey || !bairroStats[bairroKey]) {
-    return []
-  }
-
-  const schoolIds = new Set(bairroStats[bairroKey].schoolIds || [])
-  return heatmapData.filter((item) => schoolIds.has(item.escolaId))
-}
-
-function getVisibleSchools({ showBairrosLayer, selectedBairro, heatmapData, bairroStats }) {
-  if (!showBairrosLayer) {
-    return heatmapData
-  }
-
-  if (!selectedBairro) {
-    return []
-  }
-
-  return getBairroSchools({ bairroKey: selectedBairro, heatmapData, bairroStats })
-}
-
-function getSchoolBairroKey({ escolaMapa, escolaCatalogo, bairroStats, featureEntries }) {
-  const bairroNome = escolaMapa?.bairro || escolaMapa?.bairroNome || escolaCatalogo?.bairro || escolaCatalogo?.bairroNome || ''
-  const normalizedBairro = normalizeText(bairroNome)
-
-  if (normalizedBairro && bairroStats[normalizedBairro]) {
-    return normalizedBairro
-  }
-
-  const foundFeature = featureEntries.find(({ feature }) => (
-    featureContainsCoordinates(feature, Number(escolaMapa?.latitude), Number(escolaMapa?.longitude))
-  ))
-
-  return foundFeature?.key || ''
-}
-
-function buildBairroStats({ bairrosGeoJson, escolasNoMapa, escolasCatalogo }) {
-  if (bairrosGeoJson?.type !== 'FeatureCollection' || !Array.isArray(bairrosGeoJson.features)) {
-    return {}
-  }
-
-  const validFeatures = bairrosGeoJson.features.filter((feature) => ['Polygon', 'MultiPolygon'].includes(feature?.geometry?.type))
-  if (validFeatures.length === 0) {
-    return {}
-  }
-
-  const catalogoPorId = new Map(escolasCatalogo.map((escola) => [escola.id, escola]))
-  const bairroStats = Object.fromEntries(
-    validFeatures.map((feature) => {
-      const nome = getFeatureBairroName(feature) || 'Bairro'
-      return [normalizeText(nome), {
-        nome,
-        totalEscolas: 0,
-        totalSolicitacoes: 0,
-        score: 0,
-        criticas: 0,
-        atencao: 0,
-        baixas: 0,
-        intensidade: 0,
-        schoolIds: [],
-        fillColor: '#16a34a',
-      }]
-    }),
-  )
-
-  const featureEntries = validFeatures.map((feature) => ({
-    key: normalizeText(getFeatureBairroName(feature)),
-    feature,
-  }))
-
-  for (const escolaMapa of escolasNoMapa) {
-    const escolaCatalogo = catalogoPorId.get(escolaMapa.escolaId) || {}
-    const bairroNome = escolaMapa.bairro || escolaMapa.bairroNome || escolaCatalogo.bairro || escolaCatalogo.bairroNome || ''
-    let bairroKey = normalizeText(bairroNome)
-
-    if (!bairroKey || !bairroStats[bairroKey]) {
-      bairroKey = getSchoolBairroKey({
-        escolaMapa,
-        escolaCatalogo,
-        bairroStats,
-        featureEntries,
-      })
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(colorScaleStorageKey) || 'null')
+    if (!stored || typeof stored !== 'object') {
+      return defaultColorScale
     }
 
-    if (!bairroKey || !bairroStats[bairroKey]) {
-      continue
+    return {
+      start: isHexColor(stored.start) ? stored.start : defaultColorScale.start,
+      middle: isHexColor(stored.middle) ? stored.middle : defaultColorScale.middle,
+      end: isHexColor(stored.end) ? stored.end : defaultColorScale.end,
     }
-
-    bairroStats[bairroKey].totalEscolas += 1
-    bairroStats[bairroKey].totalSolicitacoes += Number(escolaMapa.totalOcorrencias || 0)
-    bairroStats[bairroKey].score += getSchoolPendingScore(escolaMapa)
-    bairroStats[bairroKey].criticas += Number(escolaMapa.criticas || 0)
-    bairroStats[bairroKey].atencao += Number(escolaMapa.atencao || 0)
-    bairroStats[bairroKey].baixas += Number(escolaMapa.baixas || 0)
-    bairroStats[bairroKey].intensidade += Number(escolaMapa.intensidade || 0)
-    bairroStats[bairroKey].schoolIds.push(escolaMapa.escolaId)
+  } catch {
+    return defaultColorScale
   }
+}
 
-  const maximumScore = Math.max(0, ...Object.values(bairroStats).map((item) => item.score))
+function getPreferredCoordinate(primaryValue, fallbackValue) {
+  if (Number.isFinite(Number(primaryValue))) return Number(primaryValue)
+  if (Number.isFinite(Number(fallbackValue))) return Number(fallbackValue)
+  return null
+}
 
-  Object.values(bairroStats).forEach((item) => {
-    item.fillColor = getBairroFillColor(item.score, maximumScore)
+function mergeSchoolHeatmapData({ schoolCatalog, heatmapData }) {
+  const catalogById = new Map(schoolCatalog.map((school) => [school.id, school]))
+  const heatmapById = new Map(heatmapData.map((item) => [item.escolaId, item]))
+  const allIds = new Set([...catalogById.keys(), ...heatmapById.keys()])
+
+  return [...allIds]
+    .map((schoolId) => {
+      const catalogSchool = catalogById.get(schoolId) || {}
+      const heatmapSchool = heatmapById.get(schoolId) || {}
+      const latitude = getPreferredCoordinate(heatmapSchool.latitude, catalogSchool.latitude)
+      const longitude = getPreferredCoordinate(heatmapSchool.longitude, catalogSchool.longitude)
+      const normalizedSchool = {
+        ...catalogSchool,
+        ...heatmapSchool,
+        id: schoolId,
+        escolaId: schoolId,
+        escolaNome: heatmapSchool.escolaNome || heatmapSchool.nome || catalogSchool.nome || 'Escola sem nome',
+        nome: catalogSchool.nome || heatmapSchool.escolaNome || heatmapSchool.nome || 'Escola sem nome',
+        bairro: heatmapSchool.bairro || heatmapSchool.bairroNome || catalogSchool.bairro || catalogSchool.bairroNome || '',
+        latitude,
+        longitude,
+        totalOcorrencias: Number(heatmapSchool.totalOcorrencias || 0),
+        criticas: Number(heatmapSchool.criticas || 0),
+        atencao: Number(heatmapSchool.atencao || 0),
+        baixas: Number(heatmapSchool.baixas || 0),
+        intensidade: Number.isFinite(Number(heatmapSchool.intensidade)) ? Number(heatmapSchool.intensidade) : 0,
+      }
+
+      return {
+        ...normalizedSchool,
+        score: getSchoolPendingScore(normalizedSchool),
+      }
+    })
+    .sort((left, right) => left.escolaNome.localeCompare(right.escolaNome, 'pt-BR'))
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;')
+}
+
+function truncateMapText(value, maxLength = 30) {
+  const text = String(value || '').trim()
+  if (text.length <= maxLength) return text
+  return `${text.slice(0, Math.max(0, maxLength - 3)).trim()}...`
+}
+
+function createSchoolPointIcon({ color, isSelected, isDimmed }) {
+  const size = isSelected ? 9 : 6
+  const borderWidth = isSelected ? 1 : 0.6
+  const opacity = isDimmed ? 0.22 : 0.96
+  const glowSize = isSelected ? 8 : 5
+  const outerGlow = isSelected ? 12 : 8
+
+  return L.divIcon({
+    className: 'school-point-icon',
+    html: `
+      <div style="
+        width:${size}px;
+        height:${size}px;
+        border-radius:999px;
+        background:${color};
+        border:${borderWidth}px solid rgba(255,255,255,0.92);
+        opacity:${opacity};
+        transform:scale(${isSelected ? 1.15 : 1});
+        transform-origin:center center;
+        box-shadow:
+          0 0 ${glowSize}px ${color},
+          0 0 ${outerGlow}px ${color};
+        transition:transform .18s ease, opacity .18s ease, box-shadow .18s ease;
+      "></div>
+    `,
+    iconSize: [14, 14],
+    iconAnchor: [7, 7],
+    popupAnchor: [0, -6],
+    tooltipAnchor: [0, -9],
   })
-
-  return bairroStats
 }
 
-function isOcorrenciaPendente(status) {
-  const normalized = String(status || '')
+function createBairroLabelIcon({ name, color, fontSize, maxWidth, isSelected, isMuted, opacity }) {
+  return L.divIcon({
+    className: 'bairro-label-icon',
+    html: `
+      <div style="
+        transform:translate(-50%, -50%);
+        pointer-events:none;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        max-width:${maxWidth}px;
+        font-size:${fontSize}px;
+        font-weight:${isSelected ? 900 : 800};
+        letter-spacing:${isSelected ? '0.08em' : '0.05em'};
+        text-transform:uppercase;
+        color:${color};
+        opacity:${opacity};
+        text-shadow:
+          0 1px 0 rgba(255,255,255,0.96),
+          0 0 5px rgba(255,255,255,0.9),
+          0 1px 8px rgba(15,23,42,0.14);
+        -webkit-text-stroke:${isMuted ? '0' : '0.3px rgba(255,255,255,0.9)'};
+      ">${escapeHtml(name)}</div>
+    `,
+    iconSize: [0, 0],
+    iconAnchor: [0, 0],
+  })
+}
+
+function normalizeCriticidade(value) {
+  const normalized = String(value || '')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .trim()
     .toUpperCase()
 
-  return ['ABERTA', 'PENDENTE', 'EM_ANDAMENTO', 'EM ANALISE', 'EM_ANALISE'].includes(normalized)
+  if (normalized === 'MEDIA' || normalized === 'ALTA' || normalized === 'ATENCAO') {
+    return 'ATENCAO'
+  }
+
+  if (normalized === 'CRITICA') return 'CRITICA'
+  if (normalized === 'BAIXA') return 'BAIXA'
+  return normalized
 }
 
-function calcularScorePendenciaEscola(item) {
-  if (Array.isArray(item?.ocorrencias)) {
-    return item.ocorrencias
-      .filter((ocorrencia) => isOcorrenciaPendente(ocorrencia.status))
-      .reduce((total, ocorrencia) => {
-        const criticidade = normalizeText(ocorrencia.criticidade)
-        if (criticidade === 'critica') return total + 3
-        if (criticidade === 'baixa') return total + 1
-        return total + 2
-      }, 0)
-  }
-
-  if (Number.isFinite(Number(item?.scorePendencia))) {
-    return Number(item.scorePendencia)
-  }
-
-  if (Number.isFinite(Number(item?.intensidadePendente))) {
-    return Number(item.intensidadePendente)
-  }
-
-  const criticas = Number(item?.criticas || 0)
-  const atencao = Number(item?.atencao || 0)
-  const baixas = Number(item?.baixas || 0)
-
-  return criticas * 3 + atencao * 2 + baixas
+function matchesOccurrenceFilters(occurrence, filters) {
+  if (filters.escolaId && occurrence.escolaId !== filters.escolaId) return false
+  if (filters.status && occurrence.status !== filters.status) return false
+  if (filters.criticidade && normalizeCriticidade(occurrence.criticidade) !== normalizeCriticidade(filters.criticidade)) return false
+  if (filters.dataInicial && occurrence.dataEnvio < filters.dataInicial) return false
+  if (filters.dataFinal && occurrence.dataEnvio > filters.dataFinal) return false
+  return true
 }
 
-function interpolateColor(start, end, progress) {
-  const clamp = Math.max(0, Math.min(1, progress))
-  const from = start.match(/\w\w/g).map((value) => Number.parseInt(value, 16))
-  const to = end.match(/\w\w/g).map((value) => Number.parseInt(value, 16))
-  const mixed = from.map((value, index) => Math.round(value + (to[index] - value) * clamp))
-  return `#${mixed.map((value) => value.toString(16).padStart(2, '0')).join('')}`
+function sortByLatestDate(left, right) {
+  return new Date(right.data || right.dataEnvio || 0) - new Date(left.data || left.dataEnvio || 0)
 }
 
-function getSchoolIconColor(score, minimum, maximum) {
-  if (maximum === minimum) {
-    return score > 0 ? '#f59e0b' : '#16a34a'
-  }
-
-  const normalized = (score - minimum) / (maximum - minimum)
-
-  if (normalized <= 0.5) {
-    return interpolateColor('#16a34a', '#f59e0b', normalized / 0.5)
-  }
-
-  return interpolateColor('#f59e0b', '#dc2626', (normalized - 0.5) / 0.5)
+function formatPercent(value, total) {
+  if (!total || total <= 0) return '0%'
+  return `${Math.round((Number(value || 0) / total) * 100)}%`
 }
 
-function createSchoolDivIcon({ color, isSelected, isDimmed }) {
-  const opacity = isDimmed ? 0.4 : 1
-  const scale = isSelected ? 1.12 : 1
-  const shadow = isSelected ? '0 10px 22px rgba(15,23,42,.28)' : '0 6px 14px rgba(15,23,42,.16)'
-  const ring = isSelected ? '#0f172a' : 'rgba(15,23,42,.18)'
-  const svg = `
-    <div style="opacity:${opacity};transform:scale(${scale});transform-origin:bottom center;transition:transform .18s ease,opacity .18s ease;filter:drop-shadow(${shadow});">
-      <svg width="34" height="42" viewBox="0 0 34 42" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <path d="M17 2C9.82 2 4 7.82 4 15c0 10.5 13 25 13 25s13-14.5 13-25C30 7.82 24.18 2 17 2Z" fill="${color}" />
-        <path d="M17 39c-.4 0-.77-.17-1.03-.47C14.71 37.05 3 23.72 3 15 3 7.27 9.27 1 17 1s14 6.27 14 14c0 8.72-11.71 22.05-12.97 23.53-.26.3-.63.47-1.03.47Z" fill="none" stroke="${ring}" stroke-width="2" stroke-linejoin="round" />
-        <rect x="10" y="10" width="14" height="14" rx="2.4" fill="white" />
-        <rect x="12.4" y="12.4" width="3" height="3" rx=".6" fill="${color}" />
-        <rect x="18.6" y="12.4" width="3" height="3" rx=".6" fill="${color}" />
-        <rect x="12.4" y="17.1" width="3" height="3" rx=".6" fill="${color}" />
-        <rect x="18.6" y="17.1" width="3" height="3" rx=".6" fill="${color}" />
-        <rect x="15.65" y="19.4" width="2.7" height="4.6" rx=".8" fill="${color}" />
-        <circle cx="17" cy="15" r="11.5" fill="none" stroke="white" stroke-opacity=".35" stroke-width="1.2" />
-      </svg>
-    </div>
-  `
+function buildMetricItems({ metrics, maxIntensity, schoolCount, totalSchools }) {
+  return [
+    {
+      label: 'Ocorrencias',
+      value: Number(metrics.totalOcorrencias || 0),
+      helper: '100% do contexto',
+    },
+    {
+      label: 'Criticas',
+      value: Number(metrics.criticas || 0),
+      helper: `${formatPercent(metrics.criticas, metrics.totalOcorrencias)} do total`,
+    },
+    {
+      label: 'Atencao',
+      value: Number(metrics.atencao || 0),
+      helper: `${formatPercent(metrics.atencao, metrics.totalOcorrencias)} do total`,
+    },
+    {
+      label: 'Baixas',
+      value: Number(metrics.baixas || 0),
+      helper: `${formatPercent(metrics.baixas, metrics.totalOcorrencias)} do total`,
+    },
+    {
+      label: 'Intensidade',
+      value: Number(metrics.intensidade || 0),
+      helper: `${formatPercent(metrics.intensidade, maxIntensity || metrics.intensidade || 0)} do pico`,
+    },
+    {
+      label: 'Escolas',
+      value: Number(schoolCount || 0),
+      helper: `${formatPercent(schoolCount, totalSchools)} da rede`,
+    },
+  ]
+}
 
-  return L.divIcon({
-    html: svg,
-    className: 'school-marker-icon',
-    iconSize: [34, 42],
-    iconAnchor: [17, 40],
-    popupAnchor: [0, -34],
-    tooltipAnchor: [0, -32],
-  })
+function getContextMetrics({
+  escola,
+  selectedBairroStats,
+  summaryMetrics,
+  schoolScoreRange,
+  bairroScoreRange,
+  visibleSchoolCount,
+  totalSchoolCount,
+}) {
+  if (escola) {
+    const metrics = {
+      totalOcorrencias: Number(escola.totalOcorrencias || 0),
+      criticas: Number(escola.criticas || 0),
+      atencao: Number(escola.atencao || 0),
+      baixas: Number(escola.baixas || 0),
+      intensidade: Number(escola.score || escola.intensidade || 0),
+    }
+
+    return {
+      title: escola.escolaNome || escola.nome || 'Escola selecionada',
+      message: escola.bairro ? `Leitura focada em ${escola.bairro}.` : 'Leitura focada na unidade selecionada.',
+      items: buildMetricItems({
+        metrics,
+        maxIntensity: schoolScoreRange.maximum,
+        schoolCount: 1,
+        totalSchools: totalSchoolCount,
+      }),
+    }
+  }
+
+  if (selectedBairroStats) {
+    const metrics = {
+      totalOcorrencias: Number(selectedBairroStats.totalSolicitacoes || 0),
+      criticas: Number(selectedBairroStats.criticas || 0),
+      atencao: Number(selectedBairroStats.atencao || 0),
+      baixas: Number(selectedBairroStats.baixas || 0),
+      intensidade: Number(selectedBairroStats.score || 0),
+    }
+
+    return {
+      title: selectedBairroStats.nome,
+      message: selectedBairroStats.totalEscolas > 0
+        ? `${selectedBairroStats.totalEscolas} escola${selectedBairroStats.totalEscolas > 1 ? 's' : ''} no contexto atual.`
+        : 'Nenhuma escola cadastrada neste bairro.',
+      items: buildMetricItems({
+        metrics,
+        maxIntensity: bairroScoreRange.maximum,
+        schoolCount: selectedBairroStats.totalEscolas,
+        totalSchools: totalSchoolCount,
+      }),
+    }
+  }
+
+  return {
+    title: 'Geral',
+    message: `${visibleSchoolCount} escola${visibleSchoolCount === 1 ? '' : 's'} visiveis no contexto atual.`,
+    items: buildMetricItems({
+      metrics: summaryMetrics,
+      maxIntensity: summaryMetrics.intensidade || 0,
+      schoolCount: visibleSchoolCount,
+      totalSchools: totalSchoolCount,
+    }),
+  }
+}
+
+function getBairroSolicitacoes({ bairroKey, bairroStats, occurrences, schoolsById }) {
+  if (!bairroKey || !bairroStats[bairroKey]) {
+    return []
+  }
+
+  const schoolIds = new Set(bairroStats[bairroKey].schoolIds || [])
+  return occurrences
+    .filter((occurrence) => schoolIds.has(occurrence.escolaId))
+    .map((occurrence) => ({
+      ...occurrence,
+      escolaNome: occurrence.escola || schoolsById[occurrence.escolaId]?.escolaNome || schoolsById[occurrence.escolaId]?.nome || 'Escola sem nome',
+    }))
+    .sort(sortByLatestDate)
+}
+
+function getBairroLabelStyle({ entry, currentZoom, isSelected, hasSchools }) {
+  const area = Number(entry?.labelBounds?.area || 0)
+  const isLarge = area >= 0.00045
+  const isMedium = area >= 0.00012
+
+  if (!isSelected) {
+    if (currentZoom < 12) return { visible: false }
+    if (currentZoom < 14 && !isLarge) return { visible: false }
+    if (currentZoom < 15 && !isLarge && !isMedium) return { visible: false }
+    if (!hasSchools && currentZoom < 15) return { visible: false }
+  }
+
+  let fontSize = 8
+  let maxWidth = 56
+  let maxLength = 16
+
+  if (isLarge) {
+    fontSize = currentZoom >= 15 ? 10 : 9
+    maxWidth = currentZoom >= 15 ? 96 : 82
+    maxLength = currentZoom >= 15 ? 20 : 18
+  } else if (isMedium) {
+    fontSize = currentZoom >= 15 ? 9 : 8
+    maxWidth = currentZoom >= 15 ? 74 : 62
+    maxLength = currentZoom >= 15 ? 18 : 15
+  }
+
+  if (isSelected) {
+    fontSize = Math.max(fontSize, 10.5)
+    maxWidth = Math.max(maxWidth, 100)
+    maxLength = Math.max(maxLength, 22)
+  }
+
+  return {
+    visible: true,
+    fontSize,
+    maxWidth,
+    maxLength,
+    opacity: hasSchools ? (isSelected ? 0.98 : 0.9) : (isSelected ? 0.86 : 0.7),
+  }
 }
 
 export function Mapa({ onNavigate }) {
@@ -384,10 +455,11 @@ export function Mapa({ onNavigate }) {
   })
   const [escolas, setEscolas] = useState([])
   const [heatmapData, setHeatmapData] = useState([])
+  const [schoolCatalog, setSchoolCatalog] = useState(() => getAllSchools())
   const [loadingMapa, setLoadingMapa] = useState(true)
   const [erroMapa, setErroMapa] = useState('')
   const [escolaSelecionada, setEscolaSelecionada] = useState('')
-  const [drawerAberto, setDrawerAberto] = useState(false)
+  const [modalContext, setModalContext] = useState(null)
   const [detalheEscola, setDetalheEscola] = useState(null)
   const [ocorrenciasEscola, setOcorrenciasEscola] = useState([])
   const [loadingDetalhe, setLoadingDetalhe] = useState(false)
@@ -397,8 +469,12 @@ export function Mapa({ onNavigate }) {
   const [caraguatatubaBoundary, setCaraguatatubaBoundary] = useState(null)
   const [bairrosGeoJson, setBairrosGeoJson] = useState(null)
   const [showBairrosLayer, setShowBairrosLayer] = useState(true)
-  const [showMunicipioBoundary, setShowMunicipioBoundary] = useState(true)
+  const [showMunicipioBoundary, setShowMunicipioBoundary] = useState(false)
   const [selectedBairro, setSelectedBairro] = useState('')
+  const [currentZoom, setCurrentZoom] = useState(13)
+  const [colorScale, setColorScale] = useState(() => readStoredColorScale())
+  const [isColorScaleExpanded, setIsColorScaleExpanded] = useState(false)
+  const warnedSchoolIdsRef = useRef(new Set())
   const [mapStyleKey, setMapStyleKey] = useState(() => {
     if (typeof window === 'undefined') return 'cartoLight'
 
@@ -410,6 +486,27 @@ export function Mapa({ onNavigate }) {
     }
   })
 
+<<<<<<< HEAD
+  const drawerAberto = Boolean(modalContext)
+
+  useEffect(() => {
+    let active = true
+
+    loadSchoolCatalog()
+      .then((schools) => {
+        if (active) {
+          setSchoolCatalog(Array.isArray(schools) && schools.length > 0 ? schools : getAllSchools())
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setSchoolCatalog(getAllSchools())
+        }
+      })
+
+    return () => {
+      active = false
+=======
   const schoolOptions = useMemo(() => escolas.map((escola) => ({ value: escola.id, label: escola.nome })), [escolas])
 
   useEffect(() => {
@@ -419,6 +516,7 @@ export function Mapa({ onNavigate }) {
       .catch(() => { if (ativo) setEscolas([]) })
     return () => {
       ativo = false
+>>>>>>> 1dbd2e8cff8e3a8fd78d1deb9fd281366dee91d8
     }
   }, [])
 
@@ -519,22 +617,91 @@ export function Mapa({ onNavigate }) {
   }, [mapStyleKey])
 
   useEffect(() => {
-    if (!escolaSelecionada) return
-
-    const exists = heatmapData.some((item) => item.escolaId === escolaSelecionada)
-    if (!exists) {
-      closeDrawer()
+    try {
+      window.localStorage.setItem(colorScaleStorageKey, JSON.stringify(colorScale))
+    } catch {
+      return
     }
-  }, [escolaSelecionada, heatmapData])
+  }, [colorScale])
 
   useEffect(() => {
     if (showBairrosLayer) return
 
     setSelectedBairro('')
-  }, [showBairrosLayer])
+    if (modalContext?.type === 'bairro') {
+      setModalContext(null)
+    }
+  }, [modalContext, showBairrosLayer])
+
+  const allMapSchools = useMemo(
+    () => mergeSchoolHeatmapData({ schoolCatalog, heatmapData }),
+    [heatmapData, schoolCatalog],
+  )
+
+  const featureEntries = useMemo(
+    () => buildFeatureEntries(bairrosGeoJson),
+    [bairrosGeoJson],
+  )
+
+  const mapSchools = useMemo(
+    () => (filters.escolaId ? allMapSchools.filter((item) => item.escolaId === filters.escolaId) : allMapSchools),
+    [allMapSchools, filters.escolaId],
+  )
+
+  const allSchoolById = useMemo(
+    () => Object.fromEntries(allMapSchools.map((item) => [item.escolaId, item])),
+    [allMapSchools],
+  )
+
+  const { schoolBairroIndex, unmatchedSchools } = useMemo(
+    () => buildSchoolBairroIndex({ schools: mapSchools, featureEntries }),
+    [featureEntries, mapSchools],
+  )
+
+  const schoolMarkers = useMemo(
+    () => mapSchools
+      .filter(isValidSchoolCoordinate)
+      .map((school) => ({
+        ...school,
+        bairroKey: schoolBairroIndex[school.escolaId] || '',
+      })),
+    [mapSchools, schoolBairroIndex],
+  )
+
+  const schoolById = useMemo(
+    () => Object.fromEntries(mapSchools.map((item) => [item.escolaId, item])),
+    [mapSchools],
+  )
 
   useEffect(() => {
-    if (!drawerAberto || !escolaSelecionada) return undefined
+    if (!import.meta.env.DEV) return
+
+    unmatchedSchools.forEach((school) => {
+      if (warnedSchoolIdsRef.current.has(school.escolaId)) return
+      warnedSchoolIdsRef.current.add(school.escolaId)
+      console.warn(
+        `[Mapa] Escola sem correspondencia espacial no GeoJSON: ${school.escolaNome || school.nome} (${school.escolaId})`,
+      )
+    })
+  }, [unmatchedSchools])
+
+  const filteredOccurrences = useMemo(
+    () => ocorrenciasAprovadas.filter((occurrence) => matchesOccurrenceFilters(occurrence, filters)),
+    [filters],
+  )
+
+  const escolaSelecionadaResumo = schoolById[escolaSelecionada] || null
+
+  useEffect(() => {
+    if (!escolaSelecionada) return
+
+    if (!schoolById[escolaSelecionada]) {
+      closeDrawer()
+    }
+  }, [escolaSelecionada, schoolById])
+
+  useEffect(() => {
+    if (modalContext?.type !== 'escola' || !escolaSelecionada) return undefined
 
     const controller = new AbortController()
 
@@ -564,42 +731,24 @@ export function Mapa({ onNavigate }) {
 
     loadDetalhe()
     return () => controller.abort()
-  }, [drawerAberto, escolaSelecionada])
+  }, [escolaSelecionada, modalContext])
 
-  const escolaSelecionadaResumo = useMemo(
-    () => heatmapData.find((item) => item.escolaId === escolaSelecionada) || null,
-    [escolaSelecionada, heatmapData],
-  )
+  const schoolOptions = useMemo(() => (
+    allMapSchools.map((school) => ({
+      value: school.escolaId,
+      label: school.escolaNome,
+    }))
+  ), [allMapSchools])
 
-  const escolasDisponiveis = useMemo(() => {
-    const itemsById = new Map()
-
-    escolas.forEach((escola) => {
-      itemsById.set(escola.id, {
-        escolaId: escola.id,
-        escolaNome: escola.nome,
-        latitude: Number(escola.latitude),
-        longitude: Number(escola.longitude),
-      })
-    })
-
-    heatmapData.forEach((item) => {
-      itemsById.set(item.escolaId, {
-        escolaId: item.escolaId,
-        escolaNome: item.escolaNome,
-        latitude: Number(item.latitude),
-        longitude: Number(item.longitude),
-      })
-    })
-
-    return [...itemsById.values()]
-      .filter(hasValidCoordinates)
-      .sort((a, b) => a.escolaNome.localeCompare(b.escolaNome, 'pt-BR'))
-  }, [heatmapData])
+  const escolasDisponiveis = useMemo(() => (
+    schoolMarkers
+      .slice()
+      .sort((left, right) => left.escolaNome.localeCompare(right.escolaNome, 'pt-BR'))
+  ), [schoolMarkers])
 
   const searchSuggestions = useMemo(() => (
     escolasDisponiveis
-      .filter((item) => normalizeText(item.escolaNome).includes(normalizeText(searchEscola)))
+      .filter((item) => normalizeName(item.escolaNome).includes(normalizeName(searchEscola)))
       .slice(0, 8)
   ), [escolasDisponiveis, searchEscola])
 
@@ -621,19 +770,13 @@ export function Mapa({ onNavigate }) {
     return null
   }, [erroMapa, erroDetalhe])
 
-  const riskScoresById = useMemo(() => (
-    Object.fromEntries(
-      heatmapData.map((item) => [item.escolaId, calcularScorePendenciaEscola(item)]),
-    )
-  ), [heatmapData])
-
   const summaryMetrics = useMemo(() => (
-    heatmapData.reduce((accumulator, item) => ({
+    mapSchools.reduce((accumulator, item) => ({
       totalOcorrencias: accumulator.totalOcorrencias + Number(item.totalOcorrencias || 0),
       criticas: accumulator.criticas + Number(item.criticas || 0),
       atencao: accumulator.atencao + Number(item.atencao || 0),
       baixas: accumulator.baixas + Number(item.baixas || 0),
-      intensidade: accumulator.intensidade + Number(item.intensidade || 0),
+      intensidade: accumulator.intensidade + Number(item.score || 0),
     }), {
       totalOcorrencias: 0,
       criticas: 0,
@@ -641,158 +784,132 @@ export function Mapa({ onNavigate }) {
       baixas: 0,
       intensidade: 0,
     })
-  ), [heatmapData])
+  ), [mapSchools])
 
-  const globalOccurrenceRange = useMemo(() => {
-    if (heatmapData.length === 0) {
-      return { minimum: 0, maximum: 0 }
-    }
-
-    const values = heatmapData.map((item) => Number(riskScoresById[item.escolaId] || 0))
-    return {
-      minimum: Math.min(...values),
-      maximum: Math.max(...values),
-    }
-  }, [heatmapData, riskScoresById])
+  const schoolScoreRange = useMemo(() => ({
+    minimum: 0,
+    maximum: Math.max(0, ...schoolMarkers.map((item) => Number(item.score || 0))),
+  }), [schoolMarkers])
 
   const markerIconsById = useMemo(() => (
     Object.fromEntries(
-      heatmapData.map((item) => [
+      schoolMarkers.map((item) => [
         item.escolaId,
-        createSchoolDivIcon({
-          color: getSchoolIconColor(
-            Number(riskScoresById[item.escolaId] || 0),
-            globalOccurrenceRange.minimum,
-            globalOccurrenceRange.maximum,
-          ),
+        createSchoolPointIcon({
+          color: getScaledColor(item.score, colorScale, schoolScoreRange.maximum),
           isSelected: escolaSelecionada === item.escolaId,
-          isDimmed: Boolean(escolaSelecionada) && escolaSelecionada !== item.escolaId,
+          isDimmed: Boolean(
+            showBairrosLayer
+            && selectedBairro
+            && item.bairroKey !== selectedBairro,
+          ),
         }),
       ]),
     )
-  ), [escolaSelecionada, globalOccurrenceRange.maximum, globalOccurrenceRange.minimum, heatmapData, riskScoresById])
+  ), [colorScale, escolaSelecionada, schoolMarkers, schoolScoreRange.maximum, selectedBairro, showBairrosLayer])
 
-  const bairroStats = useMemo(() => (
-    buildBairroStats({
-      bairrosGeoJson,
-      escolasNoMapa: heatmapData,
-      escolasCatalogo: escolas,
-    })
-  ), [bairrosGeoJson, heatmapData])
+  const bairroStatsResult = useMemo(
+    () => buildBairroStats({
+      featureEntries,
+      schools: mapSchools,
+      schoolBairroIndex,
+      colorScale,
+    }),
+    [colorScale, featureEntries, mapSchools, schoolBairroIndex],
+  )
 
-  const bairroFeatureEntries = useMemo(() => {
-    if (bairrosGeoJson?.type !== 'FeatureCollection' || !Array.isArray(bairrosGeoJson.features)) {
-      return []
-    }
-
-    return bairrosGeoJson.features
-      .filter((feature) => ['Polygon', 'MultiPolygon'].includes(feature?.geometry?.type))
-      .map((feature) => ({
-        key: normalizeText(getFeatureBairroName(feature)),
-        feature,
-      }))
-  }, [bairrosGeoJson])
-
-  const bairroScoreRange = useMemo(() => {
-    const values = Object.values(bairroStats).map((item) => Number(item.score || 0))
-
-    if (values.length === 0) {
-      return { minimum: 0, maximum: 0 }
-    }
-
-    return {
-      minimum: Math.min(...values),
-      maximum: Math.max(...values),
-    }
-  }, [bairroStats])
-
-  const visibleSchools = useMemo(() => (
-    getVisibleSchools({
-      showBairrosLayer,
-      selectedBairro,
-      heatmapData,
-      bairroStats,
-    })
-  ), [bairroStats, heatmapData, selectedBairro, showBairrosLayer])
-
-  const visibleSchoolPoints = useMemo(() => (
-    visibleSchools
-      .map((item) => [Number(item.latitude), Number(item.longitude)])
-      .filter(([latitude, longitude]) => Number.isFinite(latitude) && Number.isFinite(longitude))
-  ), [visibleSchools])
-
-  const selectedBairroStats = selectedBairro ? bairroStats[selectedBairro] || null : null
-
-  const metricContext = useMemo(() => {
-    const escola = detalheEscola || escolaSelecionadaResumo
-
-    if (escolaSelecionada && escola) {
-      return {
-        title: escola.escolaNome || escola.nome || 'Escola selecionada',
-        metrics: {
-          totalOcorrencias: Number(escola.totalOcorrencias || 0),
-          criticas: Number(escola.criticas || 0),
-          atencao: Number(escola.atencao || 0),
-          baixas: Number(escola.baixas || 0),
-          intensidade: Number(escola.intensidade || 0),
-        },
-      }
-    }
-
-    if (showBairrosLayer && selectedBairroStats) {
-      return {
-        title: selectedBairroStats.nome,
-        metrics: {
-          totalOcorrencias: Number(selectedBairroStats.totalSolicitacoes || 0),
-          criticas: Number(selectedBairroStats.criticas || 0),
-          atencao: Number(selectedBairroStats.atencao || 0),
-          baixas: Number(selectedBairroStats.baixas || 0),
-          intensidade: Number(selectedBairroStats.score || 0),
-        },
-      }
-    }
-
-    return {
-      title: 'Geral',
-      metrics: summaryMetrics,
-    }
-  }, [detalheEscola, escolaSelecionada, escolaSelecionadaResumo, selectedBairroStats, showBairrosLayer, summaryMetrics])
-
-  const selectedMapStyle = mapStyles[mapStyleKey] || mapStyles.cartoLight
-  const legendRange = showBairrosLayer ? bairroScoreRange : globalOccurrenceRange
-
-  useEffect(() => {
-    if (!escolaSelecionada) return
-
-    const visibleIds = new Set(visibleSchools.map((item) => item.escolaId))
-    if (!visibleIds.has(escolaSelecionada)) {
-      closeDrawer()
-    }
-  }, [escolaSelecionada, visibleSchools])
+  const bairroStats = bairroStatsResult.bairroStats
+  const bairroScoreRange = {
+    minimum: 0,
+    maximum: bairroStatsResult.maxScore,
+  }
 
   useEffect(() => {
     if (!selectedBairro) return
 
     if (!bairroStats[selectedBairro]) {
       setSelectedBairro('')
+      if (modalContext?.type === 'bairro') {
+        setModalContext(null)
+      }
     }
-  }, [bairroStats, selectedBairro])
+  }, [bairroStats, modalContext, selectedBairro])
+
+  const selectedBairroStats = selectedBairro ? bairroStats[selectedBairro] || null : null
+
+  const visibleSchoolPoints = useMemo(() => (
+    schoolMarkers
+      .map((item) => [Number(item.latitude), Number(item.longitude)])
+      .filter(([latitude, longitude]) => Number.isFinite(latitude) && Number.isFinite(longitude))
+  ), [schoolMarkers])
+
+  const bairroLabelEntries = useMemo(() => (
+    featureEntries.filter((entry) => Boolean(entry.labelPosition))
+  ), [featureEntries])
+
+  const currentSchoolContext = modalContext?.type === 'escola'
+    ? (detalheEscola || escolaSelecionadaResumo)
+    : null
+
+  const metricContext = useMemo(() => (
+    getContextMetrics({
+      escola: currentSchoolContext,
+      selectedBairroStats,
+      summaryMetrics,
+      schoolScoreRange,
+      bairroScoreRange,
+      visibleSchoolCount: mapSchools.length,
+      totalSchoolCount: allMapSchools.length || mapSchools.length || 1,
+    })
+  ), [allMapSchools.length, bairroScoreRange, currentSchoolContext, mapSchools.length, schoolScoreRange, selectedBairroStats, summaryMetrics])
+
+  const selectedMapStyle = mapStyles[mapStyleKey] || mapStyles.cartoLight
+  const legendRange = showBairrosLayer ? bairroScoreRange : schoolScoreRange
+  const legendGradient = `linear-gradient(90deg, ${colorScale.start} 0%, ${colorScale.middle} 50%, ${colorScale.end} 100%)`
+
+  const bairroDrawerStats = modalContext?.type === 'bairro'
+    ? bairroStats[modalContext.bairroKey] || null
+    : null
+
+  const bairroDrawerOcorrencias = useMemo(() => (
+    modalContext?.type === 'bairro'
+      ? getBairroSolicitacoes({
+        bairroKey: modalContext.bairroKey,
+        bairroStats,
+        occurrences: filteredOccurrences,
+        schoolsById: allSchoolById,
+      })
+      : []
+  ), [allSchoolById, bairroStats, filteredOccurrences, modalContext])
 
   function setFilter(key, value) {
     setFilters((current) => ({ ...current, [key]: value }))
   }
 
+  function clearSchoolContext() {
+    setEscolaSelecionada('')
+    setDetalheEscola(null)
+    setOcorrenciasEscola([])
+    setErroDetalhe('')
+    setLoadingDetalhe(false)
+  }
+
   function handleSelectBairro(feature) {
-    const bairroKey = normalizeText(getFeatureBairroName(feature))
+    const bairroKey = getBairroKey(feature)
     if (!bairroKey) return
 
-    if (selectedBairro === bairroKey) {
+    const isSameBairro = selectedBairro === bairroKey
+    if (isSameBairro) {
       setSelectedBairro('')
+      if (modalContext?.type === 'bairro' && modalContext.bairroKey === bairroKey) {
+        setModalContext(null)
+      }
       return
     }
 
-    closeDrawer()
+    clearSchoolContext()
     setSelectedBairro(bairroKey)
+    setModalContext({ type: 'bairro', bairroKey })
 
     const bounds = L.geoJSON(feature).getBounds()
     if (bounds.isValid()) {
@@ -810,33 +927,23 @@ export function Mapa({ onNavigate }) {
     }
   }
 
-  function openDrawer(escolaId) {
-    const escola = heatmapData.find((item) => item.escolaId === escolaId)
-    const escolaCatalogo = escolas.find((item) => item.id === escolaId)
-    setDetalheEscola(null)
-    setOcorrenciasEscola([])
-    setErroDetalhe('')
+  function openSchoolDrawer(escolaId, options = {}) {
+    const escola = schoolById[escolaId] || allSchoolById[escolaId] || null
+    const bairroKey = schoolBairroIndex[escolaId] || ''
+
+    clearSchoolContext()
     setEscolaSelecionada(escolaId)
-    setDrawerAberto(true)
+    setModalContext({ type: 'escola', escolaId, bairroKey })
 
-    if (showBairrosLayer && !selectedBairro) {
-      const bairroKey = getSchoolBairroKey({
-        escolaMapa: escola,
-        escolaCatalogo,
-        bairroStats,
-        featureEntries: bairroFeatureEntries,
-      })
-
-      if (bairroKey) {
-        setSelectedBairro(bairroKey)
-      }
+    if (showBairrosLayer && bairroKey) {
+      setSelectedBairro(bairroKey)
     }
 
-    if (escola && hasValidCoordinates(escola)) {
+    if (escola && isValidSchoolCoordinate(escola)) {
       setMapFocusTarget({
         latitude: Number(escola.latitude),
         longitude: Number(escola.longitude),
-        zoom: 15,
+        zoom: options.zoom || 15,
         offsetX: drawerFocusOffset.x,
         offsetY: drawerFocusOffset.y,
       })
@@ -844,58 +951,47 @@ export function Mapa({ onNavigate }) {
   }
 
   function closeDrawer() {
-    setDrawerAberto(false)
-    setEscolaSelecionada('')
-    setDetalheEscola(null)
-    setOcorrenciasEscola([])
-    setErroDetalhe('')
+    setModalContext(null)
+    clearSchoolContext()
     setMapFocusTarget(null)
   }
 
+  function clearSelectedBairro() {
+    setSelectedBairro('')
+    if (modalContext?.type === 'bairro') {
+      setModalContext(null)
+    }
+  }
+
   function openSchoolRegistry() {
-    if (!escolaSelecionada) return
+    if (modalContext?.type !== 'escola' || !escolaSelecionada) return
     onNavigate?.(`/escolas/${encodeURIComponent(escolaSelecionada)}`)
   }
 
   function focusSchool(escola) {
-    if (!escola || !hasValidCoordinates(escola)) return
-
-    const escolaCatalogo = escolas.find((item) => item.id === escola.escolaId)
-    if (showBairrosLayer && !selectedBairro) {
-      const bairroKey = getSchoolBairroKey({
-        escolaMapa: escola,
-        escolaCatalogo,
-        bairroStats,
-        featureEntries: bairroFeatureEntries,
-      })
-
-      if (bairroKey) {
-        setSelectedBairro(bairroKey)
-      }
-    }
+    if (!escola || !isValidSchoolCoordinate(escola)) return
 
     setSearchEscola(escola.escolaNome)
-    setMapFocusTarget({
-      latitude: Number(escola.latitude),
-      longitude: Number(escola.longitude),
-      zoom: 16,
-      offsetX: drawerFocusOffset.x,
-      offsetY: drawerFocusOffset.y,
-    })
-    openDrawer(escola.escolaId)
+    openSchoolDrawer(escola.escolaId, { zoom: 16 })
   }
 
   function handleSearchEscola() {
-    const normalizedSearch = normalizeText(searchEscola)
+    const normalizedSearch = normalizeName(searchEscola)
     if (!normalizedSearch) return
 
-    const exactMatch = escolasDisponiveis.find((item) => normalizeText(item.escolaNome) === normalizedSearch)
-    const partialMatch = escolasDisponiveis.find((item) => normalizeText(item.escolaNome).includes(normalizedSearch))
+    const exactMatch = escolasDisponiveis.find((item) => normalizeName(item.escolaNome) === normalizedSearch)
+    const partialMatch = escolasDisponiveis.find((item) => normalizeName(item.escolaNome).includes(normalizedSearch))
     focusSchool(exactMatch || partialMatch || null)
   }
 
   return (
     <div className="space-y-6">
+      {avisoGlobal ? (
+        <Card className="border-amber-200 bg-amber-50/80">
+          <p className="text-sm font-bold text-amber-900">{avisoGlobal.title}</p>
+          <p className="mt-1 text-xs font-semibold text-amber-800/80">{avisoGlobal.detail}</p>
+        </Card>
+      ) : null}
 
       <Card>
         <div className="grid gap-3 md:grid-cols-4 xl:grid-cols-7">
@@ -949,6 +1045,9 @@ export function Mapa({ onNavigate }) {
       <Card className="overflow-hidden p-0">
 
         <div className="relative h-[calc(100vh-16rem)] min-h-[560px]">
+<<<<<<< HEAD
+          <MetricPanel context={metricContext} />
+=======
           <div className="absolute left-4 top-4 z-[650] w-[240px] rounded-xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur">
             <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
               {metricContext.title}
@@ -963,6 +1062,7 @@ export function Mapa({ onNavigate }) {
               </div>
             </div>
           </div>
+>>>>>>> 1dbd2e8cff8e3a8fd78d1deb9fd281366dee91d8
 
           <MapContainer center={mapCenter} zoom={13} scrollWheelZoom zoomControl={false} className="h-full w-full">
             <TileLayer
@@ -970,6 +1070,7 @@ export function Mapa({ onNavigate }) {
               attribution={selectedMapStyle.attribution}
               url={selectedMapStyle.url}
             />
+            <MapZoomWatcher onZoomChange={setCurrentZoom} />
             {showMunicipioBoundary ? (
               <CaraguatatubaBoundary data={caraguatatubaBoundary} styleConfig={bairroStyleConfig} />
             ) : null}
@@ -983,11 +1084,50 @@ export function Mapa({ onNavigate }) {
                 onSelectBairro={handleSelectBairro}
               />
             ) : null}
+            {showBairrosLayer ? (
+              <BairroLabelsLayer
+                entries={bairroLabelEntries}
+                bairroStats={bairroStats}
+                currentZoom={currentZoom}
+                selectedBairro={selectedBairro}
+              />
+            ) : null}
             <SyncMapView points={visibleSchoolPoints} boundaryData={caraguatatubaBoundary} />
             <MapResizeController drawerAberto={drawerAberto} />
             <ZoomControlPosition />
             <MapFocusController target={mapFocusTarget} />
 
+<<<<<<< HEAD
+            {schoolMarkers.map((item) => {
+              const showPermanentName = currentZoom >= schoolLabelZoom
+
+              return (
+                <Marker
+                  key={item.escolaId}
+                  icon={markerIconsById[item.escolaId]}
+                  position={[item.latitude, item.longitude]}
+                  eventHandlers={{ click: () => openSchoolDrawer(item.escolaId) }}
+                >
+                  <Tooltip
+                    permanent={showPermanentName}
+                    direction="top"
+                    offset={[0, -8]}
+                    opacity={1}
+                    className={showPermanentName ? 'school-name-tooltip' : 'school-detail-tooltip'}
+                  >
+                    {showPermanentName ? (
+                      <span>{truncateMapText(item.escolaNome, 24)}</span>
+                    ) : (
+                      <div className="space-y-1">
+                        <strong>{item.escolaNome}</strong>
+                        <p>{item.totalOcorrencias} ocorrencias</p>
+                      </div>
+                    )}
+                  </Tooltip>
+                </Marker>
+              )
+            })}
+=======
             {visibleSchools.map((item) => (
               <Marker
                 key={item.escolaId}
@@ -1003,16 +1143,17 @@ export function Mapa({ onNavigate }) {
                 </Tooltip>
               </Marker>
             ))}
+>>>>>>> 1dbd2e8cff8e3a8fd78d1deb9fd281366dee91d8
           </MapContainer>
 
-          <div className="pointer-events-none absolute bottom-4 left-20 z-[650] rounded-lg border border-slate-200 bg-white/95 px-3 py-2 shadow-md backdrop-blur">
-            <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-slate-600">Solicitacoes pendentes</p>
-            <div className="h-3 w-36 rounded-full bg-gradient-to-r from-green-500 via-amber-400 to-red-600" />
-            <div className="mt-1 flex justify-between text-[10px] font-semibold text-slate-500">
-              <span>{legendRange.minimum}</span>
-              <span>{legendRange.maximum}</span>
-            </div>
-          </div>
+          <MapColorScaleControl
+            colorScale={colorScale}
+            isExpanded={isColorScaleExpanded}
+            legendGradient={legendGradient}
+            legendRange={legendRange}
+            onChangeScale={setColorScale}
+            onToggle={() => setIsColorScaleExpanded((current) => !current)}
+          />
 
           <div className={`absolute bottom-4 z-[650] rounded-lg border border-slate-200 bg-white/95 px-3 py-2 shadow-md backdrop-blur ${drawerAberto ? 'right-[410px]' : 'right-4'}`}>
             <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-500">
@@ -1050,10 +1191,19 @@ export function Mapa({ onNavigate }) {
                 <p className="truncate text-[10px] font-bold uppercase tracking-wide text-slate-500">
                   Bairro: {selectedBairroStats.nome}
                 </p>
+<<<<<<< HEAD
+                <p className="mt-1 text-[11px] font-semibold text-slate-500">
+                  {selectedBairroStats.totalEscolas > 0
+                    ? `${selectedBairroStats.totalEscolas} escola${selectedBairroStats.totalEscolas > 1 ? 's' : ''} com ${selectedBairroStats.totalSolicitacoes} ocorrencia${selectedBairroStats.totalSolicitacoes === 1 ? '' : 's'}.`
+                    : 'Sem escolas associadas no cadastro atual.'}
+                </p>
+                <button
+=======
                 <button className="cursor-pointer"
+>>>>>>> 1dbd2e8cff8e3a8fd78d1deb9fd281366dee91d8
                   type="button"
-                  onClick={() => setSelectedBairro('')}
-                  className="mt-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-50"
+                  onClick={clearSelectedBairro}
+                  className="mt-2 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-50"
                 >
                   Limpar bairro
                 </button>
@@ -1071,11 +1221,13 @@ export function Mapa({ onNavigate }) {
             </div>
           ) : null}
 
-          <EscolaDrawer
-            detalhe={detalheEscola || escolaSelecionadaResumo}
-            drawerAberto={drawerAberto}
+          <MapContextDrawer
+            bairroOcorrencias={bairroDrawerOcorrencias}
+            bairroStats={bairroDrawerStats}
+            context={modalContext}
+            detalheEscola={detalheEscola || escolaSelecionadaResumo}
             loadingDetalhe={loadingDetalhe}
-            ocorrencias={ocorrenciasEscola}
+            ocorrenciasEscola={ocorrenciasEscola}
             onClose={closeDrawer}
             onOpenSchoolRegistry={openSchoolRegistry}
           />
@@ -1085,12 +1237,94 @@ export function Mapa({ onNavigate }) {
   )
 }
 
-function MetricCompact({ label, value }) {
+function MetricPanel({ context }) {
+  return (
+    <div className="absolute left-4 top-4 z-[650] w-[260px] rounded-xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur">
+      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
+        {context.title}
+      </p>
+      <p className="mt-1 text-xs font-semibold text-slate-500">
+        {context.message}
+      </p>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        {context.items.map((item) => (
+          <MetricCard key={item.label} item={item} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function MetricCard({ item }) {
   return (
     <div className="rounded-lg bg-slate-50 px-3 py-2">
-      <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-500">{label}</span>
-      <strong className="mt-1 block text-lg font-800 text-slate-950">{value}</strong>
+      <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-500">{item.label}</span>
+      <strong className="mt-1 block text-base font-800 text-slate-950">{item.value}</strong>
+      <span className="mt-1 block text-[10px] font-semibold text-slate-400">{item.helper}</span>
     </div>
+  )
+}
+
+function MapColorScaleControl({ colorScale, isExpanded, legendGradient, legendRange, onChangeScale, onToggle }) {
+  return (
+    <div className={`absolute bottom-4 left-20 z-[650] border border-slate-200 bg-white/95 shadow-md backdrop-blur transition-all ${isExpanded ? 'w-[280px] rounded-xl p-3 shadow-lg' : 'w-[210px] rounded-lg px-3 py-2'}`}>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[10px] font-bold uppercase tracking-wide text-slate-600">
+          Solicitacoes pendentes
+        </p>
+        <button
+          type="button"
+          onClick={onToggle}
+          className="rounded-md border border-slate-200 p-1 text-slate-500 hover:bg-slate-50"
+          aria-label={isExpanded ? 'Recolher escala de cores' : 'Expandir escala de cores'}
+        >
+          <ChevronIcon direction={isExpanded ? 'up' : 'down'} />
+        </button>
+      </div>
+
+      {isExpanded ? (
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          <ColorScaleField label="Inicio" value={colorScale.start} onChange={(value) => onChangeScale((current) => ({ ...current, start: value }))} />
+          <ColorScaleField label="Meio" value={colorScale.middle} onChange={(value) => onChangeScale((current) => ({ ...current, middle: value }))} />
+          <ColorScaleField label="Fim" value={colorScale.end} onChange={(value) => onChangeScale((current) => ({ ...current, end: value }))} />
+        </div>
+      ) : null}
+
+      <div className={`${isExpanded ? 'mt-3' : 'mt-2'} h-3 rounded-full`} style={{ backgroundImage: legendGradient }} />
+      <div className="mt-1 flex justify-between text-[10px] font-semibold text-slate-500">
+        <span>{legendRange.minimum}</span>
+        <span>{legendRange.maximum}</span>
+      </div>
+    </div>
+  )
+}
+
+function ChevronIcon({ direction }) {
+  const isUp = direction === 'up'
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+      <path
+        d={isUp ? 'M3 9L7 5L11 9' : 'M3 5L7 9L11 5'}
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function ColorScaleField({ label, value, onChange }) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-[10px] font-bold uppercase text-slate-500">{label}</span>
+      <input
+        type="color"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-8 w-full cursor-pointer rounded border border-slate-200 bg-white p-1"
+      />
+    </label>
   )
 }
 
@@ -1103,14 +1337,81 @@ function DateFilter({ label, value, onChange }) {
   )
 }
 
-function EscolaDrawer({ detalhe, drawerAberto, loadingDetalhe, ocorrencias, onClose, onOpenSchoolRegistry }) {
-  if (!drawerAberto) return null
+function BairroLabelsLayer({ entries, bairroStats, currentZoom, selectedBairro }) {
+  return entries.map((entry) => {
+    const stats = bairroStats[entry.key]
+    if (!stats?.labelPosition) return null
+
+    const isSelected = selectedBairro === entry.key
+    const hasSchools = Number(stats.totalEscolas || 0) > 0
+    const labelStyle = getBairroLabelStyle({
+      entry,
+      currentZoom,
+      isSelected,
+      hasSchools,
+    })
+
+    if (!labelStyle.visible) return null
+
+    return (
+      <Marker
+        key={entry.key}
+        position={stats.labelPosition}
+        icon={createBairroLabelIcon({
+          name: truncateMapText(stats.nome, labelStyle.maxLength),
+          color: stats.labelColor,
+          fontSize: labelStyle.fontSize,
+          maxWidth: labelStyle.maxWidth,
+          isSelected,
+          isMuted: !hasSchools,
+          opacity: labelStyle.opacity,
+        })}
+        interactive={false}
+      />
+    )
+  })
+}
+
+function MapContextDrawer({
+  bairroOcorrencias,
+  bairroStats,
+  context,
+  detalheEscola,
+  loadingDetalhe,
+  ocorrenciasEscola,
+  onClose,
+  onOpenSchoolRegistry,
+}) {
+  if (!context) return null
+
+  const isBairroMode = context.type === 'bairro'
+  const isEscolaMode = context.type === 'escola'
+  const drawerTitle = isBairroMode
+    ? (bairroStats?.nome || 'Bairro selecionado')
+    : (detalheEscola?.escolaNome || detalheEscola?.nome || 'Detalhe da escola')
 
   return (
     <aside className="absolute bottom-4 right-4 top-4 z-[700] w-[390px] max-w-[calc(100%-2rem)] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
       <div className="flex h-full flex-col">
         <div className="border-b border-slate-200 p-4">
           <div className="flex items-center gap-3">
+<<<<<<< HEAD
+            {isEscolaMode ? (
+              <button
+                type="button"
+                onClick={onOpenSchoolRegistry}
+                className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-4 py-2 text-left text-sm font-bold text-slate-700 hover:bg-slate-50"
+              >
+                <span className="block truncate">{drawerTitle}</span>
+              </button>
+            ) : (
+              <div className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2">
+                <span className="block truncate text-sm font-bold text-slate-800">{drawerTitle}</span>
+                <span className="mt-1 block text-[11px] font-semibold text-slate-500">Solicitacoes das escolas do bairro</span>
+              </div>
+            )}
+            <button type="button" onClick={onClose} className="shrink-0 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
+=======
             <button
               type="button"
               onClick={onOpenSchoolRegistry}
@@ -1121,28 +1422,30 @@ function EscolaDrawer({ detalhe, drawerAberto, loadingDetalhe, ocorrencias, onCl
               </span>
             </button>
             <button type="button" onClick={onClose} className="cursor-pointer shrink-0 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
+>>>>>>> 1dbd2e8cff8e3a8fd78d1deb9fd281366dee91d8
               Fechar
             </button>
           </div>
         </div>
 
         <div className="flex-1 space-y-5 overflow-y-auto p-4">
-          {loadingDetalhe ? (
-            <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600">
-              Carregando dados da escola...
-            </div>
-          ) : null}
-
-          {detalhe ? (
+          {isBairroMode ? (
             <>
-              <div>
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <h4 className="text-sm font-800 uppercase tracking-wide text-slate-500">Solicitacoes pendentes</h4>
-                  <span className="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-bold text-primary-strong">
-                    {ocorrencias.length}
-                  </span>
-                </div>
+              <DrawerMetricsGrid
+                items={[
+                  { label: 'Escolas', value: bairroStats?.totalEscolas || 0 },
+                  { label: 'Ocorrencias', value: bairroStats?.totalSolicitacoes || 0 },
+                  { label: 'Criticas', value: bairroStats?.criticas || 0 },
+                  { label: 'Atencao', value: bairroStats?.atencao || 0 },
+                  { label: 'Baixas', value: bairroStats?.baixas || 0 },
+                ]}
+              />
 
+<<<<<<< HEAD
+              {Number(bairroStats?.totalEscolas || 0) === 0 ? (
+                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-semibold text-slate-500">
+                  Nenhuma escola cadastrada neste bairro no contexto atual.
+=======
                 <div className="space-y-3">
                   {ocorrencias.length > 0 ? ocorrencias.map((ocorrencia) => (
                     <article key={ocorrencia.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -1163,17 +1466,103 @@ function EscolaDrawer({ detalhe, drawerAberto, loadingDetalhe, ocorrencias, onCl
                       Nenhuma ocorrência encontrada para esta escola.
                     </div>
                   )}
+>>>>>>> 1dbd2e8cff8e3a8fd78d1deb9fd281366dee91d8
                 </div>
-              </div>
+              ) : bairroOcorrencias.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-semibold text-slate-500">
+                  Nenhuma solicitacao encontrada para as escolas deste bairro com os filtros atuais.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {bairroOcorrencias.map((ocorrencia) => (
+                    <OcorrenciaCard key={ocorrencia.id} ocorrencia={ocorrencia} schoolName={ocorrencia.escolaNome} />
+                  ))}
+                </div>
+              )}
             </>
+<<<<<<< HEAD
+          ) : (
+            <>
+              {loadingDetalhe ? (
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600">
+                  Carregando dados da escola...
+                </div>
+              ) : null}
+
+              {detalheEscola ? (
+                <div>
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <h4 className="text-sm font-800 uppercase tracking-wide text-slate-500">Solicitacoes pendentes</h4>
+                    <span className="rounded-full bg-primary-50 px-2.5 py-1 text-xs font-bold text-primary-strong">
+                      {ocorrenciasEscola.length}
+                    </span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {ocorrenciasEscola.length > 0 ? ocorrenciasEscola.map((ocorrencia) => (
+                      <OcorrenciaCard key={ocorrencia.id} ocorrencia={ocorrencia} />
+                    )) : (
+                      <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-semibold text-slate-500">
+                        Nenhuma ocorrencia encontrada para esta escola.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : !loadingDetalhe ? (
+                <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-semibold text-slate-500">
+                  Nao foi possivel localizar os dados desta escola.
+                </div>
+              ) : null}
+            </>
+          )}
+=======
           ) : !loadingDetalhe ? (
             <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-semibold text-slate-500">
               Não foi possível localizar os dados desta escola.
             </div>
           ) : null}
+>>>>>>> 1dbd2e8cff8e3a8fd78d1deb9fd281366dee91d8
         </div>
       </div>
     </aside>
+  )
+}
+
+function DrawerMetricsGrid({ items }) {
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      {items.map((item) => (
+        <div key={item.label} className="rounded-lg bg-slate-50 px-3 py-2">
+          <span className="block text-[10px] font-bold uppercase tracking-wide text-slate-500">{item.label}</span>
+          <strong className="mt-1 block text-sm font-800 text-slate-950">{item.value}</strong>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function OcorrenciaCard({ ocorrencia, schoolName = '' }) {
+  return (
+    <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h5 className="font-bold text-slate-900">{ocorrencia.titulo}</h5>
+          {schoolName ? (
+            <p className="mt-1 truncate text-[11px] font-bold uppercase tracking-wide text-slate-500">
+              {schoolName}
+            </p>
+          ) : null}
+        </div>
+        <Badge>{ocorrencia.criticidade}</Badge>
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <Badge>{ocorrencia.status}</Badge>
+        <span className="text-xs font-semibold text-slate-500">{ocorrencia.data || ocorrencia.dataEnvio || 'Sem data'}</span>
+      </div>
+      <p className="mt-3 text-sm leading-6 text-slate-600">
+        {ocorrencia.descricao || 'Sem descricao resumida para esta ocorrencia.'}
+      </p>
+    </article>
   )
 }
 
@@ -1226,6 +1615,20 @@ function ZoomControlPosition() {
       zoomControl.remove()
     }
   }, [map])
+
+  return null
+}
+
+function MapZoomWatcher({ onZoomChange }) {
+  const map = useMapEvents({
+    zoomend: () => {
+      onZoomChange(map.getZoom())
+    },
+  })
+
+  useEffect(() => {
+    onZoomChange(map.getZoom())
+  }, [map, onZoomChange])
 
   return null
 }
