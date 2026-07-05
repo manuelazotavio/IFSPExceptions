@@ -4,10 +4,18 @@ import 'leaflet/dist/leaflet.css'
 import { MapContainer, Marker, TileLayer, Tooltip, useMap, useMapEvents } from 'react-leaflet'
 import { CaraguatatubaBairrosLayer, bairroStyleDefaults } from '../components/CaraguatatubaBairrosLayer.jsx'
 import { CaraguatatubaBoundary } from '../components/Mapa_com_boundary.jsx'
-import { ocorrenciasAprovadas, statusValues } from '../data/mockData.js'
 import { Badge, Card, FilterSelect, Select } from '../components/ui.jsx'
-import { fetchEscolaOcorrencias, fetchHeatmapOcorrencias, getEscolaOcorrenciasFallback, getHeatmapFallback } from '../services/mapa.js'
+import { getEscolaOcorrenciasFallback, loadMapOccurrences } from '../services/mapa.js'
 import { getAllSchools, loadSchoolCatalog } from '../utils/schools.js'
+import {
+  MAP_CRITICIDADE_OPTIONS,
+  MAP_STATUS_OPTIONS,
+  includesNormalized,
+  matchesSchoolSearch,
+  mergeSchoolsWithOccurrences,
+  normalizeOccurrenceCriticidadeKey,
+  normalizeOccurrenceStatusKey,
+} from '../utils/schoolRecords.js'
 import {
   buildBairroStats,
   buildFeatureEntries,
@@ -17,12 +25,12 @@ import {
   getScaledColor,
   getSchoolPendingScore,
   isValidSchoolCoordinate,
-  normalizeName,
 } from '../utils/mapaBairros.js'
 
 const mapCenter = [-23.6203, -45.4131]
 const drawerFocusOffset = { x: -180, y: 0 }
-const criticidadeOptions = ['Baixa', 'Atencao', 'Critica']
+const criticidadeOptions = MAP_CRITICIDADE_OPTIONS
+const statusOptions = MAP_STATUS_OPTIONS
 const mapStyleStorageKey = 'seduc-map-style'
 const colorScaleStorageKey = 'seduc-map-color-scale'
 const schoolLabelZoom = 15
@@ -246,27 +254,15 @@ function createBairroLabelIcon({ name, color, fontSize, maxWidth, isSelected, is
 }
 
 function normalizeCriticidade(value) {
-  const normalized = String(value || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim()
-    .toUpperCase()
-
-  if (normalized === 'MEDIA' || normalized === 'ALTA' || normalized === 'ATENCAO') {
-    return 'ATENCAO'
-  }
-
-  if (normalized === 'CRITICA') return 'CRITICA'
-  if (normalized === 'BAIXA') return 'BAIXA'
-  return normalized
+  return normalizeOccurrenceCriticidadeKey(value)
 }
 
 function matchesOccurrenceFilters(occurrence, filters) {
   if (filters.escolaId && occurrence.escolaId !== filters.escolaId) return false
-  if (filters.status && occurrence.status !== filters.status) return false
+  if (filters.status && normalizeOccurrenceStatusKey(occurrence.status) !== normalizeOccurrenceStatusKey(filters.status)) return false
   if (filters.criticidade && normalizeCriticidade(occurrence.criticidade) !== normalizeCriticidade(filters.criticidade)) return false
-  if (filters.dataInicial && occurrence.dataEnvio < filters.dataInicial) return false
-  if (filters.dataFinal && occurrence.dataEnvio > filters.dataFinal) return false
+  if (filters.dataInicial && (occurrence.dataAbertura || occurrence.dataEnvio || '') < filters.dataInicial) return false
+  if (filters.dataFinal && (occurrence.dataAbertura || occurrence.dataEnvio || '') > filters.dataFinal) return false
   return true
 }
 
@@ -443,17 +439,15 @@ export function Mapa({ onNavigate }) {
     dataInicial: '',
     dataFinal: '',
   })
-  const [heatmapData, setHeatmapData] = useState([])
   const [schoolCatalog, setSchoolCatalog] = useState(() => getAllSchools())
+  const [occurrenceCatalog, setOccurrenceCatalog] = useState([])
   const [loadingMapa, setLoadingMapa] = useState(true)
   const [erroMapa, setErroMapa] = useState('')
   const [escolaSelecionada, setEscolaSelecionada] = useState('')
   const [modalContext, setModalContext] = useState(null)
-  const [detalheEscola, setDetalheEscola] = useState(null)
-  const [ocorrenciasEscola, setOcorrenciasEscola] = useState([])
-  const [loadingDetalhe, setLoadingDetalhe] = useState(false)
-  const [erroDetalhe, setErroDetalhe] = useState('')
   const [searchEscola, setSearchEscola] = useState('')
+  const [appliedSearch, setAppliedSearch] = useState('')
+  const [isSearchMenuOpen, setIsSearchMenuOpen] = useState(false)
   const [mapFocusTarget, setMapFocusTarget] = useState(null)
   const [caraguatatubaBoundary, setCaraguatatubaBoundary] = useState(null)
   const [bairrosGeoJson, setBairrosGeoJson] = useState(null)
@@ -464,6 +458,7 @@ export function Mapa({ onNavigate }) {
   const [colorScale, setColorScale] = useState(() => readStoredColorScale())
   const [isColorScaleExpanded, setIsColorScaleExpanded] = useState(false)
   const warnedSchoolIdsRef = useRef(new Set())
+  const searchContainerRef = useRef(null)
   const [mapStyleKey, setMapStyleKey] = useState(() => {
     if (typeof window === 'undefined') return 'cartoLight'
 
@@ -478,23 +473,38 @@ export function Mapa({ onNavigate }) {
   const drawerAberto = Boolean(modalContext)
 
   useEffect(() => {
-    let active = true
+    const controller = new AbortController()
 
-    loadSchoolCatalog()
-      .then((schools) => {
-        if (active) {
-          setSchoolCatalog(Array.isArray(schools) && schools.length > 0 ? schools : getAllSchools())
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setSchoolCatalog(getAllSchools())
-        }
-      })
+    async function loadMapData() {
+      setLoadingMapa(true)
+      setErroMapa('')
 
-    return () => {
-      active = false
+      try {
+        const schools = await loadSchoolCatalog({ includeOfficialFallback: true })
+        if (controller.signal.aborted) return
+
+        const nextSchools = Array.isArray(schools) && schools.length > 0 ? schools : getAllSchools()
+        setSchoolCatalog(nextSchools)
+
+        const occurrences = await loadMapOccurrences(nextSchools, controller.signal)
+        if (controller.signal.aborted) return
+
+        setOccurrenceCatalog(occurrences)
+      } catch (error) {
+        if (controller.signal.aborted) return
+
+        setSchoolCatalog(getAllSchools())
+        setOccurrenceCatalog([])
+        setErroMapa(error.message || 'Nao foi possivel carregar os dados do mapa.')
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoadingMapa(false)
+        }
+      }
     }
+
+    loadMapData()
+    return () => controller.abort()
   }, [])
 
   useEffect(() => {
@@ -545,34 +555,6 @@ export function Mapa({ onNavigate }) {
   }, [])
 
   useEffect(() => {
-    const controller = new AbortController()
-
-    async function loadHeatmap() {
-      setLoadingMapa(true)
-      setErroMapa('')
-
-      try {
-        const data = await fetchHeatmapOcorrencias(filters, controller.signal)
-        if (!controller.signal.aborted) {
-          setHeatmapData(data)
-        }
-      } catch (requestError) {
-        if (controller.signal.aborted) return
-
-        setHeatmapData(getHeatmapFallback(filters))
-        setErroMapa(requestError.message)
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoadingMapa(false)
-        }
-      }
-    }
-
-    loadHeatmap()
-    return () => controller.abort()
-  }, [filters])
-
-  useEffect(() => {
     if (!drawerAberto) return undefined
 
     function handleKeyDown(event) {
@@ -610,9 +592,32 @@ export function Mapa({ onNavigate }) {
     }
   }, [modalContext, showBairrosLayer])
 
+  useEffect(() => {
+    if (!isSearchMenuOpen) return undefined
+
+    function handleClickOutside(event) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
+        setIsSearchMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isSearchMenuOpen])
+
+  const filteredOccurrences = useMemo(
+    () => occurrenceCatalog.filter((occurrence) => matchesOccurrenceFilters(occurrence, filters)),
+    [filters, occurrenceCatalog],
+  )
+
+  const mergedSchoolsFull = useMemo(
+    () => mergeSchoolsWithOccurrences(schoolCatalog, occurrenceCatalog),
+    [occurrenceCatalog, schoolCatalog],
+  )
+
   const allMapSchools = useMemo(
-    () => mergeSchoolHeatmapData({ schoolCatalog, heatmapData }),
-    [heatmapData, schoolCatalog],
+    () => mergeSchoolsWithOccurrences(schoolCatalog, filteredOccurrences),
+    [filteredOccurrences, schoolCatalog],
   )
 
   const featureEntries = useMemo(
@@ -621,8 +626,12 @@ export function Mapa({ onNavigate }) {
   )
 
   const mapSchools = useMemo(
-    () => (filters.escolaId ? allMapSchools.filter((item) => item.escolaId === filters.escolaId) : allMapSchools),
-    [allMapSchools, filters.escolaId],
+    () => allMapSchools.filter((item) => {
+      if (filters.escolaId && item.escolaId !== filters.escolaId) return false
+      if (appliedSearch && !matchesSchoolSearch(item, appliedSearch)) return false
+      return true
+    }),
+    [allMapSchools, appliedSearch, filters.escolaId],
   )
 
   const allSchoolById = useMemo(
@@ -662,12 +671,19 @@ export function Mapa({ onNavigate }) {
     })
   }, [unmatchedSchools])
 
-  const filteredOccurrences = useMemo(
-    () => ocorrenciasAprovadas.filter((occurrence) => matchesOccurrenceFilters(occurrence, filters)),
-    [filters],
-  )
+  useEffect(() => {
+    if (!import.meta.env.DEV || mergedSchoolsFull.length === 0) return
 
-  const escolaSelecionadaResumo = schoolById[escolaSelecionada] || null
+    const escolasComOcorrencias = mergedSchoolsFull.filter((school) => Number(school.totalOcorrencias || 0) > 0).length
+    console.info('[schools]', {
+      escolas: mergedSchoolsFull.length,
+      ocorrencias: occurrenceCatalog.length,
+      escolasComOcorrencias,
+      escolasSemOcorrencias: mergedSchoolsFull.length - escolasComOcorrencias,
+    })
+  }, [mergedSchoolsFull, occurrenceCatalog.length])
+
+  const escolaSelecionadaResumo = schoolById[escolaSelecionada] || allSchoolById[escolaSelecionada] || null
 
   useEffect(() => {
     if (!escolaSelecionada) return
@@ -677,75 +693,45 @@ export function Mapa({ onNavigate }) {
     }
   }, [escolaSelecionada, schoolById])
 
-  useEffect(() => {
-    if (modalContext?.type !== 'escola' || !escolaSelecionada) return undefined
+  const detalheEscola = escolaSelecionadaResumo || null
+  const loadingDetalhe = false
 
-    const controller = new AbortController()
-
-    async function loadDetalhe() {
-      setLoadingDetalhe(true)
-      setErroDetalhe('')
-
-      try {
-        const data = await fetchEscolaOcorrencias(escolaSelecionada, controller.signal)
-        if (!controller.signal.aborted) {
-          setDetalheEscola(data.escola)
-          setOcorrenciasEscola(data.ocorrencias)
-        }
-      } catch (requestError) {
-        if (controller.signal.aborted) return
-
-        const fallback = getEscolaOcorrenciasFallback(escolaSelecionada)
-        setDetalheEscola(fallback.escola)
-        setOcorrenciasEscola(fallback.ocorrencias)
-        setErroDetalhe(requestError.message)
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoadingDetalhe(false)
-        }
-      }
+  const ocorrenciasEscola = useMemo(() => {
+    if (Array.isArray(detalheEscola?.ocorrencias)) {
+      return detalheEscola.ocorrencias
     }
 
-    loadDetalhe()
-    return () => controller.abort()
-  }, [escolaSelecionada, modalContext])
+    const fallback = getEscolaOcorrenciasFallback(escolaSelecionada, allMapSchools, filteredOccurrences)
+    return fallback.ocorrencias
+  }, [allMapSchools, detalheEscola, escolaSelecionada, filteredOccurrences])
 
   const schoolOptions = useMemo(() => (
-    allMapSchools.map((school) => ({
+    mergedSchoolsFull.map((school) => ({
       value: school.escolaId,
-      label: school.escolaNome,
+      label: `${school.escolaNome}${school.bairro ? ` - ${school.bairro}` : ''}`,
     }))
-  ), [allMapSchools])
+  ), [mergedSchoolsFull])
 
   const escolasDisponiveis = useMemo(() => (
-    schoolMarkers
+    mergedSchoolsFull
       .slice()
       .sort((left, right) => left.escolaNome.localeCompare(right.escolaNome, 'pt-BR'))
-  ), [schoolMarkers])
+  ), [mergedSchoolsFull])
 
   const searchSuggestions = useMemo(() => (
     escolasDisponiveis
-      .filter((item) => normalizeName(item.escolaNome).includes(normalizeName(searchEscola)))
+      .filter((item) => (searchEscola ? matchesSchoolSearch(item, searchEscola) : false))
       .slice(0, 8)
   ), [escolasDisponiveis, searchEscola])
 
   const avisoGlobal = useMemo(() => {
-    if (erroMapa) {
-      return {
-        title: 'Alguns dados estão sendo exibidos em modo temporário porque a API não respondeu.',
-        detail: erroMapa,
-      }
-    }
+    if (!erroMapa) return null
 
-    if (erroDetalhe) {
-      return {
-        title: 'Os dados da escola selecionada foram carregados em modo temporario.',
-        detail: erroDetalhe,
-      }
+    return {
+      title: 'Alguns dados estao em fallback local porque a API nao respondeu.',
+      detail: erroMapa,
     }
-
-    return null
-  }, [erroMapa, erroDetalhe])
+  }, [erroMapa])
 
   const summaryMetrics = useMemo(() => (
     mapSchools.reduce((accumulator, item) => ({
@@ -865,10 +851,6 @@ export function Mapa({ onNavigate }) {
 
   function clearSchoolContext() {
     setEscolaSelecionada('')
-    setDetalheEscola(null)
-    setOcorrenciasEscola([])
-    setErroDetalhe('')
-    setLoadingDetalhe(false)
   }
 
   function handleSelectBairro(feature) {
@@ -946,19 +928,34 @@ export function Mapa({ onNavigate }) {
   }
 
   function focusSchool(escola) {
-    if (!escola || !isValidSchoolCoordinate(escola)) return
+    if (!escola) return
 
     setSearchEscola(escola.escolaNome)
+    setAppliedSearch(escola.escolaNome)
+    setIsSearchMenuOpen(false)
     openSchoolDrawer(escola.escolaId, { zoom: 16 })
   }
 
   function handleSearchEscola() {
-    const normalizedSearch = normalizeName(searchEscola)
-    if (!normalizedSearch) return
+    const query = searchEscola.trim()
+    setAppliedSearch(query)
+    setIsSearchMenuOpen(false)
 
-    const exactMatch = escolasDisponiveis.find((item) => normalizeName(item.escolaNome) === normalizedSearch)
-    const partialMatch = escolasDisponiveis.find((item) => normalizeName(item.escolaNome).includes(normalizedSearch))
-    focusSchool(exactMatch || partialMatch || null)
+    if (!query) {
+      setMapFocusTarget(null)
+      return
+    }
+
+    const matches = escolasDisponiveis.filter((item) => matchesSchoolSearch(item, query))
+    if (matches.length === 1) {
+      focusSchool(matches[0])
+    }
+  }
+
+  function clearSearchEscola() {
+    setSearchEscola('')
+    setAppliedSearch('')
+    setIsSearchMenuOpen(false)
   }
 
   return (
@@ -970,41 +967,77 @@ export function Mapa({ onNavigate }) {
         </Card>
       ) : null}
 
-      <Card>
+      <Card className="relative z-[3000] overflow-visible">
         <div className="grid gap-3 md:grid-cols-4 xl:grid-cols-7">
           <label className="block md:col-span-2">
             <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Buscar escola</span>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                list="mapa-escolas"
-                value={searchEscola}
-                onChange={(event) => setSearchEscola(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
-                    event.preventDefault()
-                    handleSearchEscola()
-                  }
-                }}
-                placeholder="Digite o nome da escola"
-                className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500"
-              />
-              <button
-                type="button"
-                onClick={handleSearchEscola}
-                className="cursor-pointer h-10 shrink-0 rounded-md bg-primary px-3 text-sm font-bold text-white hover:bg-primary-strong"
-              >
-                Buscar
-              </button>
+            <div ref={searchContainerRef} className="relative">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={searchEscola}
+                  onChange={(event) => {
+                    setSearchEscola(event.target.value)
+                    setIsSearchMenuOpen(true)
+                  }}
+                  onFocus={() => setIsSearchMenuOpen(Boolean(searchSuggestions.length))}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault()
+                      handleSearchEscola()
+                    }
+
+                    if (event.key === 'Escape') {
+                      event.preventDefault()
+                      setIsSearchMenuOpen(false)
+                    }
+                  }}
+                  placeholder="Nome, bairro, endereco ou CEP"
+                  className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500"
+                />
+                {searchEscola ? (
+                  <button
+                    type="button"
+                    onClick={clearSearchEscola}
+                    className="cursor-pointer h-10 shrink-0 rounded-md border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 hover:bg-slate-50"
+                  >
+                    Limpar
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={handleSearchEscola}
+                  className="cursor-pointer h-10 shrink-0 rounded-md bg-primary px-3 text-sm font-bold text-white hover:bg-primary-strong"
+                >
+                  Buscar
+                </button>
+              </div>
+              {isSearchMenuOpen && searchSuggestions.length > 0 ? (
+                <div className="absolute left-0 right-0 z-[5000] mt-2 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
+                  {searchSuggestions.map((item) => (
+                    <button
+                      key={item.escolaId}
+                      type="button"
+                      onClick={() => focusSchool(item)}
+                      className="flex w-full cursor-pointer flex-col items-start gap-1 border-b border-slate-100 px-4 py-3 text-left last:border-b-0 hover:bg-slate-50"
+                    >
+                      <span className="text-sm font-bold text-slate-800">{item.escolaNome}</span>
+                      <span className="text-xs font-semibold text-slate-500">
+                        {[item.bairro, item.endereco].filter(Boolean).join(' - ')}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
             </div>
-            <datalist id="mapa-escolas">
-              {searchSuggestions.map((item) => (
-                <option key={item.escolaId} value={item.escolaNome} />
-              ))}
-            </datalist>
+            {appliedSearch ? (
+              <p className="mt-2 text-[11px] font-semibold text-slate-500">
+                Filtro textual ativo: {appliedSearch}
+              </p>
+            ) : null}
           </label>
           <FilterSelect label="Criticidade" value={filters.criticidade} onChange={(value) => setFilter('criticidade', value)} options={criticidadeOptions} />
-          <FilterSelect label="Status" value={filters.status} onChange={(value) => setFilter('status', value)} options={statusValues} />
+          <FilterSelect label="Status" value={filters.status} onChange={(value) => setFilter('status', value)} options={statusOptions} />
           <label className="block">
             <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Escola</span>
             <Select
@@ -1019,12 +1052,12 @@ export function Mapa({ onNavigate }) {
         </div>
       </Card>
 
-      <Card className="overflow-hidden p-0">
+      <Card className="relative z-0 overflow-hidden p-0">
 
         <div className="relative h-[calc(100vh-16rem)] min-h-[560px]">
           <MetricPanel context={metricContext} />
 
-          <MapContainer center={mapCenter} zoom={13} scrollWheelZoom zoomControl={false} className="h-full w-full">
+          <MapContainer center={mapCenter} zoom={13} scrollWheelZoom zoomControl={false} className="h-full w-full z-0">
             <TileLayer
               key={mapStyleKey}
               attribution={selectedMapStyle.attribution}
@@ -1154,7 +1187,7 @@ export function Mapa({ onNavigate }) {
           {loadingMapa ? (
             <div className="absolute inset-0 z-[550] flex items-center justify-center bg-white/70 backdrop-blur-[1px]">
               <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm">
-                Carregando mapa de calor...
+                Carregando escolas e ocorrencias...
               </div>
             </div>
           ) : null}
@@ -1447,11 +1480,11 @@ function OcorrenciaCard({ ocorrencia, schoolName = '' }) {
             </p>
           ) : null}
         </div>
-        <Badge>{ocorrencia.criticidade}</Badge>
+        <Badge>{ocorrencia.criticidadeLabel || ocorrencia.criticidade}</Badge>
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        <Badge>{ocorrencia.status}</Badge>
-        <span className="text-xs font-semibold text-slate-500">{ocorrencia.data || ocorrencia.dataEnvio || 'Sem data'}</span>
+        <Badge>{ocorrencia.statusLabel || ocorrencia.status}</Badge>
+        <span className="text-xs font-semibold text-slate-500">{ocorrencia.data || ocorrencia.dataAtualizacao || ocorrencia.dataAbertura || ocorrencia.dataEnvio || 'Sem data'}</span>
       </div>
       <p className="mt-3 text-sm leading-6 text-slate-600">
         {ocorrencia.descricao || 'Sem descricao resumida para esta ocorrencia.'}

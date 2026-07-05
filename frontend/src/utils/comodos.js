@@ -12,6 +12,12 @@ const salasPorEscola = {
 export function getSchoolRooms(escola) {
   if (!escola) return []
   if (Array.isArray(escola.comodos) && escola.comodos.length) return escola.comodos
+  if (Array.isArray(escola.comodosCadastrados) && escola.comodosCadastrados.length) {
+    return escola.comodosCadastrados.map((comodo) => ({
+      nome: comodo.nome || comodo.ambiente || '',
+      codigo: comodo.codigo || '',
+    }))
+  }
   return []
 }
 

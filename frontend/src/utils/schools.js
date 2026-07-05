@@ -1,13 +1,46 @@
-import { escolas as mockSchools } from '../data/mockData.js'
+import { escolasSeed } from '../seeds/escolasSeed.js'
 import { listarEscolas } from '../services/api.js'
+import { normalizeSchoolList, normalizeSchoolRecord } from './schoolRecords.js'
 
 const CUSTOM_SCHOOLS_KEY = 'custom-schools'
 
-export function isCustomSchool(schoolId) {
-  return String(schoolId || '').startsWith('esc-custom-')
+function getOfficialSchools() {
+  return normalizeSchoolList(escolasSeed)
 }
 
-export function loadCustomSchools() {
+function pickCoordinate(primary, fallback) {
+  if (Number.isFinite(Number(primary))) return Number(primary)
+  if (Number.isFinite(Number(fallback))) return Number(fallback)
+  return null
+}
+
+function mergeSchoolData(primarySchool, fallbackSchool) {
+  const primary = primarySchool ? normalizeSchoolRecord(primarySchool) : {}
+  const fallback = fallbackSchool ? normalizeSchoolRecord(fallbackSchool) : {}
+  const hasPrimaryRooms = Array.isArray(primary.comodos) && primary.comodos.length > 0
+  const hasPrimaryFotos = Array.isArray(primary.fotos) && primary.fotos.length > 0
+
+  return normalizeSchoolRecord({
+    ...fallback,
+    ...primary,
+    id: primary.id || fallback.id,
+    nome: primary.nome || fallback.nome,
+    bairro: primary.bairro || fallback.bairro,
+    endereco: primary.endereco || fallback.endereco,
+    cep: primary.cep || fallback.cep,
+    latitude: pickCoordinate(primary.latitude, fallback.latitude),
+    longitude: pickCoordinate(primary.longitude, fallback.longitude),
+    status: primary.status || fallback.status || 'Ativo',
+    descricao: primary.descricao || fallback.descricao || '',
+    fotoNome: primary.fotoNome || fallback.fotoNome || '',
+    fotoUrl: primary.fotoUrl || fallback.fotoUrl || '',
+    fotos: hasPrimaryFotos ? primary.fotos : (fallback.fotos || []),
+    dataCadastro: primary.dataCadastro || fallback.dataCadastro || '',
+    comodos: hasPrimaryRooms ? primary.comodos : (fallback.comodos || []),
+  })
+}
+
+function readCustomSchoolsFromStorage() {
   if (typeof window === 'undefined') return []
 
   try {
@@ -20,83 +53,77 @@ export function loadCustomSchools() {
   }
 }
 
+function persistCustomSchools(schools) {
+  window.localStorage.setItem(CUSTOM_SCHOOLS_KEY, JSON.stringify(schools))
+}
+
+export function isCustomSchool(schoolId) {
+  return String(schoolId || '').startsWith('esc-custom-')
+}
+
+export function loadCustomSchools() {
+  return normalizeSchoolList(readCustomSchoolsFromStorage())
+}
+
 export function getAllSchools() {
-  return [...mockSchools, ...loadCustomSchools()]
+  return mergeSchoolCatalog([], { includeOfficialFallback: true })
 }
 
-export async function loadSchoolCatalog() {
-  const remoteSchools = await listarEscolas()
-  return mergeSchoolCatalog(remoteSchools)
+export async function loadSchoolCatalog(options = {}) {
+  const includeOfficialFallback = Boolean(options.includeOfficialFallback)
+
+  try {
+    const remoteSchools = await listarEscolas()
+    const mergedRemoteSchools = mergeSchoolCatalog(remoteSchools, { includeOfficialFallback })
+    if (mergedRemoteSchools.length > 0) {
+      return mergedRemoteSchools
+    }
+  } catch {
+    return mergeSchoolCatalog([], { includeOfficialFallback: true })
+  }
+
+  return mergeSchoolCatalog([], { includeOfficialFallback: true })
 }
 
-export function mergeSchoolCatalog(remoteSchools = []) {
+export function mergeSchoolCatalog(remoteSchools = [], options = {}) {
+  const includeOfficialFallback = Boolean(options.includeOfficialFallback)
+  const officialSchools = getOfficialSchools()
   const customSchools = loadCustomSchools()
-  const mockById = new Map(mockSchools.map((school) => [school.id, school]))
-  const mergedById = new Map()
+  const officialByStableId = new Map(officialSchools.map((school) => [school.stableId, school]))
+  const mergedByStableId = new Map()
 
-  remoteSchools.forEach((remoteSchool) => {
-    mergedById.set(remoteSchool.id, mergeSchoolData(remoteSchool, mockById.get(remoteSchool.id)))
+  normalizeSchoolList(remoteSchools).forEach((remoteSchool) => {
+    const officialSchool = officialByStableId.get(remoteSchool.stableId) || null
+    mergedByStableId.set(remoteSchool.stableId, mergeSchoolData(remoteSchool, officialSchool))
   })
+
+  if (includeOfficialFallback || mergedByStableId.size === 0) {
+    officialSchools.forEach((officialSchool) => {
+      if (!mergedByStableId.has(officialSchool.stableId)) {
+        mergedByStableId.set(officialSchool.stableId, mergeSchoolData(officialSchool, null))
+      }
+    })
+  }
 
   customSchools.forEach((customSchool) => {
-    mergedById.set(customSchool.id, mergeSchoolData(customSchool, null))
+    mergedByStableId.set(customSchool.stableId || customSchool.id, mergeSchoolData(customSchool, null))
   })
 
-  return [...mergedById.values()]
+  return [...mergedByStableId.values()].sort((left, right) => left.nome.localeCompare(right.nome, 'pt-BR'))
 }
 
 export function saveCustomSchool(payload) {
+  const normalizedSchool = normalizeSchoolRecord(payload)
   const current = loadCustomSchools()
-  const next = [...current, payload]
-  window.localStorage.setItem(CUSTOM_SCHOOLS_KEY, JSON.stringify(next))
+  const nextById = new Map(current.map((school) => [school.id, school]))
+  nextById.set(normalizedSchool.id, normalizedSchool)
+  const next = [...nextById.values()].sort((left, right) => left.nome.localeCompare(right.nome, 'pt-BR'))
+  persistCustomSchools(next)
   return next
 }
 
 export function removeCustomSchool(schoolId) {
-  const current = loadCustomSchools()
-  const next = current.filter((item) => item.id !== schoolId)
-  window.localStorage.setItem(CUSTOM_SCHOOLS_KEY, JSON.stringify(next))
+  const next = loadCustomSchools().filter((item) => item.id !== schoolId)
+  persistCustomSchools(next)
   return next
-}
-
-function mergeSchoolData(primarySchool, fallbackSchool) {
-  const primary = primarySchool || {}
-  const fallback = fallbackSchool || {}
-
-  return {
-    ...fallback,
-    ...primary,
-    status: normalizeSchoolStatus(primary.status || fallback.status || 'Ativo'),
-    dataCadastro: primary.dataCadastro || formatSchoolCreatedAt(primary.criadoEm) || fallback.dataCadastro || '',
-    descricao: primary.descricao || fallback.descricao || '',
-    fotoNome: primary.fotoNome || fallback.fotoNome || '',
-    fotoUrl: primary.fotoUrl || fallback.fotoUrl || '',
-    fotos: Array.isArray(primary.fotos) && primary.fotos.length
-      ? primary.fotos
-      : (Array.isArray(fallback.fotos) ? fallback.fotos : []),
-    comodos: Array.isArray(primary.comodos) && primary.comodos.length
-      ? primary.comodos
-      : (fallback.comodos || []),
-    latitude: pickCoordinate(primary.latitude, fallback.latitude),
-    longitude: pickCoordinate(primary.longitude, fallback.longitude),
-  }
-}
-
-function normalizeSchoolStatus(value) {
-  if (value === 'Ativa') return 'Ativo'
-  if (value === 'Inativa') return 'Inativo'
-  return value || 'Ativo'
-}
-
-function formatSchoolCreatedAt(value) {
-  if (!value) return ''
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return ''
-  return date.toISOString().slice(0, 10)
-}
-
-function pickCoordinate(primary, fallback) {
-  if (Number.isFinite(Number(primary))) return Number(primary)
-  if (Number.isFinite(Number(fallback))) return Number(fallback)
-  return null
 }
