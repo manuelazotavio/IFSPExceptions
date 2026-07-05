@@ -93,7 +93,7 @@ function normalizeOption(option) {
   return { value: option, label: formatDisplayLabel(option) }
 }
 
-export function Select({ value, onChange, options, placeholder = 'Selecione...', disabled = false, className = '', size = 'md', direction = 'down' }) {
+export function Select({ value, onChange, options, placeholder = 'Selecione...', disabled = false, className = '', size = 'md', dropUp = false }) {
   const [open, setOpen] = useState(false)
   const containerRef = useRef(null)
   const normalized = options.map(normalizeOption)
