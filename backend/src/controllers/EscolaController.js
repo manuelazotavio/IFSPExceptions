@@ -10,12 +10,18 @@ function bucketCriticidade(criticidade) {
   return 'ATENCAO'
 }
 
+const comodoSchema = z.object({
+  nome: z.string({ message: 'Informe o nome do comodo' }).trim().min(1, 'Informe o nome do comodo'),
+  codigo: z.string({ message: 'Informe o codigo do comodo' }).trim().min(1, 'Informe o codigo do comodo'),
+})
+
 const escolaSchema = z.object({
   nome: z.string({ message: 'Informe o nome da escola' }).trim().min(1, 'Informe o nome da escola'),
   bairro: z.string({ message: 'Informe o bairro' }).trim().min(1, 'Informe o bairro'),
   endereco: z.string({ message: 'Informe o endereco' }).trim().min(1, 'Informe o endereco'),
   latitude: z.coerce.number({ message: 'Latitude invalida' }).min(-90, 'Latitude invalida').max(90, 'Latitude invalida'),
   longitude: z.coerce.number({ message: 'Longitude invalida' }).min(-180, 'Longitude invalida').max(180, 'Longitude invalida'),
+  comodos: z.array(comodoSchema).optional(),
 })
 
 export class EscolaController {

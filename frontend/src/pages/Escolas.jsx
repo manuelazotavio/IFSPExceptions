@@ -249,6 +249,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
         endereco: novoCadastro.endereco.trim(),
         latitude: Number(novoCadastro.latitude),
         longitude: Number(novoCadastro.longitude),
+        comodos: novoCadastro.comodos,
       })
     } catch (error) {
       setErroCadastro(error.message)
