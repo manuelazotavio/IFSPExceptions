@@ -45,7 +45,7 @@ export function Sidebar({ route, onNavigate, user, open = false, onClose, collap
       >
         <div className={`relative mb-7 flex items-center gap-3 ${collapsed ? 'lg:justify-center lg:ps-0' : 'justify-between ps-2'}`}>
           <div className={`px-3 py-2 transition-opacity ${collapsed ? 'lg:hidden' : ''}`}>
-            <img src="/geo/logo_fundo_escuro.svg" alt="Zela+" className="h-8 w-auto" />
+            <img src="/logo_fundo_escuro.svg" alt="Zela+" className="h-8 w-auto" />
           </div>
           <button
             type="button"
