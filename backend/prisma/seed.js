@@ -13,24 +13,24 @@ const escolasJsonPath = path.resolve(__dirname, '../../frontend/public/geo/unida
 // Preserve ids already referenced by ocorrencias and usuarios seeds.
 const LEGACY_ESCOLA_IDS = new Map([
   ['emef dr. carlos de almeida rodrigues', 'esc-001'],
-  ['emei/emef prof.ª alaor xavier junqueira', 'esc-008'],
+  ['emei/emef profa. alaor xavier junqueira', 'esc-008'],
   ['emei/emef prof. lucio jacinto dos santos', 'esc-003'],
   ['emef prof. luiz ribeiro muniz', 'esc-007'],
   ['emef prof. luiz silvar do prado', 'esc-009'],
-  ['emef prof.ª antonia antunes arouca', 'esc-005'],
-  ['emef prof.ª maria aparecida ujio', 'esc-004'],
-  ['cei/emei prof.ª maria eugenia aranha chodounsky', 'esc-010'],
+  ['emef profa. antonia antunes arouca', 'esc-005'],
+  ['emef profa. maria aparecida ujio', 'esc-004'],
+  ['cei/emei profa. maria eugenia aranha chodounsky', 'esc-010'],
   ['emei/emef prof. yasutada nasu', 'esc-006'],
 ])
 
 function mojibakeScore(value) {
-  return (String(value ?? '').match(/[ÃƒÃ‚]/g) || []).length
+  return (String(value ?? '').match(/[\u00C3\u00C2]/g) || []).length
 }
 
 function repairText(value) {
   const text = String(value ?? '').trim()
   if (!text) return ''
-  if (!/[ÃƒÃ‚]/.test(text)) return text
+  if (!/[\u00C3\u00C2]/.test(text)) return text
 
   try {
     const repaired = Buffer.from(text, 'latin1').toString('utf8')
@@ -207,7 +207,7 @@ async function main() {
   const senhaHash = await bcrypt.hash('123456', 10)
 
   const usuarios = [
-    { email: 'seduc@escola.gov.br', nome: 'JoÃ£o Beserra', role: 'SEDUC', escolaId: null },
+    { email: 'seduc@escola.gov.br', nome: 'Joao Beserra', role: 'SEDUC', escolaId: null },
     { email: 'diretor@escola.gov.br', nome: 'Diretora Alberto Souza', role: 'DIRETOR', escolaId: 'esc-001' },
     ...usuariosExternosSeed.map((usuario) => ({ ...usuario, role: 'EXTERNO' })),
   ]
