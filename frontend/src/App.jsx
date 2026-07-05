@@ -41,7 +41,13 @@ function isPublicRoute(pathname) {
 }
 
 function isPresentationRoute(pathname) {
-  return pathname === PRESENTATION_ROUTE
+  return pathname === PRESENTATION_ROUTE || pathname.startsWith(`${PRESENTATION_ROUTE}/`)
+}
+
+function getPresentationPath(pathname) {
+  if (pathname === PRESENTATION_ROUTE) return '/mapa'
+  const nextPath = pathname.slice(PRESENTATION_ROUTE.length)
+  return nextPath || '/mapa'
 }
 
 async function svgUrlParaPngDataUrl(url, width = 240, height = 240) {
@@ -70,10 +76,12 @@ async function svgUrlParaPngDataUrl(url, width = 240, height = 240) {
 export default function App() {
   const [route, setRoute] = useState(normalizeRoute)
   const [user, setUser] = useState(getStoredUser)
-  const isExterno = user?.role === 'EXTERNO'
-  const isDiretor = user?.role === 'DIRETOR'
   const { pathname, searchParams } = parseRoute(route)
   const presentationMode = isPresentationRoute(pathname)
+  const activeUser = presentationMode ? PRESENTATION_USER : user
+  const activePathname = presentationMode ? getPresentationPath(pathname) : pathname
+  const isExterno = activeUser?.role === 'EXTERNO'
+  const isDiretor = activeUser?.role === 'DIRETOR'
   const [escolas, setEscolas] = useState([])
   const [ocorrenciasAprovadas, setOcorrenciasAprovadas] = useState([])
 
@@ -84,12 +92,12 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (!user || isExterno) return
+    if (!activeUser || isExterno) return
 
     let ativo = true
     Promise.all([
       listarEscolas(),
-      listarOcorrencias(isDiretor && user?.escolaId ? { escolaId: user.escolaId } : {}),
+      listarOcorrencias(isDiretor && activeUser?.escolaId ? { escolaId: activeUser.escolaId } : {}),
     ])
       .then(([escolasApi, ocorrenciasApi]) => {
         if (!ativo) return
@@ -105,7 +113,7 @@ export default function App() {
     return () => {
       ativo = false
     }
-  }, [user, isExterno, isDiretor, user?.escolaId])
+  }, [activeUser, isExterno, isDiretor, activeUser?.escolaId])
 
   useEffect(() => {
     if (presentationMode) return
@@ -143,14 +151,19 @@ export default function App() {
   }
 
   function navigatePresentation(path) {
-    navigate(path === '/mapa' ? PRESENTATION_ROUTE : path)
+    if (path.startsWith(PRESENTATION_ROUTE)) {
+      navigate(path)
+      return
+    }
+
+    navigate(path === '/mapa' ? PRESENTATION_ROUTE : `${PRESENTATION_ROUTE}${path}`)
   }
 
   function buildDashboardExportRows() {
-    const escopo = isDiretor ? ocorrenciasAprovadas.filter((item) => item.escolaId === user.escolaId) : ocorrenciasAprovadas
+    const escopo = isDiretor ? ocorrenciasAprovadas.filter((item) => item.escolaId === activeUser.escolaId) : ocorrenciasAprovadas
     const metrics = dashboardMetrics(escopo, isDiretor ? 1 : escolas.length)
     const escolasRank = escolas
-      .filter((escola) => !isDiretor || escola.id === user.escolaId)
+      .filter((escola) => !isDiretor || escola.id === activeUser.escolaId)
       .map((escola) => ({
         escola: escola.nome,
         bairro: escola.bairro,
@@ -332,38 +345,41 @@ export default function App() {
     else exportCsv(rows)
   }
 
-  function renderPage() {
-    if (pathname.startsWith('/ocorrencias/')) {
-      return <OcorrenciaDetalhe id={pathname.split('/').at(-1)} onNavigate={navigate} user={user} />
+  function renderPage(pagePathname = activePathname, pageNavigate = navigate, pageUser = activeUser, pageSearchParams = searchParams) {
+    const pageIsExterno = pageUser?.role === 'EXTERNO'
+    const pageIsDiretor = pageUser?.role === 'DIRETOR'
+
+    if (pagePathname.startsWith('/ocorrencias/')) {
+      return <OcorrenciaDetalhe id={pagePathname.split('/').at(-1)} onNavigate={pageNavigate} user={pageUser} />
     }
 
-    if (pathname.startsWith('/escolas/')) {
-      return <EscolaDetalhe id={pathname.split('/').at(-1)} onNavigate={navigate} />
+    if (pagePathname.startsWith('/escolas/')) {
+      return <EscolaDetalhe id={pagePathname.split('/').at(-1)} onNavigate={pageNavigate} />
     }
 
-    if (isExterno) {
-      return <Ocorrencias onNavigate={navigate} user={user} />
+    if (pageIsExterno) {
+      return <Ocorrencias onNavigate={pageNavigate} user={pageUser} />
     }
 
-    if (isDiretor) {
-      return pathname === '/ocorrencias'
-        ? <Ocorrencias onNavigate={navigate} user={user} />
-        : <Dashboard onNavigate={navigate} user={user} />
+    if (pageIsDiretor) {
+      return pagePathname === '/ocorrencias'
+        ? <Ocorrencias onNavigate={pageNavigate} user={pageUser} />
+        : <Dashboard onNavigate={pageNavigate} user={pageUser} />
     }
 
     const pages = {
-      '/dashboard': <Dashboard onNavigate={navigate} user={user} />,
-      '/mapa': <Mapa onNavigate={navigate} />,
-      '/ocorrencias': <Ocorrencias onNavigate={navigate} user={user} />,
-      '/escolas': <Escolas onNavigate={navigate} escolaIdFiltro={searchParams.get('escolaId') || ''} />,
+      '/dashboard': <Dashboard onNavigate={pageNavigate} user={pageUser} />,
+      '/mapa': <Mapa onNavigate={pageNavigate} />,
+      '/ocorrencias': <Ocorrencias onNavigate={pageNavigate} user={pageUser} />,
+      '/escolas': <Escolas onNavigate={pageNavigate} escolaIdFiltro={pageSearchParams.get('escolaId') || ''} />,
       '/indicadores': <Indicadores />,
-      '/usuarios': <Usuarios />,
+      '/usuarios': <Usuarios presentationMode={presentationMode} />,
       '/categorias': <Categorias />,
-      '/auditoria': <Auditoria />,
+      '/auditoria': <Auditoria presentationMode={presentationMode} />,
       '/configuracoes': <Configuracoes />,
     }
 
-    return pages[pathname] || pages['/mapa']
+    return pages[pagePathname] || pages['/mapa']
   }
 
   if (isPublicRoute(pathname)) {
@@ -373,14 +389,14 @@ export default function App() {
   if (presentationMode) {
     return (
       <Layout
-        route="/mapa"
+        route={activePathname}
         onNavigate={navigatePresentation}
-        onExport={() => {}}
+        onExport={exportDashboard}
         user={PRESENTATION_USER}
         onLogout={() => navigate('/login')}
         presentationMode
       >
-        <Mapa onNavigate={navigatePresentation} />
+        {renderPage(activePathname, navigatePresentation, PRESENTATION_USER, searchParams)}
       </Layout>
     )
   }
