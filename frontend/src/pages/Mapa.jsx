@@ -92,6 +92,7 @@ const mapStyles = {
     attribution: '&copy; Stadia Maps &copy; OpenMapTiles &copy; OpenStreetMap contributors',
   },
 }
+const defaultMapStyleKey = 'cartoLightNoLabels'
 
 function isFeatureCollectionGeoJson(data) {
   return data?.type === 'FeatureCollection' && Array.isArray(data.features)
@@ -199,6 +200,50 @@ function truncateMapText(value, maxLength = 30) {
   const text = String(value || '').trim()
   if (text.length <= maxLength) return text
   return `${text.slice(0, Math.max(0, maxLength - 3)).trim()}...`
+}
+
+function clampNumber(value, minimum, maximum) {
+  return Math.min(maximum, Math.max(minimum, value))
+}
+
+function getBairroLabelName(entry, stats) {
+  const properties = entry?.feature?.properties || {}
+  const candidates = [
+    stats?.nome,
+    entry?.name,
+    properties.NM_BAIRRO,
+    properties.nome_bairro,
+    properties.nome_bairr,
+    properties.NOME,
+    properties.bairro,
+    properties.BAIRRO,
+    properties.nome,
+    properties.name,
+    properties.Name,
+  ]
+
+  const match = candidates.find((value) => String(value || '').trim())
+  return match ? String(match).trim() : 'Bairro sem nome'
+}
+
+function getBairroLabelPixelBounds(labelBounds, map) {
+  if (!labelBounds || !map) return null
+
+  const northWest = map.latLngToLayerPoint([labelBounds.maxLatitude, labelBounds.minLongitude])
+  const southEast = map.latLngToLayerPoint([labelBounds.minLatitude, labelBounds.maxLongitude])
+  const width = Math.abs(southEast.x - northWest.x)
+  const height = Math.abs(southEast.y - northWest.y)
+
+  if (!Number.isFinite(width) || !Number.isFinite(height)) {
+    return null
+  }
+
+  return {
+    width,
+    height,
+    area: width * height,
+    smallestSide: Math.min(width, height),
+  }
 }
 
 function createSchoolPointIcon({ color, isSelected, isDimmed }) {
@@ -424,44 +469,54 @@ function getBairroSolicitacoes({ bairroKey, bairroStats, occurrences, schoolsByI
     .sort(sortOcorrenciasByUrgencia)
 }
 
-function getBairroLabelStyle({ entry, currentZoom, isSelected, hasSchools }) {
-  const area = Number(entry?.labelBounds?.area || 0)
-  const isLarge = area >= 0.00045
-  const isMedium = area >= 0.00012
+function getBairroLabelStyle({ entry, currentZoom, isSelected, hasSchools, map }) {
+  const pixelBounds = getBairroLabelPixelBounds(entry?.labelBounds, map)
+  if (!pixelBounds) {
+    return isSelected
+      ? {
+        visible: true,
+        fontSize: 10,
+        maxWidth: 100,
+        maxLength: 20,
+        opacity: hasSchools ? 0.98 : 0.86,
+      }
+      : { visible: false }
+  }
+
+  const { width, height, area, smallestSide } = pixelBounds
 
   if (!isSelected) {
     if (currentZoom < 12) return { visible: false }
-    if (currentZoom < 14 && !isLarge) return { visible: false }
-    if (currentZoom < 15 && !isLarge && !isMedium) return { visible: false }
-    if (!hasSchools && currentZoom < 15) return { visible: false }
+    if (!hasSchools && currentZoom < 14) return { visible: false }
+    if (smallestSide < 16) return { visible: false }
+    if (currentZoom < 14 && (width < 110 || height < 26 || area < 2200)) return { visible: false }
+    if (currentZoom < 15 && (width < 76 || height < 22 || area < 1400)) return { visible: false }
   }
 
-  let fontSize = 8
-  let maxWidth = 56
-  let maxLength = 16
-
-  if (isLarge) {
-    fontSize = currentZoom >= 15 ? 10 : 9
-    maxWidth = currentZoom >= 15 ? 96 : 82
-    maxLength = currentZoom >= 15 ? 20 : 18
-  } else if (isMedium) {
-    fontSize = currentZoom >= 15 ? 9 : 8
-    maxWidth = currentZoom >= 15 ? 74 : 62
-    maxLength = currentZoom >= 15 ? 18 : 15
-  }
-
-  if (isSelected) {
-    fontSize = Math.max(fontSize, 10.5)
-    maxWidth = Math.max(maxWidth, 100)
-    maxLength = Math.max(maxLength, 22)
-  }
+  const fontSize = clampNumber(
+    Math.min(Math.sqrt(Math.max(area, 1)) / 18, height * 0.55, width / 5.2),
+    8,
+    isSelected ? 20 : 18,
+  )
+  const maxWidth = clampNumber(
+    width * (isSelected ? 0.82 : 0.72),
+    48,
+    isSelected ? 220 : 180,
+  )
+  const maxLength = Math.max(
+    10,
+    Math.min(
+      isSelected ? 28 : 24,
+      Math.floor(maxWidth / Math.max(fontSize * 0.58, 5)),
+    ),
+  )
 
   return {
     visible: true,
     fontSize,
     maxWidth,
     maxLength,
-    opacity: hasSchools ? (isSelected ? 0.98 : 0.9) : (isSelected ? 0.86 : 0.7),
+    opacity: hasSchools ? (isSelected ? 0.98 : 0.88) : (isSelected ? 0.86 : 0.68),
   }
 }
 
@@ -636,13 +691,17 @@ export function Mapa({ onNavigate }) {
   const [schoolSearch, setSchoolSearch] = useState('')
   const warnedSchoolIdsRef = useRef(new Set())
   const [mapStyleKey, setMapStyleKey] = useState(() => {
-    if (typeof window === 'undefined') return 'cartoLight'
+    if (typeof window === 'undefined') return defaultMapStyleKey
 
     try {
       const storedStyle = window.localStorage.getItem(mapStyleStorageKey)
-      return storedStyle && mapStyles[storedStyle] ? storedStyle : 'cartoLight'
+      if (!storedStyle || storedStyle === 'cartoLight') {
+        return defaultMapStyleKey
+      }
+
+      return mapStyles[storedStyle] ? storedStyle : defaultMapStyleKey
     } catch {
-      return 'cartoLight'
+      return defaultMapStyleKey
     }
   })
 
@@ -1008,7 +1067,7 @@ export function Mapa({ onNavigate }) {
     })
   ), [currentSchoolContext, historyMode, mapSchools.length, selectedBairroStats, summaryMetrics])
 
-  const selectedMapStyle = mapStyles[mapStyleKey] || mapStyles.cartoLight
+  const selectedMapStyle = mapStyles[mapStyleKey] || mapStyles[defaultMapStyleKey]
   const shouldShowPermanentSchoolLabels = currentZoom >= schoolLabelZoom && !filters.escolaId && !drawerAberto
   const legendRange = showBairrosLayer ? bairroScoreRange : schoolScoreRange
   const legendGradient = `linear-gradient(90deg, ${effectiveColorScale.start} 0%, ${effectiveColorScale.middle} 50%, ${effectiveColorScale.end} 100%)`
@@ -1493,17 +1552,21 @@ function ColorScaleField({ label, value, onChange }) {
 
 
 function BairroLabelsLayer({ entries, bairroStats, currentZoom, selectedBairro }) {
+  const map = useMap()
+
   return entries.map((entry) => {
     const stats = bairroStats[entry.key]
-    if (!stats?.labelPosition) return null
+    const labelPosition = stats?.labelPosition || entry?.labelPosition
+    if (!labelPosition) return null
 
     const isSelected = selectedBairro === entry.key
-    const hasSchools = Number(stats.totalEscolas || 0) > 0
+    const hasSchools = Number(stats?.totalEscolas || 0) > 0
     const labelStyle = getBairroLabelStyle({
       entry,
       currentZoom,
       isSelected,
       hasSchools,
+      map,
     })
 
     if (!labelStyle.visible) return null
@@ -1511,10 +1574,10 @@ function BairroLabelsLayer({ entries, bairroStats, currentZoom, selectedBairro }
     return (
       <Marker
         key={entry.key}
-        position={stats.labelPosition}
+        position={labelPosition}
         icon={createBairroLabelIcon({
-          name: truncateMapText(stats.nome, labelStyle.maxLength),
-          color: stats.labelColor,
+          name: truncateMapText(getBairroLabelName(entry, stats), labelStyle.maxLength),
+          color: stats?.labelColor || '#475569',
           fontSize: labelStyle.fontSize,
           maxWidth: labelStyle.maxWidth,
           isSelected,

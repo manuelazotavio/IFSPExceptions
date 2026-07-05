@@ -21,8 +21,12 @@ export function getBairroName(feature) {
   return feature?.properties?.NM_BAIRRO
     || feature?.properties?.nome_bairro
     || feature?.properties?.nome_bairr
+    || feature?.properties?.NOME
+    || feature?.properties?.bairro
+    || feature?.properties?.BAIRRO
     || feature?.properties?.nome
     || feature?.properties?.name
+    || feature?.properties?.Name
     || 'Bairro sem nome'
 }
 
@@ -331,6 +335,10 @@ export function buildFeatureEntries(bairrosGeoJson) {
           width: boundsWidth,
           height: boundsHeight,
           area: boundsWidth * boundsHeight,
+          minLongitude: coordinateBounds.minLongitude,
+          maxLongitude: coordinateBounds.maxLongitude,
+          minLatitude: coordinateBounds.minLatitude,
+          maxLatitude: coordinateBounds.maxLatitude,
         } : null,
       }
     })
