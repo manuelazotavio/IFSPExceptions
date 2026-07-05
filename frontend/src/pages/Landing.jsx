@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Icon } from '../components/Icons.jsx'
 import { listarEscolas, listarOcorrencias } from '../services/api.js'
-
+//
 const niceLabels = {
   Indaia: 'Indaiá',
   'Jardim California': 'Jardim Califórnia',

@@ -360,7 +360,7 @@ async function main() {
       create: { ...usuario, senha: senhaHash },
     })
   }
-
+//
   const totalExistentes = await prisma.ocorrencia.count()
   const totalOcorrenciasOficiais = await prisma.ocorrencia.count({
     where: { id: { startsWith: 'oco-seed-' } },
