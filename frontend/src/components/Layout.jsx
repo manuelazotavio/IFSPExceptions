@@ -22,7 +22,7 @@ const roleLabels = {
   EXTERNO: 'Externo',
 }
 
-export function Layout({ route, onNavigate, onExport, user, onLogout, children }) {
+export function Layout({ route, onNavigate, onExport, user, onLogout, presentationMode = false, children }) {
   const [exportOpen, setExportOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -36,10 +36,15 @@ export function Layout({ route, onNavigate, onExport, user, onLogout, children }
   }
 
   const carregarNotificacoes = useCallback(() => {
+    if (presentationMode) {
+      setNotificacoes([])
+      return Promise.resolve([])
+    }
+
     return listarNotificacoes(filtrosNotificacoes)
       .then((dados) => setNotificacoes(dados))
       .catch(() => setNotificacoes([]))
-  }, [isDiretor, isExterno, user?.escolaId, user?.email])
+  }, [isDiretor, isExterno, presentationMode, user?.escolaId, user?.email])
 
   useEffect(() => {
     let ativo = true
@@ -97,6 +102,7 @@ export function Layout({ route, onNavigate, onExport, user, onLogout, children }
         nomeExibido={nomeExibido}
         roleLabel={roleLabel}
         onLogout={onLogout}
+        presentationMode={presentationMode}
       />
       <div className={`flex flex-col transition-[padding] duration-200 ${isMapaRoute ? 'h-full min-h-0 overflow-hidden' : 'min-h-screen'} ${sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}`}>
         <header className="sticky top-0 z-30 shrink-0 border-b border-slate-200 bg-white/95 px-5 pt-4 pb-0 backdrop-blur sm:pb-4 lg:px-8">
@@ -143,7 +149,7 @@ export function Layout({ route, onNavigate, onExport, user, onLogout, children }
                     )}
                   </div>
                 )}
-                <NotificationBell notificacoes={notificacoes} onAbrir={handleAbrirNotificacao} onLimpar={handleLimparNotificacoes} />
+                {!presentationMode && <NotificationBell notificacoes={notificacoes} onAbrir={handleAbrirNotificacao} onLimpar={handleLimparNotificacoes} />}
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
@@ -172,21 +178,23 @@ export function Layout({ route, onNavigate, onExport, user, onLogout, children }
                   )}
                 </div>
               )}
-              <div className="hidden md:block">
+              {!presentationMode && <div className="hidden md:block">
                 <NotificationBell notificacoes={notificacoes} onAbrir={handleAbrirNotificacao} onLimpar={handleLimparNotificacoes} />
-              </div>
+              </div>}
               <div className="hidden min-w-0 items-center gap-2 rounded-md bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 lg:flex">
                 <span className="max-w-[8rem] truncate sm:max-w-[14rem]">{nomeExibido}</span>
                 <span className="text-slate-400">|</span>
                 <span className="whitespace-nowrap text-slate-500">{roleLabel}</span>
               </div>
-              <button
-                type="button"
-                onClick={onLogout}
-                className="hidden cursor-pointer rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 lg:block"
-              >
-                Sair
-              </button>
+              {!presentationMode && (
+                <button
+                  type="button"
+                  onClick={onLogout}
+                  className="hidden cursor-pointer rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 lg:block"
+                >
+                  Sair
+                </button>
+              )}
             </div>
           </div>
         </header>

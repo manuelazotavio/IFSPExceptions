@@ -10,10 +10,10 @@ const items = [
   ['auditoria', 'Log de auditoria', '/auditoria', 'history']
 ]
 
-export function Sidebar({ route, onNavigate, user, open = false, onClose, collapsed = false, onToggleCollapsed, nomeExibido, roleLabel, onLogout }) {
+export function Sidebar({ route, onNavigate, user, open = false, onClose, collapsed = false, onToggleCollapsed, nomeExibido, roleLabel, onLogout, presentationMode = false }) {
   const isExterno = user?.role === 'EXTERNO'
   const isDiretor = user?.role === 'DIRETOR'
-  const visibleItems = isExterno
+  const visibleItems = presentationMode ? [['mapa', 'Mapa de calor', '/mapa', 'map']] : isExterno
     ? [['ocorrencias', 'Minhas ocorrências', '/ocorrencias', 'alert']]
     : isDiretor
       ? [
@@ -110,13 +110,15 @@ export function Sidebar({ route, onNavigate, user, open = false, onClose, collap
             <span className="text-blue-200">|</span>
             <span className="whitespace-nowrap text-blue-100">{roleLabel}</span>
           </div>
-          <button
-            type="button"
-            onClick={onLogout}
-            className="mt-2 w-full cursor-pointer rounded-md border border-white/15 px-3 py-2 text-sm font-semibold text-blue-50 hover:bg-white/15"
-          >
-            Sair
-          </button>
+          {!presentationMode && (
+            <button
+              type="button"
+              onClick={onLogout}
+              className="mt-2 w-full cursor-pointer rounded-md border border-white/15 px-3 py-2 text-sm font-semibold text-blue-50 hover:bg-white/15"
+            >
+              Sair
+            </button>
+          )}
         </div>
       </aside>
     </>
