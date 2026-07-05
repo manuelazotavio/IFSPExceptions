@@ -6,21 +6,21 @@ import { Icon } from '../components/Icons.jsx'
 import { listarEscolas, listarOcorrencias } from '../services/api.js'
 
 const niceLabels = {
-  Indaia: 'Indaia',
-  'Jardim California': 'Jardim California',
+  Indaia: 'Indaiá',
+  'Jardim California': 'Jardim Califórnia',
   Tinga: 'Tinga',
   'Porto Novo': 'Porto Novo',
-  Massaguacu: 'Massaguacu',
-  'Pereque Mirim': 'Pereque Mirim',
-  'Martim de Sa': 'Martim de Sa',
-  Travessao: 'Travessao',
-  Eletrica: 'Eletrica',
-  Hidraulica: 'Hidraulica',
+  Massaguacu: 'Massaguaçu',
+  'Pereque Mirim': 'Perequê Mirim',
+  'Martim de Sa': 'Martim de Sá',
+  Travessao: 'Travessão',
+  Eletrica: 'Elétrica',
+  Hidraulica: 'Hidráulica',
   Estrutural: 'Estrutural',
-  Seguranca: 'Seguranca',
+  Seguranca: 'Segurança',
   Acessibilidade: 'Acessibilidade',
   Equipamento: 'Equipamento',
-  Mobiliario: 'Mobiliario',
+  Mobiliario: 'Mobiliário',
   Limpeza: 'Limpeza',
   Tecnologia: 'Tecnologia',
   Outros: 'Outros',
@@ -87,17 +87,16 @@ function goodNewsChartData(metrics, ocorrenciasAprovadas) {
   const movimentadas = ocorrenciasAprovadas.filter((item) => item.status !== 'Aberta').length
   const encaminhadas = ocorrenciasAprovadas.filter((item) => (
     item.status === 'Em andamento'
-    || item.status === 'Aguardando orcamento'
     || item.status === 'Aguardando visita tecnica'
     || item.status === 'Resolvida'
   )).length
 
   return [
     { label: 'Escolas ativas', value: metrics.escolas, detail: 'unidades', tone: 'sky' },
-    { label: 'Bairros cobertos', value: metrics.bairros, detail: 'territorios', tone: 'teal' },
-    { label: 'Registros acompanhados', value: metrics.acompanhadas, detail: 'solicitacoes', tone: 'blue' },
+    { label: 'Bairros cobertos', value: metrics.bairros, detail: 'territórios', tone: 'teal' },
+    { label: 'Registros acompanhados', value: metrics.acompanhadas, detail: 'solicitações', tone: 'blue' },
     { label: 'Tratativas movimentadas', value: movimentadas, detail: 'com andamento', tone: 'emerald' },
-    { label: 'Encaminhamentos tecnicos', value: encaminhadas, detail: 'em fluxo ativo', tone: 'amber' },
+    { label: 'Encaminhamentos técnicos', value: encaminhadas, detail: 'em fluxo ativo', tone: 'amber' },
   ]
 }
 
@@ -147,9 +146,9 @@ export function Landing({ onNavigate, user }) {
             className="flex cursor-pointer items-center gap-3 rounded-md px-1 py-1 text-left"
           >
             <span className="flex h-10 items-center rounded-md px-2.5">
-              <img src="/geo/logo_fundo_escuro.svg" alt="Escola em Dia" className="h-6 w-auto" />
+              <img src="/geo/logo_fundo_escuro.svg" alt="Zela+" className="h-6 w-auto" />
             </span>
-            <span className="block text-xs font-semibold text-slate-200">Rede municipal monitorada</span>
+            
           </button>
 
           <nav className="flex items-center gap-2">
@@ -159,15 +158,13 @@ export function Landing({ onNavigate, user }) {
 
         <div className="relative z-10 mx-auto flex max-w-5xl flex-col items-center px-5 pb-20 pt-20 text-center lg:px-8 lg:pb-28 lg:pt-28">
           <div>
-            <p className="mb-5 inline-flex rounded-md bg-emerald-400/18 px-3 py-1 text-sm font-800 text-emerald-100 ring-1 ring-emerald-200/25">
-              Transparencia com foco no que esta andando bem
-            </p>
+          
             <h1 className="mx-auto max-w-4xl text-5xl font-800 leading-tight tracking-normal md:text-7xl">
-              Escola em Dia
+              Zela+
             </h1>
             <p className="mx-auto mt-6 max-w-3xl text-lg font-medium leading-8 text-slate-100">
-              Um panorama publico dos avancos da manutencao escolar: escolas acompanhadas, bairros atendidos,
-              melhorias concluidas e frentes de trabalho em movimento.
+              Um panorama público dos avanços da manutenção escolar: escolas acompanhadas, bairros atendidos,
+              melhorias concluídas e frentes de trabalho em movimento.
             </p>
             <div className="mx-auto mt-8 flex max-w-xl flex-col gap-3 sm:flex-row sm:justify-center">
               <button className="cursor-pointer"
@@ -184,7 +181,7 @@ export function Landing({ onNavigate, user }) {
                 className="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-md border border-white/30 px-5 text-sm font-800 text-white transition hover:bg-white/10"
               >
                 <Icon name="plus" className="h-4 w-4" />
-                Enviar solicitacao
+                Enviar solicitação
               </button>
             </div>
           </div>
@@ -192,7 +189,7 @@ export function Landing({ onNavigate, user }) {
           <div className="mt-14 grid w-full max-w-3xl gap-3 rounded-lg border border-white/14 bg-slate-950/36 p-3 backdrop-blur-sm sm:grid-cols-3">
             <HeroInlineStat label="Escolas ativas" value={metrics.escolas} />
             <HeroInlineStat label="Bairros cobertos" value={metrics.bairros} />
-            <HeroInlineStat label="Melhorias concluidas" value={metrics.resolvidas} />
+            <HeroInlineStat label="Melhorias concluídas" value={metrics.resolvidas} />
           </div>
         </div>
       </section>
@@ -200,7 +197,7 @@ export function Landing({ onNavigate, user }) {
       <section className="border-b border-slate-200 bg-slate-50 px-5 py-10 lg:px-8">
         <div className="mx-auto grid max-w-7xl gap-4 md:grid-cols-3">
           <SignalCard icon="school" label="Rede acompanhada" value={`${metrics.escolas} unidades`} text={`${metrics.bairros} bairros com escolas ativas no monitoramento.`} />
-          <SignalCard icon="chart" label="Trabalho em movimento" value={`${metrics.emTratativa} tratativas`} text="Demandas ja analisadas, encaminhadas ou em execucao pelas equipes." />
+          <SignalCard icon="chart" label="Trabalho em movimento" value={`${metrics.emTratativa} tratativas`} text="Demandas já analisadas, encaminhadas ou em execução pelas equipes." />
           <SignalCard icon="tag" label="Visão organizada" value={`${metrics.categorias} temas`} text="Categorias padronizadas para priorizar investimento e manutenção." />
         </div>
       </section>
@@ -208,18 +205,18 @@ export function Landing({ onNavigate, user }) {
       <section className="px-5 py-16 lg:px-8">
         <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.95fr_1.05fr]">
           <div>
-            <p className="text-sm font-800 uppercase text-primary-strong">Dados publicos selecionados</p>
+            <p className="text-sm font-800 uppercase text-primary-strong">Dados públicos selecionados</p>
             <h2 className="mt-3 text-3xl font-800 leading-tight text-slate-950 md:text-4xl">
               Indicadores que ajudam a comunidade a enxergar progresso.
             </h2>
             <p className="mt-4 text-base font-medium leading-7 text-slate-600">
-              A area publica mostra apenas informacoes agregadas e construtivas. O detalhe operacional fica protegido
+              A área pública mostra apenas informações agregadas e construtivas. O detalhe operacional fica protegido
               no painel interno, onde a equipe acompanha prioridades, mensagens e histórico.
             </p>
 
             <div className="mt-8 grid gap-3 sm:grid-cols-2">
-              <MiniMetric label="Tempo medio das conclusoes" value={`${metrics.mediaResolucao} dias`} />
-              <MiniMetric label="Solicitacoes aprovadas" value={metrics.acompanhadas} />
+              <MiniMetric label="Tempo médio das conclusões" value={`${metrics.mediaResolucao} dias`} />
+              <MiniMetric label="Solicitações aprovadas" value={metrics.acompanhadas} />
             </div>
 
             <GoodNewsChart data={dadosBons} />
@@ -234,7 +231,7 @@ export function Landing({ onNavigate, user }) {
                   <div>
                     <h3 className="text-lg font-800 text-slate-950">Principais frentes atendidas</h3>
                     <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">
-                      Temas com mais acompanhamento publico consolidado.
+                      Temas com mais acompanhamento público consolidado.
                     </p>
                   </div>
                   <span className="rounded-md bg-emerald-50 px-3 py-1 text-xs font-800 text-emerald-700">
@@ -257,7 +254,7 @@ export function Landing({ onNavigate, user }) {
                 <div className="mt-5 rounded-md bg-slate-50 p-4">
                   <strong className="block text-2xl font-800 text-slate-950">{metrics.emTratativa}</strong>
                   <span className="mt-1 block text-sm font-bold text-slate-500">
-                    tratativas ja analisadas, encaminhadas ou em execucao
+                    tratativas já analisadas, encaminhadas ou em execução
                   </span>
                 </div>
               </div>
@@ -271,7 +268,7 @@ export function Landing({ onNavigate, user }) {
           <div className="mb-8">
             <div>
               <p className="text-sm font-800 uppercase text-cyan-200">Cobertura territorial</p>
-              <h2 className="mt-3 text-3xl font-800">Escolas visiveis por bairro</h2>
+              <h2 className="mt-3 text-3xl font-800">Escolas visíveis por bairro</h2>
             </div>
           </div>
 
@@ -339,8 +336,8 @@ function GoodNewsChart({ data }) {
     <section className="mt-5 overflow-hidden rounded-lg border border-slate-200 bg-slate-950 p-5 text-white shadow-sm">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-800 uppercase text-cyan-200">Grafico positivo</p>
-          <h3 className="mt-1 text-xl font-800">Avancos visiveis da rede</h3>
+          <p className="text-xs font-800 uppercase text-cyan-200">Gráfico positivo</p>
+          <h3 className="mt-1 text-xl font-800">Avanços visíveis da rede</h3>
         </div>
         <span className="rounded-md bg-white/10 px-3 py-1 text-xs font-800 text-cyan-100">
           Dados agregados
@@ -369,7 +366,7 @@ function GoodNewsChart({ data }) {
       </div>
 
       <div className="mt-4 grid gap-2 text-sm font-semibold text-slate-300 sm:grid-cols-2">
-        <p>Mostra apenas sinais construtivos e consolidados para consulta publica.</p>
+        <p>Mostra apenas sinais construtivos e consolidados para consulta pública.</p>
         <p className="sm:text-right">Detalhes operacionais ficam no painel interno.</p>
       </div>
     </section>

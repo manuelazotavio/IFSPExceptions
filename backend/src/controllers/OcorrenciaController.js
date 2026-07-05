@@ -19,7 +19,7 @@ function assertOcorrenciaAccess(user, ocorrencia) {
 }
 
 const CRITICIDADES = ['Baixa', 'Media', 'Alta', 'Critica']
-const STATUS_VALUES = ['Aberta', 'Em analise', 'Em andamento', 'Aguardando orcamento', 'Aguardando visita tecnica', 'Resolvida']
+const STATUS_VALUES = ['Aguardando aprovacao', 'Aberta', 'Em analise', 'Em andamento', 'Aguardando visita tecnica', 'Resolvida']
 
 const criarOcorrenciaSchema = z.object({
   escolaId: z.string({ message: 'Informe a escola' }).trim().min(1, 'Informe a escola'),
@@ -54,9 +54,19 @@ const atualizarOcorrenciaSchema = z.object({
 const interacaoSchema = z.object({
   origem: z.string().trim().min(1, 'Informe a origem'),
   autor: z.string().trim().min(1, 'Informe o autor'),
-  mensagem: z.string().trim().min(1, 'Informe a mensagem'),
+  mensagem: z.string().trim().default(''),
   status: z.string().trim().optional(),
-  anexos: z.array(z.string()).optional(),
+  anexos: z.array(z.union([
+    z.string(),
+    z.object({
+      nome: z.string(),
+      url: z.string(),
+      tipo: z.string().optional(),
+    }),
+  ])).optional(),
+}).refine((data) => data.mensagem || data.anexos?.length, {
+  message: 'Informe a mensagem ou envie ao menos um anexo',
+  path: ['mensagem'],
 })
 
 export class OcorrenciaController {
@@ -94,6 +104,8 @@ export class OcorrenciaController {
     }
     if (request.user.role === 'EXTERNO') {
       payload.criadoPorEmail = request.user.email
+      payload.status = 'Aguardando aprovacao'
+      payload.aprovadaPelaEscola = false
     }
 
     const ocorrencia = await OcorrenciaModel.create(payload)
@@ -192,7 +204,16 @@ export class OcorrenciaController {
   }
 
   static async addInteracao(request, response) {
-    const payload = parseOrThrow(interacaoSchema, request.body)
+    const baseUrl = `${request.protocol}://${request.get('host')}`
+    const anexosUpload = (request.files || []).map((file) => ({
+      nome: file.originalname,
+      url: `${baseUrl}/uploads/ocorrencias/${request.params.id}/${file.filename}`,
+      tipo: file.mimetype,
+    }))
+    const payload = parseOrThrow(interacaoSchema, {
+      ...request.body,
+      anexos: anexosUpload.length ? anexosUpload : request.body.anexos,
+    })
     const atual = await OcorrenciaModel.findById(request.params.id)
     assertOcorrenciaAccess(request.user, atual)
 

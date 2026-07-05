@@ -236,7 +236,7 @@ const issueTemplates = [
 const categoriasBase = ['Eletrica', 'Hidraulica', 'Estrutural', 'Seguranca', 'Acessibilidade', 'Equipamento', 'Mobiliario', 'Limpeza', 'Tecnologia', 'Outros']
 const nomesSolicitantes = ['Fernanda Souza', 'Ricardo Almeida', 'Juliana Costa', 'Marcos Pereira', 'Patricia Lima', 'Anderson Santos']
 
-export const statusValues = ['Aberta', 'Em analise', 'Em andamento', 'Aguardando orcamento', 'Aguardando visita tecnica', 'Resolvida']
+export const statusValues = ['Aguardando aprovacao', 'Aberta', 'Em analise', 'Em andamento', 'Aguardando visita tecnica', 'Resolvida']
 export const criticidadeValues = ['Baixa', 'Media', 'Alta', 'Critica']
 export const locaisInternos = ['Biblioteca', 'Laboratorio', 'Patio', 'Patio coberto', 'Area externa', 'Entrada', 'Entrada lateral', 'Corredor', 'Refeitorio', 'Cozinha', 'Secretaria', 'Diretoria', 'Portaria', 'Almoxarifado', 'Cobertura', 'Banheiro infantil', 'Sala dos professores', 'Sala multifuncional', 'Sala 1', 'Sala 2', 'Sala 3', 'Sala 4', 'Sala 5', 'Bloco A', 'Bloco B']
 
@@ -394,3 +394,4 @@ export const usuarios = [
   { nome: 'Rafael Lima', email: 'rafael.lima@escola.gov.br', role: 'DIRETOR', escolaId: 'esc-002', status: 'Inativo', ultimoAcesso: '18/06/2026' },
   ...usuariosExternos.map((usuario) => ({ ...usuario, role: 'EXTERNO', status: 'Ativo', ultimoAcesso: '01/07/2026' })),
 ]
+

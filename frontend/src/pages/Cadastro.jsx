@@ -1,39 +1,20 @@
-import { useEffect, useState } from 'react'
-import { listarEscolas, registro } from '../services/api.js'
-import { Select } from '../components/ui.jsx'
-
-const roles = [
-  { value: 'DIRETOR', label: 'Diretor(a)' },
-  { value: 'EXTERNO', label: 'Externo' },
-]
+import { useState } from 'react'
+import { registro } from '../services/api.js'
 
 export function Cadastro({ onNavigate }) {
-  const [escolas, setEscolas] = useState([])
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
-  const [role, setRole] = useState('EXTERNO')
-  const [escolaId, setEscolaId] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    listarEscolas()
-      .then(setEscolas)
-      .catch(() => setError('Não foi possível carregar as escolas'))
-  }, [])
-
   async function handleSubmit(event) {
     event.preventDefault()
     setError('')
-    if (!escolaId) {
-      setError('Selecione uma escola')
-      return
-    }
     setLoading(true)
     try {
-      await registro({ nome, email, senha, role, escolaId })
+      await registro({ nome, email, senha, role: 'EXTERNO' })
       setSuccess(true)
     } catch (err) {
       setError(err.message)
@@ -68,7 +49,7 @@ export function Cadastro({ onNavigate }) {
         </div>
 
         <h1 className="text-xl font-800 text-slate-950">Criar conta</h1>
-        <p className="mt-1 text-sm text-slate-500">Cadastro para direcao e usuarios externos da rede.</p>
+        <p className="mt-1 text-sm text-slate-500">Cadastro para usuários externos da rede.</p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <label className="block">
@@ -101,21 +82,6 @@ export function Cadastro({ onNavigate }) {
               className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
             />
           </label>
-          <label className="block">
-            <span className="mb-1 block text-xs font-bold  text-slate-500">Perfil</span>
-            <Select size="lg" value={role} onChange={setRole} options={roles} />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-xs font-bold  text-slate-500">Escola</span>
-            <Select
-              size="lg"
-              value={escolaId}
-              onChange={setEscolaId}
-              placeholder="Selecione"
-              options={escolas.map((escola) => ({ value: escola.id, label: escola.nome }))}
-            />
-          </label>
-
           {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</p>}
 
           <button

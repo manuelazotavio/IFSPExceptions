@@ -662,9 +662,9 @@ function getOccurrenceSignalColor(value, variant) {
   }
 
   if (normalized.includes('resolvida')) return 'bg-emerald-500'
+  if (normalized.includes('aprovacao') || normalized.includes('aprovação')) return 'bg-sky-500'
   if (normalized.includes('andamento')) return 'bg-blue-500'
   if (normalized.includes('analise') || normalized.includes('análise')) return 'bg-indigo-500'
-  if (normalized.includes('orcamento') || normalized.includes('orçamento')) return 'bg-amber-500'
   if (normalized.includes('visita')) return 'bg-violet-500'
   return 'bg-slate-400'
 }
