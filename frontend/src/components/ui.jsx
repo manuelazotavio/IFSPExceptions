@@ -30,15 +30,18 @@ export function Badge({ children, type = 'status' }) {
   const text = Array.isArray(children) ? children.map((item) => String(item)).join('') : String(children)
   const classes = {
     Critica: 'bg-red-100 text-red-700',
+    critica: 'bg-red-100 text-red-700',
     Alta: 'bg-orange-100 text-orange-700',
     Media: 'bg-amber-100 text-amber-700',
     Baixa: 'bg-emerald-100 text-emerald-700',
     'Aguardando aprovacao': 'bg-sky-50 text-sky-700',
     Aberta: 'bg-red-50 text-red-700',
+    aberta: 'bg-red-50 text-red-700',
     'Em andamento': 'bg-primary-50 text-primary-strong',
     'Em analise': 'bg-indigo-50 text-indigo-700',
     'Aguardando visita tecnica': 'bg-purple-50 text-purple-700',
     Resolvida: 'bg-emerald-50 text-emerald-700',
+    resolvida: 'bg-emerald-50 text-emerald-700',
     Ativo: 'bg-emerald-50 text-emerald-700',
     Inativo: 'bg-slate-100 text-slate-600',
   }
@@ -120,7 +123,7 @@ export function Select({ value, onChange, options, placeholder = 'Selecione...',
   }
 
   return (
-    <div ref={containerRef} className={`relative ${className}`}>
+    <div ref={containerRef} className={`relative ${open ? 'z-[4000]' : 'z-10'} ${className}`}>
       <button
         type="button"
         disabled={disabled}
@@ -144,7 +147,7 @@ export function Select({ value, onChange, options, placeholder = 'Selecione...',
       </button>
 
       {open && !disabled && (
-        <ul role="listbox" className="absolute z-30 mt-1 max-h-60 w-full overflow-auto rounded-md border border-slate-200 bg-white p-1 shadow-lg">
+        <ul role="listbox" className="absolute z-[5000] mt-1 max-h-60 w-full overflow-auto rounded-md border border-slate-200 bg-white p-1 shadow-lg">
           {normalized.map((item) => {
             const active = item.value === value
             return (
@@ -174,6 +177,7 @@ export function Select({ value, onChange, options, placeholder = 'Selecione...',
 }
 
 export function FilterSelect({ label, value, onChange, options }) {
+  const normalizedOptions = options.map(normalizeOption)
   return (
     <label className="block">
       <span className="mb-1 block text-xs font-bold text-slate-500">{label}</span>
@@ -181,7 +185,7 @@ export function FilterSelect({ label, value, onChange, options }) {
         value={value}
         onChange={onChange}
         placeholder="Todos"
-        options={[{ value: '', label: 'Todos' }, ...options.map((option) => ({ value: option, label: formatDisplayLabel(option) }))]}
+        options={[{ value: '', label: 'Todos' }, ...normalizedOptions]}
       />
     </label>
   )
