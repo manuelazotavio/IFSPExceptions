@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { MapContainer, Marker, TileLayer, Tooltip, useMap } from 'react-leaflet'
+import { CaraguatatubaBoundary } from '../components/Mapa_com_boundary.jsx'
 import { escolas, statusValues } from '../data/mockData.js'
 import { Badge, Card, FilterSelect } from '../components/ui.jsx'
 import { fetchEscolaOcorrencias, fetchHeatmapOcorrencias, getEscolaOcorrenciasFallback, getHeatmapFallback } from '../services/mapa.js'
@@ -162,6 +163,7 @@ export function Mapa({ onNavigate }) {
   const [erroDetalhe, setErroDetalhe] = useState('')
   const [searchEscola, setSearchEscola] = useState('')
   const [mapFocusTarget, setMapFocusTarget] = useState(null)
+  const [caraguatatubaBoundary, setCaraguatatubaBoundary] = useState(null)
   const [mapStyleKey, setMapStyleKey] = useState(() => {
     if (typeof window === 'undefined') return 'cartoLight'
 
@@ -172,6 +174,33 @@ export function Mapa({ onNavigate }) {
       return 'cartoLight'
     }
   })
+
+  useEffect(() => {
+    let active = true
+
+    fetch('/geo/caraguatatuba-boundary.geojson')
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Falha ao carregar limite municipal')
+        }
+        return response.json()
+      })
+      .then((data) => {
+        if (active) {
+          setCaraguatatubaBoundary(data)
+        }
+      })
+      .catch((error) => {
+        console.warn(error.message)
+        if (active) {
+          setCaraguatatubaBoundary(null)
+        }
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -546,7 +575,8 @@ export function Mapa({ onNavigate }) {
               attribution={selectedMapStyle.attribution}
               url={selectedMapStyle.url}
             />
-            <SyncMapView points={mapBoundsPoints} />
+            <CaraguatatubaBoundary data={caraguatatubaBoundary} />
+            <SyncMapView points={mapBoundsPoints} boundaryData={caraguatatubaBoundary} />
             <MapResizeController drawerAberto={drawerAberto} />
             <ZoomControlPosition />
             <MapFocusController target={mapFocusTarget} />
@@ -755,20 +785,30 @@ function ZoomControlPosition() {
   return null
 }
 
-function SyncMapView({ points }) {
+function SyncMapView({ points, boundaryData }) {
   const map = useMap()
 
   useEffect(() => {
     map.invalidateSize()
 
     if (points.length === 0) {
+      if (boundaryData?.type === 'FeatureCollection' && Array.isArray(boundaryData.features) && boundaryData.features.length > 0) {
+        const boundaryLayer = L.geoJSON(boundaryData)
+        const bounds = boundaryLayer.getBounds()
+
+        if (bounds.isValid()) {
+          map.fitBounds(bounds, { padding: [24, 24], maxZoom: 13 })
+          return
+        }
+      }
+
       map.setView(mapCenter, 13)
       return
     }
 
     const bounds = L.latLngBounds(points.map(([latitude, longitude]) => [latitude, longitude]))
     map.fitBounds(bounds, { padding: [24, 24], maxZoom: 14 })
-  }, [map, points])
+  }, [boundaryData, map, points])
 
   return null
 }
