@@ -1,19 +1,134 @@
+import { readFile } from 'node:fs/promises'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import bcrypt from 'bcryptjs'
 import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
-const escolasSeed = [
-  { id: 'esc-001', nome: 'EMEF Dr. Carlos de Almeida Rodrigues', bairro: 'Indaia', endereco: 'Av. Pernambuco, 1101', latitude: -23.631425, longitude: -45.423699 },
-  { id: 'esc-003', nome: 'EMEF Lucio Jacinto dos Santos', bairro: 'Tinga', endereco: 'Rua Denilza Sebastiana dos Santos, 75', latitude: -23.6286667, longitude: -45.4355698 },
-  { id: 'esc-004', nome: 'EMEF Profa. Maria Aparecida Ujio', bairro: 'Porto Novo', endereco: 'Av. Primeiro de Maio, 285', latitude: -23.6914719, longitude: -45.4360238 },
-  { id: 'esc-005', nome: 'EMEF Profa. Antonia Antunes Arouca', bairro: 'Massaguacu', endereco: 'Rua Italia Baffi Magni, 581', latitude: -23.581018, longitude: -45.3333415 },
-  { id: 'esc-006', nome: 'EMEI Yasutada Nasu', bairro: 'Pereque Mirim', endereco: 'Av. Pedro Goncalves Leite, 685', latitude: -23.7090203, longitude: -45.4429127 },
-  { id: 'esc-007', nome: 'EMEF Prof. Luiz Ribeiro Muniz', bairro: 'Martim de Sa', endereco: 'Rua Analandia, 355', latitude: -23.6174836, longitude: -45.3897454 },
-  { id: 'esc-008', nome: 'EMEI/EMEF Prof. Alaor Xavier Junqueira', bairro: 'Travessao', endereco: 'Rua Jose Ferreira dos Santos, 381', latitude: -23.6981504, longitude: -45.4443438 },
-  { id: 'esc-009', nome: 'EMEF Prof. Luiz Silvar do Prado (CIDE Casa Branca)', bairro: 'Jardim Casa Branca', endereco: 'Rua Jose Pedro de Oliveira Barbosa, 805', latitude: -23.6094773, longitude: -45.382068 },
-  { id: 'esc-010', nome: 'CEI/EMEI Profa. Maria Eugenia Aranha Chodounsky', bairro: 'Jardim Casa Branca', endereco: 'Rua Jose Pedro de Oliveira Barbosa, S/N', latitude: -23.6090319, longitude: -45.3817271 },
-]
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+const escolasJsonPath = path.resolve(__dirname, '../../frontend/public/geo/unidades_seduc_caraguatatuba.json')
+
+// Preserve ids already referenced by ocorrencias and usuarios seeds.
+const LEGACY_ESCOLA_IDS = new Map([
+  ['emef dr. carlos de almeida rodrigues', 'esc-001'],
+  ['emei/emef prof.ª alaor xavier junqueira', 'esc-008'],
+  ['emei/emef prof. lucio jacinto dos santos', 'esc-003'],
+  ['emef prof. luiz ribeiro muniz', 'esc-007'],
+  ['emef prof. luiz silvar do prado', 'esc-009'],
+  ['emef prof.ª antonia antunes arouca', 'esc-005'],
+  ['emef prof.ª maria aparecida ujio', 'esc-004'],
+  ['cei/emei prof.ª maria eugenia aranha chodounsky', 'esc-010'],
+  ['emei/emef prof. yasutada nasu', 'esc-006'],
+])
+
+function mojibakeScore(value) {
+  return (String(value ?? '').match(/[ÃƒÃ‚]/g) || []).length
+}
+
+function repairText(value) {
+  const text = String(value ?? '').trim()
+  if (!text) return ''
+  if (!/[ÃƒÃ‚]/.test(text)) return text
+
+  try {
+    const repaired = Buffer.from(text, 'latin1').toString('utf8')
+    return mojibakeScore(repaired) < mojibakeScore(text) ? repaired : text
+  } catch {
+    return text
+  }
+}
+
+function normalizeText(value) {
+  return repairText(value)
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function cleanRequiredText(value, fieldName, escolaNome = 'registro') {
+  const text = repairText(value).replace(/\s+/g, ' ').trim()
+  if (!text) {
+    throw new Error(`Campo obrigatorio ausente (${fieldName}) para ${escolaNome}.`)
+  }
+  return text
+}
+
+function toRequiredNumber(value, fieldName, escolaNome) {
+  const number = Number(value)
+  if (!Number.isFinite(number)) {
+    throw new Error(`Campo numerico invalido (${fieldName}) para ${escolaNome}.`)
+  }
+  return number
+}
+
+async function loadEscolasSeed() {
+  const content = await readFile(escolasJsonPath, 'utf8')
+  const records = JSON.parse(content)
+
+  if (!Array.isArray(records)) {
+    throw new Error('O arquivo oficial de escolas nao contem uma lista JSON.')
+  }
+
+  if (records.length !== 71) {
+    throw new Error(`O arquivo oficial de escolas deveria conter 71 registros, mas veio com ${records.length}.`)
+  }
+
+  const reservedIds = new Set(LEGACY_ESCOLA_IDS.values())
+  const assignedIds = new Set()
+  const matchedLegacyNames = new Set()
+  let nextGeneratedNumber = 1
+
+  function getNextGeneratedId() {
+    while (true) {
+      const candidate = `esc-${String(nextGeneratedNumber).padStart(3, '0')}`
+      nextGeneratedNumber += 1
+
+      if (reservedIds.has(candidate) || assignedIds.has(candidate)) {
+        continue
+      }
+
+      return candidate
+    }
+  }
+
+  const escolas = records.map((record) => {
+    const nome = cleanRequiredText(record?.nome, 'nome')
+    const normalizedName = normalizeText(nome)
+    const legacyId = LEGACY_ESCOLA_IDS.get(normalizedName)
+    const id = legacyId || getNextGeneratedId()
+
+    if (assignedIds.has(id)) {
+      throw new Error(`Id duplicado detectado no seed de escolas: ${id}.`)
+    }
+
+    assignedIds.add(id)
+    if (legacyId) {
+      matchedLegacyNames.add(normalizedName)
+    }
+
+    return {
+      id,
+      nome,
+      bairro: cleanRequiredText(record?.bairro, 'bairro', nome),
+      endereco: cleanRequiredText(record?.endereco, 'endereco', nome),
+      latitude: toRequiredNumber(record?.latitude, 'latitude', nome),
+      longitude: toRequiredNumber(record?.longitude, 'longitude', nome),
+    }
+  })
+
+  const missingLegacyNames = [...LEGACY_ESCOLA_IDS.keys()].filter((name) => !matchedLegacyNames.has(name))
+  if (missingLegacyNames.length > 0) {
+    throw new Error(`Nao foi possivel preservar ids legados para: ${missingLegacyNames.join(', ')}`)
+  }
+
+  return escolas
+}
+
+const escolasSeed = await loadEscolasSeed()
 
 const ocorrenciasSeed = [
   ['esc-001', 'Infiltracao na biblioteca', 'Hidraulica', 'Alta', 'Aberta', 'Biblioteca', '2026-05-02', true],
@@ -46,14 +161,17 @@ const ocorrenciasSeed = [
 const usuariosExternosSeed = [
   { email: 'externo@escola.gov.br', nome: 'Usuario Externo', escolaId: 'esc-001' },
   { email: 'externo.esc-001@escola.gov.br', nome: 'Fernanda Souza', escolaId: 'esc-001' },
-  { email: 'externo.esc-002@escola.gov.br', nome: 'Ricardo Almeida', escolaId: 'esc-002' },
   { email: 'externo.esc-003@escola.gov.br', nome: 'Juliana Costa', escolaId: 'esc-003' },
   { email: 'externo.esc-004@escola.gov.br', nome: 'Marcos Pereira', escolaId: 'esc-004' },
   { email: 'externo.esc-005@escola.gov.br', nome: 'Patricia Lima', escolaId: 'esc-005' },
   { email: 'externo.esc-006@escola.gov.br', nome: 'Anderson Santos', escolaId: 'esc-006' },
   { email: 'externo.esc-007@escola.gov.br', nome: 'Camila Rocha', escolaId: 'esc-007' },
   { email: 'externo.esc-008@escola.gov.br', nome: 'Diego Martins', escolaId: 'esc-008' },
+  { email: 'externo.esc-009@escola.gov.br', nome: 'Ricardo Almeida', escolaId: 'esc-009' },
+  { email: 'externo.esc-010@escola.gov.br', nome: 'Bruna Azevedo', escolaId: 'esc-010' },
 ]
+
+const escolaIdsValidos = new Set(escolasSeed.map((escola) => escola.id))
 function addDays(dateStr, days) {
   const date = new Date(`${dateStr}T00:00:00`)
   date.setDate(date.getDate() + days)
@@ -70,6 +188,18 @@ function gerarProtocolo(usados) {
 }
 
 async function main() {
+  for (const usuario of usuariosExternosSeed) {
+    if (!escolaIdsValidos.has(usuario.escolaId)) {
+      throw new Error(`Usuario externo com escola invalida no seed: ${usuario.email} -> ${usuario.escolaId}`)
+    }
+  }
+
+  for (const [escolaId, titulo] of ocorrenciasSeed) {
+    if (!escolaIdsValidos.has(escolaId)) {
+      throw new Error(`Ocorrencia com escola invalida no seed: ${titulo} -> ${escolaId}`)
+    }
+  }
+
   for (const escola of escolasSeed) {
     await prisma.escola.upsert({ where: { id: escola.id }, update: escola, create: escola })
   }
