@@ -8,6 +8,7 @@ import { Card, Select } from '../components/ui.jsx'
 import { getEscolaOcorrenciasFallback, loadMapOccurrences } from '../services/mapa.js'
 import { getAllSchools, loadSchoolCatalog } from '../utils/schools.js'
 import {
+  includesNormalized,
   MAP_CRITICIDADE_OPTIONS,
   mergeSchoolsWithOccurrences,
   normalizeOccurrenceCriticidadeKey,
@@ -36,6 +37,7 @@ const statusOptions = MAP_STATUS_OPTIONS
 const mapStyleStorageKey = 'seduc-map-style'
 const colorScaleStorageKey = 'seduc-map-color-scale'
 const schoolLabelZoom = 15
+const schoolSearchResultLimit = 12
 const resolvedHistoryColorScale = {
   start: '#94a3b8',
   middle: '#94a3b8',
@@ -463,6 +465,150 @@ function getBairroLabelStyle({ entry, currentZoom, isSelected, hasSchools }) {
   }
 }
 
+function SchoolSearchCombobox({
+  options,
+  searchValue,
+  selectedValue,
+  onClear,
+  onSearchChange,
+  onSelectOption,
+  placeholder = 'Buscar escola...',
+}) {
+  const [open, setOpen] = useState(false)
+  const containerRef = useRef(null)
+  const inputRef = useRef(null)
+  const showClearButton = Boolean(searchValue || selectedValue)
+
+  useEffect(() => {
+    if (!open) return undefined
+
+    function handleClickOutside(event) {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        setOpen(false)
+      }
+    }
+
+    function handleEscape(event) {
+      if (event.key === 'Escape') {
+        setOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleEscape)
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [open])
+
+  function handleInputChange(event) {
+    onSearchChange(event.target.value)
+    setOpen(true)
+  }
+
+  function handleSelect(option) {
+    onSelectOption(option)
+    setOpen(false)
+  }
+
+  function handleClear() {
+    onClear()
+    setOpen(false)
+    inputRef.current?.focus()
+  }
+
+  function handleKeyDown(event) {
+    if (event.key === 'ArrowDown') {
+      setOpen(true)
+    }
+
+    if (event.key === 'Enter' && open && options.length === 1) {
+      event.preventDefault()
+      handleSelect(options[0])
+    }
+  }
+
+  return (
+    <div ref={containerRef} className="relative">
+      <input
+        ref={inputRef}
+        type="text"
+        value={searchValue}
+        onChange={handleInputChange}
+        onFocus={() => setOpen(true)}
+        onClick={() => setOpen(true)}
+        onKeyDown={handleKeyDown}
+        placeholder={placeholder}
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded={open}
+        aria-controls="school-search-results"
+        className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 pr-16 text-sm text-slate-700 outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
+      />
+
+      <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center gap-1">
+        {showClearButton ? (
+          <button
+            type="button"
+            onClick={handleClear}
+            className="pointer-events-auto inline-flex h-6 w-6 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+            aria-label="Limpar escola"
+          >
+            <span className="text-base leading-none">&times;</span>
+          </button>
+        ) : null}
+        <button
+          type="button"
+          onClick={() => setOpen((current) => !current)}
+          className="pointer-events-auto inline-flex h-6 w-6 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+          aria-label={open ? 'Fechar busca de escolas' : 'Abrir busca de escolas'}
+        >
+          <ChevronIcon direction={open ? 'up' : 'down'} />
+        </button>
+      </div>
+
+      {open ? (
+        <div className="absolute top-full z-[4100] mt-1 w-full overflow-hidden rounded-md border border-slate-200 bg-white shadow-lg">
+          <ul id="school-search-results" role="listbox" className="max-h-72 overflow-y-auto p-1.5">
+            {options.length > 0 ? options.map((option) => {
+              const isSelected = option.value === selectedValue
+
+              return (
+                <li key={option.value}>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={isSelected}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => handleSelect(option)}
+                    className={`flex w-full items-start justify-between gap-2 rounded-md px-3 py-2.5 text-left transition ${isSelected ? 'bg-primary-50 text-primary-strong' : 'text-slate-700 hover:bg-slate-50'}`}
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-semibold leading-snug">{option.inputLabel}</span>
+                      {option.secondaryLabel ? (
+                        <span className="mt-0.5 block text-[11px] font-semibold text-slate-500">
+                          {option.secondaryLabel}
+                        </span>
+                      ) : null}
+                    </span>
+                    {isSelected ? (
+                      <span className="shrink-0 text-xs font-bold text-primary-strong">OK</span>
+                    ) : null}
+                  </button>
+                </li>
+              )
+            }) : (
+              <li className="px-3 py-2 text-sm font-semibold text-slate-400">Nenhuma escola encontrada</li>
+            )}
+          </ul>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 export function Mapa({ onNavigate }) {
   const [filters, setFilters] = useState({
     criticidade: '',
@@ -487,6 +633,7 @@ export function Mapa({ onNavigate }) {
   const [colorScale, setColorScale] = useState(() => readStoredColorScale())
   const [isColorScaleExpanded, setIsColorScaleExpanded] = useState(false)
   const [isMapStyleExpanded, setIsMapStyleExpanded] = useState(false)
+  const [schoolSearch, setSchoolSearch] = useState('')
   const warnedSchoolIdsRef = useRef(new Set())
   const [mapStyleKey, setMapStyleKey] = useState(() => {
     if (typeof window === 'undefined') return 'cartoLight'
@@ -732,9 +879,30 @@ export function Mapa({ onNavigate }) {
   const schoolOptions = useMemo(() => (
     mergedSchoolsFull.map((school) => ({
       value: school.escolaId,
+      inputLabel: school.escolaNome || school.nome || 'Escola sem nome',
+      secondaryLabel: school.bairro || '',
       label: `${school.escolaNome}${school.bairro ? ` - ${school.bairro}` : ''}`,
     }))
   ), [mergedSchoolsFull])
+
+  const selectedSchoolOption = useMemo(
+    () => schoolOptions.find((option) => option.value === filters.escolaId) || null,
+    [filters.escolaId, schoolOptions],
+  )
+
+  const schoolSearchQuery = filters.escolaId && selectedSchoolOption?.inputLabel === schoolSearch
+    ? ''
+    : schoolSearch
+
+  const filteredSchoolOptions = useMemo(() => {
+    const matchingOptions = schoolSearchQuery
+      ? schoolOptions.filter((option) => includesNormalized(option.inputLabel, schoolSearchQuery))
+      : schoolOptions
+
+    return schoolSearchQuery
+      ? matchingOptions.slice(0, 40)
+      : matchingOptions.slice(0, schoolSearchResultLimit)
+  }, [schoolOptions, schoolSearchQuery])
 
   const avisoGlobal = useMemo(() => {
     if (!erroMapa) return null
@@ -841,6 +1009,7 @@ export function Mapa({ onNavigate }) {
   ), [currentSchoolContext, historyMode, mapSchools.length, selectedBairroStats, summaryMetrics])
 
   const selectedMapStyle = mapStyles[mapStyleKey] || mapStyles.cartoLight
+  const shouldShowPermanentSchoolLabels = currentZoom >= schoolLabelZoom && !filters.escolaId && !drawerAberto
   const legendRange = showBairrosLayer ? bairroScoreRange : schoolScoreRange
   const legendGradient = `linear-gradient(90deg, ${effectiveColorScale.start} 0%, ${effectiveColorScale.middle} 50%, ${effectiveColorScale.end} 100%)`
 
@@ -863,14 +1032,29 @@ export function Mapa({ onNavigate }) {
     setFilters((current) => ({ ...current, [key]: value }))
   }
 
-  function handleEscolaFilterChange(value) {
-    setFilter('escolaId', value)
+  function clearSchoolFilter({ preserveSearch = false, nextSearch = '' } = {}) {
+    setFilter('escolaId', '')
+    setSchoolSearch(preserveSearch ? nextSearch : '')
+    closeDrawer()
+  }
 
-    if (value) {
-      openSchoolDrawer(value, { zoom: 16 })
-    } else {
+  function handleSchoolSearchChange(value) {
+    setSchoolSearch(value)
+
+    if (filters.escolaId) {
+      setFilter('escolaId', '')
       closeDrawer()
     }
+  }
+
+  function handleSelectSchoolOption(option) {
+    setSchoolSearch(option.inputLabel)
+    setFilter('escolaId', option.value)
+    openSchoolDrawer(option.value, { zoom: 16 })
+  }
+
+  function handleClearSchoolSelection() {
+    clearSchoolFilter()
   }
 
   function clearSchoolContext() {
@@ -952,7 +1136,7 @@ export function Mapa({ onNavigate }) {
     closeDrawer()
     setSelectedBairro('')
     if (filters.escolaId) {
-      setFilter('escolaId', '')
+      clearSchoolFilter()
     }
   }
 
@@ -988,12 +1172,14 @@ export function Mapa({ onNavigate }) {
             options={[{ value: '', label: 'Todos' }, ...statusOptions]}
           />
         </div>
-        <div className="w-48">
-          <Select
-            value={filters.escolaId}
-            onChange={handleEscolaFilterChange}
-            placeholder="Escola"
-            options={[{ value: '', label: 'Escola' }, ...schoolOptions]}
+        <div className="w-full sm:w-72 lg:w-[25rem]">
+          <SchoolSearchCombobox
+            options={filteredSchoolOptions}
+            searchValue={schoolSearch}
+            selectedValue={filters.escolaId}
+            onClear={handleClearSchoolSelection}
+            onSearchChange={handleSchoolSearchChange}
+            onSelectOption={handleSelectSchoolOption}
           />
         </div>
         <input
@@ -1048,11 +1234,19 @@ export function Mapa({ onNavigate }) {
             ) : null}
             <SyncMapView points={visibleSchoolPoints} boundaryData={caraguatatubaBoundary} />
             <MapResizeController drawerAberto={drawerAberto} />
+            <MapTooltipCleanup
+              shouldShowPermanentLabels={shouldShowPermanentSchoolLabels}
+              schoolMarkerCount={schoolMarkers.length}
+              selectedBairro={selectedBairro}
+              selectedSchoolFilter={filters.escolaId}
+              drawerAberto={drawerAberto}
+            />
             <ZoomControlPosition />
             <MapFocusController target={mapFocusTarget} />
 
             {schoolMarkers.map((item) => {
-              const showPermanentName = currentZoom >= schoolLabelZoom
+              const showPermanentName = shouldShowPermanentSchoolLabels
+              const tooltipMode = showPermanentName ? 'label' : 'detail'
 
               return (
                 <Marker
@@ -1062,11 +1256,12 @@ export function Mapa({ onNavigate }) {
                   eventHandlers={{ click: () => openSchoolDrawer(item.escolaId) }}
                 >
                   <Tooltip
+                    key={`tooltip-${item.escolaId}-${tooltipMode}`}
                     permanent={showPermanentName}
                     direction="top"
                     offset={[0, -8]}
                     opacity={1}
-                    className={showPermanentName ? 'school-name-tooltip' : 'school-detail-tooltip'}
+                    className={tooltipMode === 'label' ? 'school-name-tooltip' : 'school-detail-tooltip'}
                   >
                     {showPermanentName ? (
                       <span>{truncateMapText(item.escolaNome, 24)}</span>
@@ -1605,6 +1800,34 @@ function MapBackgroundClickHandler({ onBackgroundClick }) {
       onBackgroundClick()
     },
   })
+
+  return null
+}
+
+function MapTooltipCleanup({
+  shouldShowPermanentLabels,
+  schoolMarkerCount,
+  selectedBairro,
+  selectedSchoolFilter,
+  drawerAberto,
+}) {
+  const map = useMap()
+
+  useEffect(() => {
+    if (shouldShowPermanentLabels) return undefined
+
+    let frameId = window.requestAnimationFrame(() => {
+      map.eachLayer((layer) => {
+        if (typeof layer.closeTooltip === 'function') {
+          layer.closeTooltip()
+        }
+      })
+    })
+
+    return () => {
+      window.cancelAnimationFrame(frameId)
+    }
+  }, [drawerAberto, map, schoolMarkerCount, selectedBairro, selectedSchoolFilter, shouldShowPermanentLabels])
 
   return null
 }
