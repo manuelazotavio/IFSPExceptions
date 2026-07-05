@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { categorias } from '../data/mockData.js'
 import { dashboardMetrics, groupCount } from '../utils/metrics.js'
-import { atualizarUsuario, listarEscolas, listarOcorrencias, listarUsuarios } from '../services/api.js'
-import { Badge, BarList, Card, MetricCard, Modal } from '../components/ui.jsx'
+import { atualizarUsuario, listarAuditoria, listarEscolas, listarOcorrencias, listarUsuarios } from '../services/api.js'
+import { Badge, BarList, Card, FilterSelect, MetricCard, Modal } from '../components/ui.jsx'
 
 export function Indicadores() {
   const [escolas, setEscolas] = useState([])
@@ -138,6 +138,108 @@ export function Usuarios() {
                   <td className="px-4 py-3 text-slate-600">{user.criadoEm?.slice(0, 10)}</td>
                 </tr>
               ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const ACAO_CLASSES = {
+  CRIAR: 'bg-emerald-50 text-emerald-700',
+  ATUALIZAR: 'bg-blue-50 text-blue-700',
+  REMOVER: 'bg-red-50 text-red-700',
+}
+
+export function Auditoria() {
+  const [logs, setLogs] = useState([])
+  const [escolas, setEscolas] = useState([])
+  const [escolaId, setEscolaId] = useState('')
+  const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState('')
+
+  useEffect(() => {
+    let ativo = true
+    listarEscolas().then((dados) => { if (ativo) setEscolas(dados) }).catch(() => {})
+    return () => { ativo = false }
+  }, [])
+
+  useEffect(() => {
+    let ativo = true
+
+    async function carregar() {
+      setCarregando(true)
+      setErro('')
+      try {
+        const dados = await listarAuditoria(escolaId ? { escolaId } : {})
+        if (ativo) setLogs(dados)
+      } catch (error) {
+        if (ativo) setErro(error.message)
+      } finally {
+        if (ativo) setCarregando(false)
+      }
+    }
+
+    carregar()
+    return () => { ativo = false }
+  }, [escolaId])
+
+  const nomesEscolas = escolas.map((escola) => escola.nome)
+
+  return (
+    <div className="space-y-4">
+      <div className="max-w-xs">
+        <FilterSelect
+          label="Escola"
+          value={escolas.find((escola) => escola.id === escolaId)?.nome || ''}
+          onChange={(nome) => setEscolaId(escolas.find((escola) => escola.nome === nome)?.id || '')}
+          options={nomesEscolas}
+        />
+      </div>
+
+      {erro && (
+        <p className="rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{erro}</p>
+      )}
+
+      {carregando ? (
+        <p className="text-sm font-semibold text-slate-500">Carregando log de auditoria...</p>
+      ) : (
+        <div className="overflow-x-auto w-full overflow-x-auto border border-slate-200 rounded-xl shadow-sm">
+          <table className="w-full min-w-[900px] border-collapse rounded-2 text-sm">
+            <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-extrabold tracking-wide">
+              <tr className="divide-x divide-slate-200">
+                {['Data/Hora', 'Ação', 'Entidade', 'Descrição', 'Usuário', 'Escola'].map((head) => (
+                  <th key={head} className="px-4 py-3">
+                    {head}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200">
+              {logs.map((log) => (
+                <tr key={log.id} className="divide-x divide-slate-200 border-x border-slate-200">
+                  <td className="whitespace-nowrap px-4 py-3 text-slate-600">
+                    {new Date(log.criadoEm).toLocaleString('pt-BR')}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${ACAO_CLASSES[log.acao] || 'bg-slate-100 text-slate-700'}`}>
+                      {log.acao}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 font-bold text-slate-800">{log.entidade}</td>
+                  <td className="px-4 py-3 text-slate-600">{log.descricao}</td>
+                  <td className="px-4 py-3 text-slate-600">{log.usuarioNome || log.usuarioEmail || '—'}</td>
+                  <td className="px-4 py-3 text-slate-600">{log.escola || '—'}</td>
+                </tr>
+              ))}
+              {!logs.length && (
+                <tr>
+                  <td colSpan="6" className="px-4 py-8 text-center text-sm font-semibold text-slate-500">
+                    Nenhum registro de auditoria encontrado.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

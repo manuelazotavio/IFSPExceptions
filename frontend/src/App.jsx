@@ -4,18 +4,19 @@ import { clearStoredUser, getStoredUser, setStoredUser } from './auth/session.js
 import { escolas, ocorrenciasAprovadas } from './data/mockData.js'
 import { Cadastro } from './pages/Cadastro.jsx'
 import { Dashboard } from './pages/Dashboard.jsx'
+import { Landing } from './pages/Landing.jsx'
 import { Login } from './pages/Login.jsx'
 import { Mapa } from './pages/Mapa.jsx'
 import { Ocorrencias } from './pages/Ocorrencias.jsx'
 import { OcorrenciaDetalhe } from './pages/OcorrenciaDetalhe.jsx'
 import { EscolaDetalhe } from './pages/EscolaDetalhe.jsx'
 import { Escolas } from './pages/Escolas.jsx'
-import { Categorias, Configuracoes, Indicadores, Usuarios } from './pages/AdminPages.jsx'
+import { Auditoria, Categorias, Configuracoes, Indicadores, Usuarios } from './pages/AdminPages.jsx'
 import { dashboardMetrics, groupCount } from './utils/metrics.js'
 
 function normalizeRoute() {
   const hash = window.location.hash.replace('#', '')
-  return hash || '/dashboard'
+  return hash || '/'
 }
 
 function parseRoute(route) {
@@ -24,6 +25,10 @@ function parseRoute(route) {
     pathname,
     searchParams: new URLSearchParams(search),
   }
+}
+
+function isPublicRoute(pathname) {
+  return pathname === '/' || pathname === '/publico'
 }
 
 export default function App() {
@@ -40,13 +45,15 @@ export default function App() {
   }, [])
 
   useEffect(() => {
+    if (isPublicRoute(pathname)) return
+
     const rotaDeOcorrencia = route === '/ocorrencias' || route.startsWith('/ocorrencias/')
     if (isExterno && !rotaDeOcorrencia) {
       navigate('/ocorrencias')
     } else if (isDiretor && route !== '/dashboard' && !rotaDeOcorrencia) {
       navigate('/dashboard')
     }
-  }, [isExterno, isDiretor, route])
+  }, [isExterno, isDiretor, pathname, route])
 
   function navigate(path) {
     window.location.hash = path
@@ -271,13 +278,19 @@ export default function App() {
       '/indicadores': <Indicadores />,
       '/usuarios': <Usuarios />,
       '/categorias': <Categorias />,
+      '/auditoria': <Auditoria />,
       '/configuracoes': <Configuracoes />,
     }
 
     return pages[pathname] || pages['/dashboard']
   }
 
+  if (isPublicRoute(pathname)) {
+    return <Landing onNavigate={navigate} user={user} />
+  }
+
   if (!user) {
+    if (route === '/login') return <Login onLogin={handleLogin} onNavigate={navigate} />
     if (route === '/cadastro') return <Cadastro onNavigate={navigate} />
     return <Login onLogin={handleLogin} onNavigate={navigate} />
   }

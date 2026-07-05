@@ -15,24 +15,24 @@ export function NotificationBell({ notificacoes, onNavigate }) {
         type="button"
         onClick={() => setOpen((current) => !current)}
         aria-label="Notificacoes"
-        className="relative cursor-pointer rounded-md border border-slate-200 p-2.5 text-slate-600 hover:bg-slate-50"
+        className="relative cursor-pointer rounded-md border border-slate-200 p-2 text-slate-600 hover:bg-slate-50"
       >
-        <Icon name="bell" className="h-5 w-5" />
+        <Icon name="bell" className="h-4 w-4" />
         {notificacoes.length > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
+          <span className="absolute -right-1 -top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-red-600 px-1 text-[9px] font-bold text-white">
             {notificacoes.length > 9 ? '9+' : notificacoes.length}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 z-30 mt-2 w-104 rounded-lg border border-slate-200 bg-white shadow-lg">
-          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+        <div className="absolute right-0 z-30 mt-2 w-72 rounded-lg border border-slate-200 bg-white shadow-lg">
+          <div className="flex items-center justify-between border-b border-slate-100 px-3 py-2.5">
             <h3 className="text-sm font-800 text-slate-900">Notificações</h3>
             {notificacoes.length > 0 && <span className="text-xs font-semibold text-slate-400">{notificacoes.length} no total</span>}
           </div>
 
-          <div className="max-h-96 overflow-y-auto">
+          <div className="max-h-80 overflow-y-auto">
             {notificacoes.length === 0 && (
               <p className="px-4 py-8 text-center text-sm font-semibold text-slate-400">Nenhuma notificação no momento.</p>
             )}
@@ -41,10 +41,10 @@ export function NotificationBell({ notificacoes, onNavigate }) {
                 key={item.id}
                 type="button"
                 onClick={() => abrirOcorrencia(item.ocorrenciaId)}
-                className="flex w-full cursor-pointer items-start gap-3 border-b border-slate-50 px-4 py-3.5 text-left last:border-0 hover:bg-slate-50"
+                className="flex w-full cursor-pointer items-start gap-2.5 border-b border-slate-50 px-3 py-2.5 text-left last:border-0 hover:bg-slate-50"
               >
-                <span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${item.tipo === 'urgente' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
-                  <Icon name={item.tipo === 'urgente' ? 'alert' : 'bell'} className="h-4.5 w-4.5" />
+                <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${item.tipo === 'urgente' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}`}>
+                  <Icon name={item.tipo === 'urgente' ? 'alert' : 'bell'} className="h-3.5 w-3.5" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">

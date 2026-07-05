@@ -101,6 +101,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
   const [salvando, setSalvando] = useState(false)
   const [erroSalvar, setErroSalvar] = useState('')
   const [modalEdicaoAberto, setModalEdicaoAberto] = useState(false)
+  const [historicoAberto, setHistoricoAberto] = useState(false)
 
   const handleSalvar = async () => {
     setSalvando(true)
@@ -386,32 +387,48 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
 
   return (
     <div className="space-y-5 xl:flex xl:h-[calc(100vh-8rem)] xl:flex-col xl:space-y-0 xl:gap-5 xl:overflow-hidden">
-      <div className="flex flex-wrap gap-2 xl:shrink-0">
-        <button onClick={() => onNavigate('/ocorrencias')} className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold">Voltar para lista</button>
+      <div className="flex gap-2 xl:shrink-0">
+        <button
+          onClick={() => onNavigate('/ocorrencias')}
+          className="flex flex-1 items-center justify-center gap-2 rounded-md border border-slate-200 px-4 py-2 text-sm font-bold xl:flex-none"
+        >
+          <Icon name="arrow-left" className="h-4 w-4" />
+          Voltar
+        </button>
+        <button
+          type="button"
+          onClick={() => setHistoricoAberto(true)}
+          className="flex flex-1 items-center justify-center gap-2 rounded-md border border-slate-200 px-4 py-2 text-sm font-bold xl:hidden"
+        >
+          <Icon name="history" className="h-4 w-4" />
+          Histórico
+        </button>
       </div>
-      <div className="grid gap-5 xl:grid-cols-[7fr_3fr] xl:flex-1 xl:items-stretch xl:overflow-hidden xl:min-h-0">
-        <div className="space-y-5 xl:overflow-y-auto xl:pr-1">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[7fr_3fr] xl:flex-1 xl:items-stretch xl:overflow-hidden xl:min-h-0">
+        <div className="space-y-5 xl:overflow-y-auto xl:pr-1 xl:[scrollbar-width:thin] xl:[&::-webkit-scrollbar]:w-1.5 xl:[&::-webkit-scrollbar-thumb]:rounded-full xl:[&::-webkit-scrollbar-thumb]:bg-slate-300">
 
           <Card>
-            <div className="mb-4 flex items-start justify-between gap-3">
-              <p className="text-md font-bold text-blue-600">Protocolo {ocorrencia.protocolo}</p>
-              <div className="flex items-center gap-2">
-                {savedAt && <span className="text-xs font-semibold text-emerald-600">Salvo às {savedAt}</span>}
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-md font-bold text-blue-600">Protocolo {ocorrencia.protocolo}</p>
+                {savedAt && <p className="mt-1 text-xs font-semibold text-emerald-600">Salvo às {savedAt}</p>}
+              </div>
+              <div className="flex w-full gap-2 sm:w-auto">
                 <button
                   onClick={exportarPdf}
-                  className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50"
+                  className="flex-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 sm:flex-none"
                 >
                   Exportar PDF
                 </button>
                 <button
                   onClick={() => setModalEdicaoAberto(true)}
-                  className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50"
+                  className="flex-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 sm:flex-none"
                 >
                   Editar
                 </button>
               </div>
             </div>
-            <div className="grid gap-4 grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <InfoField label="Escola" value={escolaSelecionada.nome} />
               <InfoField label="Bairro" value={escolaSelecionada.bairro} />
             </div>
@@ -421,14 +438,14 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
             <div className="mt-4">
               <InfoField label="Título" value={form.titulo} />
             </div>
-            <div className="mt-4 grid sm:grid-cols-2 gap-4">
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <InfoField label="Criticidade" value={criticidade} />
               <InfoField label="Status" value={status} />
             </div>
             <div className="mt-4">
               <InfoField label="Descrição" value={form.descricao} />
             </div>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <InfoField label="Endereço" value={escolaSelecionada.endereco} />
               <InfoField label="Localização" value={form.localizacaoInterna} />
               <InfoField label="Tipo" value={form.tipo} />
@@ -459,14 +476,31 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
             </div>
           </Card>
         </div>
-        <Card className="flex flex-col p-0 xl:h-full xl:min-h-0">
-          <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 pb-3 shrink-0">
-            <h3 className="text-lg font-800 text-slate-950">Histórico da ocorrência</h3>
+        <Card
+          className={`fixed inset-y-0 right-0 z-40 flex w-full flex-col p-0 transition-transform duration-200 ease-in-out xl:static xl:z-auto xl:h-full xl:w-auto xl:min-h-0 xl:translate-x-0 ${
+            historicoAberto ? 'translate-x-0' : 'translate-x-full'
+          }`}
+        >
+          <div className="flex justify-end border-b border-slate-200 px-2 py-2 shrink-0 xl:hidden">
+            <button
+              type="button"
+              onClick={() => setHistoricoAberto(false)}
+              aria-label="Fechar histórico"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+            >
+              <Icon name="close" className="h-5 w-5" />
+            </button>
+          </div>
+        
+          <div className="flex flex-nowrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-4 shrink-0">
+            <h3 className="min-w-0 flex-1 truncate text-lg font-800 text-slate-950">Histórico da ocorrência</h3>
             <button
               onClick={exportarHistoricoPdf}
-              className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50"
+              aria-label="Exportar PDF"
+              className="flex shrink-0 items-center gap-2 rounded-md border border-slate-300 px-2 py-1.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 xl:px-3"
             >
-              Exportar PDF
+              <Icon name="download" className="h-4 w-4" />
+              <span className="hidden xl:inline">Exportar PDF</span>
             </button>
           </div>
           <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
@@ -534,7 +568,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
                     enviarMensagem()
                   }
                 }}
-                placeholder="Escreva uma mensagem..."
+                placeholder="Escreva..."
                 rows={1}
                 className="max-h-32 flex-1 resize-none border-0 bg-transparent py-2 text-sm outline-none"
               />
@@ -564,7 +598,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
             <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Título</span>
             <input value={form.titulo} onChange={(e) => updateForm('titulo', e.target.value)} className={campoClasse('h-9 text-sm font-semibold text-slate-800')} />
           </label>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="block">
               <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Criticidade</span>
               <select value={criticidade} onChange={(e) => setCriticidade(e.target.value)} className={campoClasse('h-9 text-sm font-semibold text-slate-800')}>
@@ -586,7 +620,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
             <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Endereço</span>
             <input value={escolaSelecionada.endereco || ''} readOnly className="h-9 w-full rounded-md border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-500 outline-none" />
           </label>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="block">
               <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Localização</span>
               <select value={form.localizacaoInterna} onChange={(e) => updateForm('localizacaoInterna', e.target.value)} className={campoClasse('h-9 text-sm font-semibold text-slate-800')}>
@@ -600,7 +634,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
               </select>
             </label>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <label className="block">
               <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Envio</span>
               <input type="date" value={form.dataEnvio} readOnly className="h-9 w-full rounded-md border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-500 outline-none" />
@@ -616,7 +650,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
               Adicionar fotos
             </button>
             {(fotos.length > 0 || novosArquivosFotos.length > 0) && (
-              <div className="mt-2 grid grid-cols-3 gap-2">
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {fotos.map((foto, index) => (
                   <div key={foto} className="group relative aspect-square overflow-hidden rounded-md border border-slate-200 bg-slate-50">
                     {isFotoImagem(foto) ? (

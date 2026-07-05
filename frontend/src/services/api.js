@@ -1,9 +1,20 @@
+import { getStoredUser } from '../auth/session.js'
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3333/api'
+
+function actorHeaders() {
+  const user = getStoredUser()
+  if (!user) return {}
+  return {
+    'x-user-email': user.email || '',
+    'x-user-nome': user.nome || '',
+  }
+}
 
 async function request(path, options = {}) {
   const response = await fetch(`${API_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
     ...options,
+    headers: { 'Content-Type': 'application/json', ...actorHeaders(), ...options.headers },
   })
   const data = await response.json().catch(() => null)
   if (!response.ok) throw new Error(data?.message || 'Erro inesperado')
@@ -82,8 +93,14 @@ export async function uploadFotosOcorrencia(id, arquivos) {
   const formData = new FormData()
   arquivos.forEach((arquivo) => formData.append('fotos', arquivo))
 
-  const response = await fetch(`${API_URL}/ocorrencias/${id}/fotos`, { method: 'POST', body: formData })
+  const response = await fetch(`${API_URL}/ocorrencias/${id}/fotos`, { method: 'POST', body: formData, headers: actorHeaders() })
   const data = await response.json().catch(() => null)
   if (!response.ok) throw new Error(data?.message || 'Erro inesperado')
   return data
+}
+
+export function listarAuditoria(filters = {}) {
+  const params = new URLSearchParams(filters)
+  const query = params.toString()
+  return request(`/auditoria${query ? `?${query}` : ''}`)
 }
