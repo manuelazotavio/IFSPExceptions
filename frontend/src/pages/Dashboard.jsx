@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { escolas, ocorrenciasAprovadas } from '../data/mockData.js'
 import { dashboardMetrics, groupCount, sortOcorrencias } from '../utils/metrics.js'
 import { BarList, Card } from '../components/ui.jsx'
+import { Icon } from '../components/Icons.jsx'
 
 function ThickBarList({ data }) {
   const max = Math.max(...data.map((item) => item.value), 1)
@@ -31,54 +32,56 @@ function NeighborhoodColumnChart({ data }) {
 
   return (
     <div className="px-1 pb-1 pt-2">
-      <div className="grid grid-cols-[34px_1fr] gap-3">
-        <div className="flex h-64 flex-col justify-between pb-12 text-right text-xs font-semibold text-slate-400">
-          {ticks.map((tick) => (
-            <span key={tick}>{tick}</span>
-          ))}
-        </div>
-
-        <div className="relative h-64 border-b border-l border-slate-200">
-          <div className="absolute inset-x-0 top-0 flex h-52 flex-col justify-between">
+      <div className="overflow-x-auto">
+        <div className="grid min-w-[38rem] grid-cols-[34px_1fr] gap-3">
+          <div className="flex h-64 flex-col justify-between pb-12 text-right text-xs font-semibold text-slate-400">
             {ticks.map((tick) => (
-              <div key={tick} className="border-t border-slate-100" />
+              <span key={tick}>{tick}</span>
             ))}
           </div>
 
-          <div className="relative flex h-full items-end gap-5 px-4">
-            {data.map((item) => {
-              return (
-                <div key={item.label} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2">
-                  <div className="flex h-48 w-full items-end justify-center gap-0.5">
-                    {urgencyColumns.map((column) => {
-                      const value = item[column.key] || 0
-                      const height = value ? Math.max((value / chartMax) * 100, 8) : 0
+          <div className="relative h-64 border-b border-l border-slate-200">
+            <div className="absolute inset-x-0 top-0 flex h-52 flex-col justify-between">
+              {ticks.map((tick) => (
+                <div key={tick} className="border-t border-slate-100" />
+              ))}
+            </div>
 
-                      return (
-                        <div key={column.key} className="relative flex h-full w-3 items-end justify-center">
-                          {value > 0 && (
-                            <strong
-                              className="absolute text-[10px] font-800 leading-none text-slate-600"
-                              style={{ bottom: `calc(${height}% + 4px)` }}
-                            >
-                              {value}
-                            </strong>
-                          )}
-                    <div
-                      className={`w-full rounded-t-sm shadow-sm transition ${column.color} ${column.hover}`}
-                      style={{ height: `${height}%` }}
-                      title={`${item.label} - ${column.label}: ${value} ocorrências`}
-                    />
-                        </div>
-                      )
-                    })}
+            <div className="relative flex h-full items-end gap-5 px-4">
+              {data.map((item) => {
+                return (
+                  <div key={item.label} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2">
+                    <div className="flex h-48 w-full items-end justify-center gap-0.5">
+                      {urgencyColumns.map((column) => {
+                        const value = item[column.key] || 0
+                        const height = value ? Math.max((value / chartMax) * 100, 8) : 0
+
+                        return (
+                          <div key={column.key} className="relative flex h-full w-3 items-end justify-center">
+                            {value > 0 && (
+                              <strong
+                                className="absolute text-[10px] font-800 leading-none text-slate-600"
+                                style={{ bottom: `calc(${height}% + 4px)` }}
+                              >
+                                {value}
+                              </strong>
+                            )}
+                      <div
+                        className={`w-full rounded-t-sm shadow-sm transition ${column.color} ${column.hover}`}
+                        style={{ height: `${height}%` }}
+                        title={`${item.label} - ${column.label}: ${value} ocorrências`}
+                      />
+                          </div>
+                        )
+                      })}
+                    </div>
+                    <span className="line-clamp-2 min-h-9 text-center text-[11px] font-semibold leading-tight text-slate-500">
+                      {item.label}
+                    </span>
                   </div>
-                  <span className="line-clamp-2 min-h-9 text-center text-[11px] font-semibold leading-tight text-slate-500">
-                    {item.label}
-                  </span>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
         </div>
       </div>
@@ -169,7 +172,7 @@ export function Dashboard({ onNavigate, user }) {
 
   return (
     <div className="space-y-6">
-      <div className={`grid gap-4 md:grid-cols-3 ${isDiretor ? 'xl:grid-cols-5' : 'xl:grid-cols-6'}`}>
+      <div className={`grid grid-cols-2 gap-4 md:grid-cols-3 ${isDiretor ? 'xl:grid-cols-5' : 'xl:grid-cols-6'}`}>
         {!isDiretor && <StatCard label="Escolas" value={metrics.escolas} tone="slate" />}
         <StatCard label="Aprovadas" value={metrics.aprovadas} tone="blue" />
         <StatCard label="Abertas" value={metrics.abertas} tone="red" />
@@ -178,7 +181,7 @@ export function Dashboard({ onNavigate, user }) {
         <StatCard label="Críticas" value={metrics.criticas} tone="critical" />
       </div>
 
-      <div className={`grid gap-4 ${isDiretor ? '' : 'xl:grid-cols-[420px_1fr]'}`}>
+      <div className={`grid grid-cols-1 gap-4 ${isDiretor ? '' : 'xl:grid-cols-[420px_1fr]'}`}>
         <Card>
           <div className="mb-5 flex flex-col gap-3">
             <div>
@@ -202,9 +205,12 @@ export function Dashboard({ onNavigate, user }) {
             </div>
             <div className="space-y-3">
               {escolasRank.slice(0, 5).map((escola) => (
-                <div key={escola.id} className="flex items-center justify-between rounded-md border border-slate-100 px-3 py-2">
-                  <div><p className="font-bold text-slate-800">{formatLabel(escola.nome)}</p><p className="text-sm text-slate-500">{formatLabel(escola.bairro)}</p></div>
-                  <div className="text-right"><p className="font-800 text-slate-950">{escola.total}</p><p className="text-xs text-red-600">{escola.criticas} críticas</p></div>
+                <div key={escola.id} className="flex items-center justify-between gap-3 rounded-md border border-slate-100 px-3 py-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-bold text-slate-800">{formatLabel(escola.nome)}</p>
+                    <p className="truncate text-sm text-slate-500">{formatLabel(escola.bairro)}</p>
+                  </div>
+                  <div className="shrink-0 text-right"><p className="font-800 text-slate-950">{escola.total}</p><p className="text-xs text-red-600">{escola.criticas} críticas</p></div>
                 </div>
               ))}
             </div>
@@ -219,7 +225,7 @@ export function Dashboard({ onNavigate, user }) {
         </Card>
       )}
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <Card>
           <h2 className="mb-4 text-lg font-800 text-slate-950">Ocorrências por tipo</h2>
           <BarList data={porTipo} />
@@ -276,7 +282,6 @@ function SchoolChartSelect({ value, onChange, escolas }) {
 
   return (
     <div className="relative">
-      <span className="mb-1 block text-xs font-bold  text-slate-500">Escola</span>
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
@@ -288,7 +293,7 @@ function SchoolChartSelect({ value, onChange, escolas }) {
           <strong className="block truncate text-sm font-800 text-slate-900">{label}</strong>
           <span className="block truncate text-xs font-semibold text-slate-500">{bairro}</span>
         </span>
-        <span className={`ml-3 text-slate-400 transition ${open ? 'rotate-180' : ''}`}>⌄</span>
+        <Icon name="chevron-down" className={`ml-3 h-4 w-4 shrink-0 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
@@ -365,7 +370,7 @@ function PieChart({ data }) {
   const activePercent = activeItem && total ? Math.round((activeItem.value / total) * 100) : null
 
   return (
-    <div className="grid items-center gap-5 md:grid-cols-[180px_1fr]">
+    <div className="grid grid-cols-1 items-center gap-5 md:grid-cols-[180px_1fr]">
       <div className="relative mx-auto h-44 w-44">
         <svg viewBox="0 0 42 42" className="h-full w-full -rotate-90">
           <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#eef2f7" strokeWidth="8" />
