@@ -1115,6 +1115,7 @@ export function Mapa({ onNavigate }) {
             <div className={`${isMapStyleExpanded ? 'block' : 'hidden'} sm:block`}>
               <Select
                 size="xs"
+                dropUp
                 className="mt-1"
                 direction="up"
                 value={mapStyleKey}

@@ -93,11 +93,22 @@ function normalizeOption(option) {
   return { value: option, label: formatDisplayLabel(option) }
 }
 
-export function Select({ value, onChange, options, placeholder = 'Selecione...', disabled = false, className = '', size = 'md', direction = 'down' }) {
+export function Select({
+  value,
+  onChange,
+  options,
+  placeholder = 'Selecione...',
+  disabled = false,
+  className = '',
+  size = 'md',
+  direction = 'down',
+  dropUp = false,
+}) {
   const [open, setOpen] = useState(false)
   const containerRef = useRef(null)
   const normalized = options.map(normalizeOption)
   const selected = normalized.find((item) => item.value === value)
+  const menuDirection = direction === 'up' || dropUp ? 'up' : 'down'
 
   useEffect(() => {
     if (!open) return
@@ -147,7 +158,7 @@ export function Select({ value, onChange, options, placeholder = 'Selecione...',
       </button>
 
       {open && !disabled && (
-        <ul role="listbox" className={`absolute z-[5000] max-h-60 w-full overflow-auto rounded-md border border-slate-200 bg-white p-1 shadow-lg ${direction === 'up' ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
+        <ul role="listbox" className={`absolute z-[5000] max-h-60 w-full overflow-auto rounded-md border border-slate-200 bg-white p-1 shadow-lg ${menuDirection === 'up' ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
           {normalized.map((item) => {
             const active = item.value === value
             return (
