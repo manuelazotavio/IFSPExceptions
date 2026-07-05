@@ -31,3 +31,33 @@ textarea {
   font-family: inherit;
 }
 
+.leaflet-tooltip.school-name-tooltip {
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #0f172a;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.14);
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.leaflet-tooltip.school-name-tooltip::before {
+  display: none;
+}
+
+.leaflet-tooltip.school-detail-tooltip {
+  border: 0;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.92);
+  color: #f8fafc;
+  box-shadow: 0 14px 26px rgba(15, 23, 42, 0.2);
+  padding: 8px 10px;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.leaflet-tooltip.school-detail-tooltip::before {
+  border-top-color: rgba(15, 23, 42, 0.92);
+}
+
