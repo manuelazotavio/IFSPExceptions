@@ -2,8 +2,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { getSchoolStats } from '../utils/metrics.js'
 import { loadCustomSchools, loadSchoolCatalog, saveCustomSchool } from '../utils/schools.js'
 import { criarEscola, listarOcorrencias } from '../services/api.js'
-import { Badge, Card, FilterSelect } from '../components/ui.jsx'
+import { Card, FilterSelect } from '../components/ui.jsx'
+import { Pagination } from '../components/Pagination.jsx'
+import { Icon } from '../components/Icons.jsx'
 import { formatDisplayLabel } from '../utils/labels.js'
+
+const ITENS_POR_PAGINA = 10
 
 export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
   const [schoolList, setSchoolList] = useState(loadCustomSchools)
@@ -33,7 +37,17 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
     bairro: escolaFiltrada?.bairro || '',
     status: escolaFiltrada?.status || '',
   })
-  const setFilter = (key, value) => setFilters((prev) => ({ ...prev, [key]: value }))
+  const setFilter = (key, value) => { setFilters((prev) => ({ ...prev, [key]: value })); setPagina(1) }
+  const [pagina, setPagina] = useState(1)
+  const [expandidos, setExpandidos] = useState(() => new Set())
+  const toggleExpandido = (id) => {
+    setExpandidos((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   useEffect(() => {
     setFilters({
@@ -95,6 +109,8 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
       return true
     })
   }, [filters, schoolList])
+  const totalPaginas = Math.max(1, Math.ceil(escolasFiltradas.length / ITENS_POR_PAGINA))
+  const escolasPaginadas = escolasFiltradas.slice((pagina - 1) * ITENS_POR_PAGINA, pagina * ITENS_POR_PAGINA)
 
   function updateNovoCadastro(key, value) {
     setNovoCadastro((prev) => ({ ...prev, [key]: value }))
@@ -249,6 +265,18 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
     setIsModalOpen(false)
   }
 
+  function exportarCsv() {
+    const cabecalho = ['Nome', 'Bairro', 'Endereço', 'Status', 'Cadastro']
+    const linhas = escolasFiltradas.map((escola) => [escola.nome, formatDisplayLabel(escola.bairro), escola.endereco, escola.status, escola.dataCadastro])
+    const csv = [cabecalho, ...linhas].map((linha) => linha.map((valor) => `"${String(valor).replace(/"/g, '""')}"`).join(',')).join('\n')
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'escolas.csv'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <>
       <div className="space-y-5">
@@ -270,48 +298,113 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
         </Card>
       ) : null}
 
-      <Card>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-800 text-slate-950">Lista de escolas</h2>
-            <p className="mt-1 text-sm text-slate-500">Gerencie as unidades cadastradas e abra o detalhe de cada escola.</p>
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-center w-full mb-4">
+        <div className="relative w-full flex-1">
+          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+            <svg className="h-5 w-5 text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clipRule="evenodd" />
+            </svg>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              className="cursor-pointer rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
-            >
-              Importar csv
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsModalOpen(true)}
-              className="cursor-pointer rounded-md bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-strong"
-            >
-              Cadastrar escola
-            </button>
-          </div>
+          <input
+            type="text"
+            placeholder="Buscar escolas..."
+            value={filters.busca}
+            onChange={(event) => setFilter('busca', event.target.value)}
+            className="block w-full rounded-lg border-0 py-2 pl-10 pr-4 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary text-sm"
+          />
         </div>
-        <div className="grid gap-3 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
-          <label className="block">
-            <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Busca</span>
-            <input
-              value={filters.busca}
-              onChange={(event) => setFilter('busca', event.target.value)}
-              placeholder="Nome, bairro ou endereco"
-              className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500"
-            />
-          </label>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <button
+            type="button"
+            onClick={exportarCsv}
+            className="cursor-pointer w-full sm:w-auto rounded-lg border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors duration-200 flex items-center justify-center gap-2"
+          >
+            Exportar
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsModalOpen(true)}
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white shadow-sm transition-colors duration-200 hover:bg-primary-strong sm:w-auto"
+          >
+            <span className="text-sm leading-none">+</span> Cadastrar escola
+          </button>
+        </div>
+      </div>
+
+      <Card>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <FilterSelect label="Bairro" value={filters.bairro} onChange={(value) => setFilter('bairro', value)} options={bairroOptions} />
           <FilterSelect label="Status" value={filters.status} onChange={(value) => setFilter('status', value)} options={statusOptions} />
         </div>
-        <p className="mt-3 text-sm font-semibold text-slate-500">
-          {escolasFiltradas.length} de {schoolList.length} escolas encontradas
-        </p>
         {loadingSchools ? <p className="mt-1 text-xs font-semibold text-slate-400">Carregando escolas do banco...</p> : null}
       </Card>
 
-      <div className="w-full overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-slate-200 shadow-sm sm:hidden">
+        <div className="border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-extrabold tracking-wide text-slate-700">
+          Nome
+        </div>
+        <div className="divide-y divide-slate-200">
+          {escolasPaginadas.map((escola) => {
+            const stats = getSchoolStats(escola.id, ocorrencias)
+            const aberto = expandidos.has(escola.id)
+            return (
+              <div key={escola.id}>
+                <button
+                  type="button"
+                  onClick={() => toggleExpandido(escola.id)}
+                  aria-expanded={aberto}
+                  className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-left hover:bg-slate-50"
+                >
+                  <span className="font-bold text-slate-800">{escola.nome}</span>
+                  <Icon name="chevron-down" className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${aberto ? 'rotate-180' : ''}`} />
+                </button>
+                {aberto && (
+                  <div className="space-y-3 border-t border-slate-200 bg-white px-4 py-3 text-sm">
+                    <div>
+                      <span className="block text-xs font-bold tracking-wide text-slate-500">Bairro:</span>
+                      <span className="block text-slate-700">{formatDisplayLabel(escola.bairro)}</span>
+                    </div>
+                    <div>
+                      <span className="block text-xs font-bold tracking-wide text-slate-500">Endereço:</span>
+                      <span className="block text-slate-700">{escola.endereco}</span>
+                    </div>
+                    <div>
+                      <span className="block text-xs font-bold tracking-wide text-slate-500">Status:</span>
+                      <span className="block text-slate-700">{escola.status}</span>
+                    </div>
+                    <div>
+                      <span className="block text-xs font-bold tracking-wide text-slate-500">Ocorrências:</span>
+                      <span className="block text-slate-700">{stats.total}</span>
+                    </div>
+                    <div>
+                      <span className="block text-xs font-bold tracking-wide text-slate-500">Críticas:</span>
+                      <span className="block text-slate-700">{stats.criticas}</span>
+                    </div>
+                    <div>
+                      <span className="block text-xs font-bold tracking-wide text-slate-500">Cadastro:</span>
+                      <span className="block text-slate-700">{escola.dataCadastro}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onNavigate(`/escolas/${escola.id}`)}
+                      className="mt-2 w-full cursor-pointer rounded-md border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
+                    >
+                      Ver detalhes
+                    </button>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+          {!escolasPaginadas.length && (
+            <p className="px-4 py-8 text-center text-sm font-semibold text-slate-500">
+              Nenhuma escola encontrada com os filtros selecionados.
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="hidden w-full overflow-x-auto rounded-xl border border-slate-200 shadow-sm sm:block">
         <table className="w-full min-w-[1000px] border-collapse rounded-2 text-sm">
           <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-extrabold tracking-wide text-slate-600">
             <tr className="divide-x divide-slate-200">
@@ -319,7 +412,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {escolasFiltradas.map((escola) => {
+            {escolasPaginadas.map((escola) => {
               const stats = getSchoolStats(escola.id, ocorrencias)
               return (
                 <tr
@@ -330,7 +423,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                   <td className="px-4 py-3 font-bold text-slate-800">{escola.nome}</td>
                   <td className="px-4 py-3 text-slate-600">{formatDisplayLabel(escola.bairro)}</td>
                   <td className="px-4 py-3 text-slate-600">{escola.endereco}</td>
-                  <td className="px-4 py-3"><Badge>{escola.status}</Badge></td>
+                  <td className="px-4 py-3 text-slate-600">{escola.status}</td>
                   <td className="px-4 py-3 text-slate-600">{stats.total}</td>
                   <td className="px-4 py-3 text-slate-600">{stats.criticas}</td>
                   <td className="px-4 py-3 text-slate-600">{escola.dataCadastro}</td>
@@ -348,16 +441,24 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
         </table>
       </div>
 
+      <Pagination page={pagina} totalPages={totalPaginas} onPageChange={setPagina} totalItems={escolasFiltradas.length} pageSize={ITENS_POR_PAGINA} />
+
       {isModalOpen && (
-        <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-slate-950/45 px-3 py-4 sm:items-center sm:px-4 sm:py-8">
-          <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl sm:max-h-[calc(100vh-4rem)]">
+        <div
+          className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-slate-950/45 px-3 py-4 sm:items-center sm:px-4 sm:py-8"
+          onClick={() => setIsModalOpen(false)}
+        >
+          <div
+            onClick={(event) => event.stopPropagation()}
+            className="flex max-h-[calc(100vh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl sm:max-h-[calc(100vh-4rem)]"
+          >
             <div className="flex shrink-0 flex-col gap-3 border-b border-slate-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
               <div>
                 <h3 className="text-lg font-800 text-slate-950">Cadastrar escola</h3>
                 <p className="mt-1 text-sm text-slate-500">Adicione uma nova unidade para aparecer na listagem.</p>
               </div>
-              <button type="button" onClick={() => setIsModalOpen(false)} className="w-full cursor-pointer rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 sm:w-auto">
-                Fechar
+              <button type="button" onClick={() => setIsModalOpen(false)} aria-label="Fechar" className="cursor-pointer self-end rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 sm:self-auto">
+                <Icon name="close" className="h-5 w-5" />
               </button>
             </div>
             <form onSubmit={handleCadastrarEscola} className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">

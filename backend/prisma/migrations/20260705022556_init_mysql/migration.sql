@@ -44,7 +44,7 @@ CREATE TABLE `Ocorrencia` (
     `criadoPorEmail` VARCHAR(191) NOT NULL,
     `criadoPorNome` VARCHAR(191) NOT NULL DEFAULT '',
     `chatPendente` BOOLEAN NOT NULL DEFAULT false,
-    `fotos` TEXT NOT NULL DEFAULT '[]',
+    `fotos` TEXT NOT NULL,
     `criadoEm` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `atualizadoEm` DATETIME(3) NOT NULL,
     `escolaId` VARCHAR(191) NOT NULL,
@@ -60,7 +60,7 @@ CREATE TABLE `Interacao` (
     `autor` VARCHAR(191) NOT NULL,
     `mensagem` TEXT NOT NULL,
     `status` VARCHAR(191) NULL,
-    `anexos` TEXT NOT NULL DEFAULT '[]',
+    `anexos` TEXT NOT NULL,
     `criadoEm` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `ocorrenciaId` VARCHAR(191) NOT NULL,
 

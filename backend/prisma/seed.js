@@ -4,20 +4,21 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 const escolasSeed = [
-  { id: 'esc-001', nome: 'EMEF Dr. Carlos de Almeida Rodrigues', bairro: 'Indaia', endereco: 'Av. Pernambuco, 1101', latitude: -23.633, longitude: -45.417 },
-  { id: 'esc-002', nome: 'CEI/EMEI Profa. Ana Maria Aulicino', bairro: 'Jardim California', endereco: 'Rua Manoel Amaral, 51', latitude: -23.642, longitude: -45.429 },
-  { id: 'esc-003', nome: 'EMEI/EMEF Prof. Lucio Jacinto dos Santos', bairro: 'Tinga', endereco: 'Rua Denilza Sebastiana dos Santos, 75', latitude: -23.621, longitude: -45.466 },
-  { id: 'esc-004', nome: 'EMEF Profa. Maria Aparecida Ujio', bairro: 'Porto Novo', endereco: 'Av. Ezequiel da Silva Barreto, 285', latitude: -23.704, longitude: -45.428 },
-  { id: 'esc-005', nome: 'EMEF Profa. Antonia Antunes Arouca', bairro: 'Massaguacu', endereco: 'Rua Italia Baffi Magni, 581', latitude: -23.567, longitude: -45.327 },
-  { id: 'esc-006', nome: 'EMEI/EMEF Prof. Yasutada Nasu', bairro: 'Pereque Mirim', endereco: 'Av. Pedro Goncalves, 685', latitude: -23.724, longitude: -45.394 },
-  { id: 'esc-007', nome: 'EMEF Prof. Luiz Ribeiro Muniz', bairro: 'Martim de Sa', endereco: 'Rua Analandia, 355', latitude: -23.603, longitude: -45.389 },
-  { id: 'esc-008', nome: 'EMEI/EMEF Profa. Alaor Xavier Junqueira', bairro: 'Travessao', endereco: 'Rua Jose Ferreira dos Santos, 381', latitude: -23.672, longitude: -45.468 },
+  { id: 'esc-001', nome: 'EMEF Dr. Carlos de Almeida Rodrigues', bairro: 'Indaia', endereco: 'Av. Pernambuco, 1101', latitude: -23.631425, longitude: -45.423699 },
+  { id: 'esc-003', nome: 'EMEF Lucio Jacinto dos Santos', bairro: 'Tinga', endereco: 'Rua Denilza Sebastiana dos Santos, 75', latitude: -23.6286667, longitude: -45.4355698 },
+  { id: 'esc-004', nome: 'EMEF Profa. Maria Aparecida Ujio', bairro: 'Porto Novo', endereco: 'Av. Primeiro de Maio, 285', latitude: -23.6914719, longitude: -45.4360238 },
+  { id: 'esc-005', nome: 'EMEF Profa. Antonia Antunes Arouca', bairro: 'Massaguacu', endereco: 'Rua Italia Baffi Magni, 581', latitude: -23.581018, longitude: -45.3333415 },
+  { id: 'esc-006', nome: 'EMEI Yasutada Nasu', bairro: 'Pereque Mirim', endereco: 'Av. Pedro Goncalves Leite, 685', latitude: -23.7090203, longitude: -45.4429127 },
+  { id: 'esc-007', nome: 'EMEF Prof. Luiz Ribeiro Muniz', bairro: 'Martim de Sa', endereco: 'Rua Analandia, 355', latitude: -23.6174836, longitude: -45.3897454 },
+  { id: 'esc-008', nome: 'EMEI/EMEF Prof. Alaor Xavier Junqueira', bairro: 'Travessao', endereco: 'Rua Jose Ferreira dos Santos, 381', latitude: -23.6981504, longitude: -45.4443438 },
+  { id: 'esc-009', nome: 'EMEF Prof. Luiz Silvar do Prado (CIDE Casa Branca)', bairro: 'Jardim Casa Branca', endereco: 'Rua Jose Pedro de Oliveira Barbosa, 805', latitude: -23.6094773, longitude: -45.382068 },
+  { id: 'esc-010', nome: 'CEI/EMEI Profa. Maria Eugenia Aranha Chodounsky', bairro: 'Jardim Casa Branca', endereco: 'Rua Jose Pedro de Oliveira Barbosa, S/N', latitude: -23.6090319, longitude: -45.3817271 },
 ]
 
 const ocorrenciasSeed = [
   ['esc-001', 'Infiltracao na biblioteca', 'Hidraulica', 'Alta', 'Aberta', 'Biblioteca', '2026-05-02', true],
   ['esc-001', 'Quadro eletrico com faiscas', 'Eletrica', 'Critica', 'Em andamento', 'Bloco A', '2026-04-23', true],
-  ['esc-002', 'Portao lateral danificado', 'Seguranca', 'Media', 'Em analise', 'Entrada lateral', '2026-05-04', true],
+  ['esc-009', 'Portao lateral danificado', 'Seguranca', 'Media', 'Em analise', 'Entrada lateral', '2026-05-04', true], // era esc-002
   ['esc-003', 'Telhado com risco de queda', 'Estrutural', 'Critica', 'Aberta', 'Patio coberto', '2026-04-18', true],
   ['esc-004', 'Banheiro sem descarga', 'Hidraulica', 'Media', 'Aguardando visita tecnica', 'Banheiro infantil', '2026-05-08', true],
   ['esc-005', 'Luminarias queimadas', 'Eletrica', 'Baixa', 'Resolvida', 'Corredor principal', '2026-04-29', true],
@@ -29,7 +30,7 @@ const ocorrenciasSeed = [
   ['esc-005', 'Carteiras danificadas', 'Mobiliario', 'Media', 'Aberta', 'Sala 3', '2026-04-30', true],
   ['esc-006', 'Curto em tomada', 'Eletrica', 'Critica', 'Em andamento', 'Sala 2', '2026-04-20', true],
   ['esc-007', 'Vidro trincado', 'Seguranca', 'Alta', 'Aberta', 'Secretaria', '2026-04-26', true],
-  ['esc-002', 'Vazamento em pia', 'Hidraulica', 'Media', 'Aguardando visita tecnica', 'Cozinha', '2026-05-03', true],
+  ['esc-010', 'Vazamento em pia', 'Hidraulica', 'Media', 'Aguardando visita tecnica', 'Cozinha', '2026-05-03', true], // era esc-002
   ['esc-001', 'Ar condicionado parado', 'Equipamento', 'Baixa', 'Aberta', 'Sala dos professores', '2026-05-07', true],
   ['esc-008', 'Iluminacao externa insuficiente', 'Seguranca', 'Alta', 'Aguardando orcamento', 'Area externa', '2026-04-17', true],
   ['esc-005', 'Piso solto', 'Estrutural', 'Media', 'Em analise', 'Sala 5', '2026-04-28', true],
@@ -37,7 +38,7 @@ const ocorrenciasSeed = [
   ['esc-004', 'Falta de tomada acessivel', 'Acessibilidade', 'Media', 'Aberta', 'Sala multifuncional', '2026-05-10', true],
   ['esc-007', 'Caixa d agua sem tampa', 'Hidraulica', 'Critica', 'Aberta', 'Cobertura', '2026-04-13', true],
   ['esc-003', 'Projetor queimado', 'Tecnologia', 'Baixa', 'Em andamento', 'Sala 1', '2026-05-11', true],
-  ['esc-002', 'Extintor vencido', 'Seguranca', 'Critica', 'Aberta', 'Corredor', '2026-04-10', true],
+  ['esc-009', 'Extintor vencido', 'Seguranca', 'Critica', 'Aberta', 'Corredor', '2026-04-10', true], // era esc-002
   ['esc-008', 'Mesa quebrada', 'Mobiliario', 'Media', 'Aguardando orcamento', 'Diretoria', '2026-05-12', true],
   ['esc-005', 'Ocorrencia publica pendente', 'Outros', 'Alta', 'Aberta', 'Portaria', '2026-05-13', false],
 ]
@@ -53,7 +54,6 @@ const usuariosExternosSeed = [
   { email: 'externo.esc-007@escola.gov.br', nome: 'Camila Rocha', escolaId: 'esc-007' },
   { email: 'externo.esc-008@escola.gov.br', nome: 'Diego Martins', escolaId: 'esc-008' },
 ]
-
 function addDays(dateStr, days) {
   const date = new Date(`${dateStr}T00:00:00`)
   date.setDate(date.getDate() + days)
@@ -77,7 +77,7 @@ async function main() {
   const senhaHash = await bcrypt.hash('123456', 10)
 
   const usuarios = [
-    { email: 'seduc@escola.gov.br', nome: 'Administrador SEDUC', role: 'SEDUC', escolaId: null },
+    { email: 'seduc@escola.gov.br', nome: 'João Beserra', role: 'SEDUC', escolaId: null },
     { email: 'diretor@escola.gov.br', nome: 'Diretora Alberto Souza', role: 'DIRETOR', escolaId: 'esc-001' },
     ...usuariosExternosSeed.map((usuario) => ({ ...usuario, role: 'EXTERNO' })),
   ]

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { categorias, criticidadeValues, locaisInternos, statusValues } from '../data/mockData.js'
 import { adicionarInteracao, atualizarOcorrencia, listarEscolas, obterOcorrencia, uploadFotosOcorrencia } from '../services/api.js'
-import { Card, Modal } from '../components/ui.jsx'
+import { Card, Modal, Select } from '../components/ui.jsx'
 import { Icon } from '../components/Icons.jsx'
 import { formatDisplayLabel } from '../utils/labels.js'
 
@@ -596,9 +596,12 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
         <div className="space-y-4">
           <label className="block">
             <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Escola</span>
-            <select value={form.escolaId} onChange={(e) => updateForm('escolaId', e.target.value)} className={campoClasse('h-9 text-sm font-semibold text-slate-800')}>
-              {escolas.map((item) => <option key={item.id} value={item.id}>{item.nome} - {item.bairro}</option>)}
-            </select>
+            <Select
+              size="sm"
+              value={form.escolaId}
+              onChange={(value) => updateForm('escolaId', value)}
+              options={escolas.map((item) => ({ value: item.id, label: `${item.nome} - ${item.bairro}` }))}
+            />
           </label>
           <label className="block">
             <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Título</span>
@@ -607,15 +610,11 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="block">
               <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Criticidade</span>
-              <select value={criticidade} onChange={(e) => setCriticidade(e.target.value)} className={campoClasse('h-9 text-sm font-semibold text-slate-800')}>
-                {criticidadeValues.map((item) => <option key={item} value={item}>{formatDisplayLabel(item)}</option>)}
-              </select>
+              <Select size="sm" value={criticidade} onChange={setCriticidade} options={criticidadeValues} />
             </label>
             <label className="block">
               <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Status</span>
-              <select value={status} onChange={(e) => setStatus(e.target.value)} className={campoClasse('h-9 text-sm font-semibold text-slate-800')}>
-                {statusValues.map((item) => <option key={item} value={item}>{formatDisplayLabel(item)}</option>)}
-              </select>
+              <Select size="sm" value={status} onChange={setStatus} options={statusValues} />
             </label>
           </div>
           <label className="block">
@@ -629,16 +628,11 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="block">
               <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Localização</span>
-              <select value={form.localizacaoInterna} onChange={(e) => updateForm('localizacaoInterna', e.target.value)} className={campoClasse('h-9 text-sm font-semibold text-slate-800')}>
-                <option value="">Não informada</option>
-                {locaisInternos.map((item) => <option key={item} value={item}>{formatDisplayLabel(item)}</option>)}
-              </select>
+              <Select size="sm" value={form.localizacaoInterna} onChange={(value) => updateForm('localizacaoInterna', value)} options={locaisInternos} />
             </label>
             <label className="block">
               <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Tipo</span>
-              <select value={form.tipo} onChange={(e) => updateForm('tipo', e.target.value)} className={campoClasse('h-9 text-sm font-semibold text-slate-800')}>
-                {categorias.map((item) => <option key={item} value={item}>{formatDisplayLabel(item)}</option>)}
-              </select>
+              <Select size="sm" value={form.tipo} onChange={(value) => updateForm('tipo', value)} options={categorias} />
             </label>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

@@ -87,7 +87,7 @@ export class OcorrenciaModel {
         fotos: JSON.stringify(payload.fotos || []),
         escolaId: escola.id,
         interacoes: {
-          create: [{ origem: 'sistema', autor: 'Sistema', mensagem: 'Ocorrencia aberta pela escola.' }],
+          create: [{ origem: 'sistema', autor: 'Sistema', mensagem: 'Ocorrencia aberta pela escola.', anexos: '[]' }],
         },
       },
       include: includeRelacoes,
