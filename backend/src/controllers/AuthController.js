@@ -4,6 +4,7 @@ import { EscolaModel } from '../models/EscolaModel.js'
 import { UserModel } from '../models/UserModel.js'
 import { AppError } from '../utils/AppError.js'
 import { parseOrThrow } from '../utils/validate.js'
+import { signToken } from '../utils/jwt.js'
 
 const REGISTRO_ROLES = ['DIRETOR', 'EXTERNO']
 
@@ -36,7 +37,16 @@ export class AuthController {
     if (!senhaValida) throw new AppError('Email ou senha invalidos', 401)
     if (!user.ativo) throw new AppError('Usuario inativo', 403)
 
-    return response.json({ user: sanitizeUser(user) })
+    const usuario = sanitizeUser(user)
+    const token = signToken({
+      id: usuario.id,
+      nome: usuario.nome,
+      email: usuario.email,
+      role: usuario.role,
+      escolaId: usuario.escolaId,
+    })
+
+    return response.json({ user: usuario, token })
   }
 
   static async registro(request, response) {
