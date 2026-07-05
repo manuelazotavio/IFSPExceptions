@@ -7,8 +7,11 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
   const [schoolList, setSchoolList] = useState(loadCustomSchools)
   const [loadingSchools, setLoadingSchools] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [loadingCep, setLoadingCep] = useState(false)
+  const [cepFeedback, setCepFeedback] = useState('')
   const [novoCadastro, setNovoCadastro] = useState({
     nome: '',
+    cep: '',
     bairro: '',
     endereco: '',
     latitude: '',
@@ -82,6 +85,43 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
     setNovoCadastro((prev) => ({ ...prev, [key]: value }))
   }
 
+  async function preencherEnderecoPorCep() {
+    const cep = normalizeCep(novoCadastro.cep)
+    if (cep.length !== 8) {
+      setCepFeedback('Informe um CEP valido com 8 digitos.')
+      return
+    }
+
+    setLoadingCep(true)
+    setCepFeedback('')
+
+    try {
+      const cepData = await fetchCepData(cep)
+      const endereco = buildAddressLine(cepData)
+      const geocode = await fetchAddressCoordinates({
+        endereco,
+        bairro: cepData.bairro,
+        cidade: cepData.localidade,
+        estado: cepData.uf,
+      })
+
+      setNovoCadastro((prev) => ({
+        ...prev,
+        cep,
+        bairro: cepData.bairro || prev.bairro,
+        endereco: endereco || prev.endereco,
+        latitude: geocode?.latitude || prev.latitude,
+        longitude: geocode?.longitude || prev.longitude,
+      }))
+
+      setCepFeedback(geocode ? 'Endereco preenchido com latitude e longitude.' : 'Endereco preenchido. Ajuste latitude e longitude se necessario.')
+    } catch (error) {
+      setCepFeedback(error.message || 'Nao foi possivel localizar o CEP informado.')
+    } finally {
+      setLoadingCep(false)
+    }
+  }
+
   function handleFotoSelecionada(event) {
     const file = event.target.files?.[0]
     if (!file) return
@@ -127,6 +167,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
     const createdSchool = {
       id: `esc-custom-${Date.now()}`,
       nome: novoCadastro.nome.trim(),
+      cep: normalizeCep(novoCadastro.cep),
       bairro: novoCadastro.bairro.trim(),
       endereco: novoCadastro.endereco.trim(),
       latitude: Number(novoCadastro.latitude),
@@ -149,6 +190,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
     }
     setNovoCadastro({
       nome: '',
+      cep: '',
       bairro: '',
       endereco: '',
       latitude: '',
@@ -159,6 +201,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
       comodos: [],
     })
     setNovoComodo({ nome: '', codigo: '' })
+    setCepFeedback('')
     setIsModalOpen(false)
   }
 
@@ -281,6 +324,32 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                 <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Nome</span>
                 <input required value={novoCadastro.nome} onChange={(event) => updateNovoCadastro('nome', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500" />
               </label>
+              <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto]">
+                <label className="block">
+                  <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">CEP</span>
+                  <input
+                    required
+                    value={novoCadastro.cep}
+                    onChange={(event) => updateNovoCadastro('cep', formatCepInput(event.target.value))}
+                    onBlur={() => {
+                      if (normalizeCep(novoCadastro.cep).length === 8) {
+                        preencherEnderecoPorCep()
+                      }
+                    }}
+                    className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500"
+                    placeholder="00000-000"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={preencherEnderecoPorCep}
+                  disabled={loadingCep}
+                  className="mt-[22px] rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60"
+                >
+                  {loadingCep ? 'Buscando...' : 'Preencher'}
+                </button>
+              </div>
+              {cepFeedback ? <p className="text-xs font-semibold text-slate-500">{cepFeedback}</p> : null}
               <label className="block">
                 <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Bairro</span>
                 <input required value={novoCadastro.bairro} onChange={(event) => updateNovoCadastro('bairro', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500" />
@@ -394,4 +463,57 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
 
 function normalizeRoomKey(value) {
   return String(value || '').trim().toLowerCase()
+}
+
+function normalizeCep(value) {
+  return String(value || '').replace(/\D/g, '').slice(0, 8)
+}
+
+function formatCepInput(value) {
+  const digits = normalizeCep(value)
+  if (digits.length <= 5) return digits
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`
+}
+
+async function fetchCepData(cep) {
+  const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
+  if (!response.ok) {
+    throw new Error('Nao foi possivel consultar o CEP.')
+  }
+
+  const data = await response.json()
+  if (data.erro) {
+    throw new Error('CEP nao encontrado.')
+  }
+
+  return data
+}
+
+function buildAddressLine(data) {
+  const parts = [data.logradouro, data.localidade && data.uf ? `${data.localidade} - ${data.uf}` : data.localidade || data.uf]
+  return parts.filter(Boolean).join(', ')
+}
+
+async function fetchAddressCoordinates({ endereco, bairro, cidade, estado }) {
+  const query = [endereco, bairro, cidade, estado, 'Brasil'].filter(Boolean).join(', ')
+  if (!query) return null
+
+  const params = new URLSearchParams({
+    format: 'jsonv2',
+    limit: '1',
+    countrycodes: 'br',
+    q: query,
+  })
+
+  const response = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`)
+  if (!response.ok) return null
+
+  const data = await response.json()
+  const first = Array.isArray(data) ? data[0] : null
+  if (!first) return null
+
+  return {
+    latitude: String(first.lat || ''),
+    longitude: String(first.lon || ''),
+  }
 }
