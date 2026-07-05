@@ -26,6 +26,7 @@ model Escola {
   ocorrencias   Ocorrencia[]
   logs          LogAuditoria[]
   notificacoes  Notificacao[]
+  comodos       Comodo[]
 }
 
 model User {
@@ -109,4 +110,14 @@ model Notificacao {
   ocorrencia   Ocorrencia? @relation(fields: [ocorrenciaId], references: [id], onDelete: Cascade)
   escolaId     String?
   escola       Escola?     @relation(fields: [escolaId], references: [id], onDelete: Cascade)
+}
+
+model Comodo {
+  id       String   @id @default(cuid())
+  nome     String
+  codigo   String
+  criadoEm DateTime @default(now())
+
+  escolaId String
+  escola   Escola @relation(fields: [escolaId], references: [id], onDelete: Cascade)
 }

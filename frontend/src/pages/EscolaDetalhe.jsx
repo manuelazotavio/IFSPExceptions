@@ -341,9 +341,9 @@ function formatSchoolDetailData(escolaApi, complementoLocal) {
     fotos: Array.isArray(local.fotos) && local.fotos.length
       ? local.fotos
       : (Array.isArray(escolaApi.fotos) ? escolaApi.fotos : []),
-    comodos: Array.isArray(local.comodos) && local.comodos.length
-      ? local.comodos
-      : (Array.isArray(escolaApi.comodos) ? escolaApi.comodos : []),
+    comodos: Array.isArray(escolaApi.comodos) && escolaApi.comodos.length
+      ? escolaApi.comodos
+      : (Array.isArray(local.comodos) ? local.comodos : []),
     x: local.x || escolaApi.x,
     y: local.y || escolaApi.y,
   }
