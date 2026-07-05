@@ -90,7 +90,12 @@ export default function App() {
     setStoredUser(loggedUser)
     setStoredToken(token)
     setUser(loggedUser)
-    navigate(loggedUser.role === 'EXTERNO' ? '/ocorrencias' : '/dashboard')
+    const destino = loggedUser.role === 'EXTERNO'
+      ? '/ocorrencias'
+      : loggedUser.role === 'DIRETOR'
+        ? '/dashboard'
+        : '/mapa'
+    navigate(destino)
   }
 
   function handleLogout() {
@@ -309,7 +314,7 @@ export default function App() {
       '/configuracoes': <Configuracoes />,
     }
 
-    return pages[pathname] || pages['/dashboard']
+    return pages[pathname] || pages['/mapa']
   }
 
   if (isPublicRoute(pathname)) {
