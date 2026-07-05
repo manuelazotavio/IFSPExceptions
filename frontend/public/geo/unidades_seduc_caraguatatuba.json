@@ -1,8 +1,8 @@
 [
   {
-    "nome": "CIEFI PROF.ª ADOLFINA LEONOR SOARES DOS SANTOS",
+    "nome": "CIEFI PROFA. ADOLFINA LEONOR SOARES DOS SANTOS",
     "cep": "11661-400",
-    "bairro": "Sumaré",
+    "bairro": "Sumare",
     "endereco": "Avenida Siqueira Campos, 1257",
     "latitude": -23.6168047,
     "longitude": -45.3987256,
@@ -41,7 +41,7 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
@@ -49,8 +49,8 @@
   {
     "nome": "CEI/EMEI ADI ADRIANA APARECIDA CASSIANO",
     "cep": "11668-315",
-    "bairro": "Perequê Mirim",
-    "endereco": "Rua São Roque, 410",
+    "bairro": "Pereque Mirim",
+    "endereco": "Rua Sao Roque, 410",
     "latitude": -23.7139088,
     "longitude": -45.4397189,
     "fotos": null,
@@ -88,13 +88,13 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "EMEI/EMEF PROF.ª AIDA DE ALMEIDA CASTRO GRAZIOLI",
+    "nome": "EMEI/EMEF PROFA. AIDA DE ALMEIDA CASTRO GRAZIOLI",
     "cep": "11675-690",
     "bairro": "Rio do Ouro",
     "endereco": "Rua Francisco Ribeiro, 80",
@@ -135,16 +135,16 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "EMEI/EMEF PROF.ª ALAOR XAVIER JUNQUEIRA",
+    "nome": "EMEI/EMEF PROFA. ALAOR XAVIER JUNQUEIRA",
     "cep": "11670-400",
-    "bairro": "Travessão",
-    "endereco": "Rua José Ferreira dos Santos, 381",
+    "bairro": "Travessao",
+    "endereco": "Rua Jose Ferreira dos Santos, 381",
     "latitude": -23.6969996,
     "longitude": -45.4423324,
     "fotos": null,
@@ -182,15 +182,15 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "CEI/EMEI PROF.ª ANA MARIA AULICINO",
+    "nome": "CEI/EMEI PROFA. ANA MARIA AULICINO",
     "cep": "11660-497",
-    "bairro": "Jd. Califórnia",
+    "bairro": "Jd. California",
     "endereco": "Rua Manoel Amaral, 51",
     "latitude": -23.6180855,
     "longitude": -45.4172194,
@@ -229,16 +229,16 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "EMEF PROF.ª ANTONIA ANTUNES AROUCA",
+    "nome": "EMEF PROFA. ANTONIA ANTUNES AROUCA",
     "cep": "11677-180",
-    "bairro": "Massaguaçu",
-    "endereco": "Rua Itália Baffi Magni, 581",
+    "bairro": "Massaguacu",
+    "endereco": "Rua Italia Baffi Magni, 581",
     "latitude": -23.5787219,
     "longitude": -45.3351767,
     "fotos": null,
@@ -276,15 +276,15 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "CIEFI PROF.ª ANTONIA RIBEIRO DA SILVA",
+    "nome": "CIEFI PROFA. ANTONIA RIBEIRO DA SILVA",
     "cep": "11660-497",
-    "bairro": "Jd. Califórnia",
+    "bairro": "Jd. California",
     "endereco": "Rua Alcides Alves Pereira, 140",
     "latitude": -23.6182953,
     "longitude": -45.4177527,
@@ -323,7 +323,7 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
@@ -331,8 +331,8 @@
   {
     "nome": "EMEF PROF. ANTONIO DE FREITAS AVELAR",
     "cep": "11660-650",
-    "bairro": "Estrela D’Alva",
-    "endereco": "Rua João Marcelo, 302",
+    "bairro": "Estrela D'Alva",
+    "endereco": "Rua Joao Marcelo, 302",
     "latitude": -23.6213363,
     "longitude": -45.4200692,
     "fotos": null,
@@ -370,13 +370,13 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "CEI/EMEI PROF.ª APARECIDA MARIA PIRES DE MENESES",
+    "nome": "CEI/EMEI PROFA. APARECIDA MARIA PIRES DE MENESES",
     "cep": "11663-380",
     "bairro": "Olaria",
     "endereco": "Avenida Marginal Ipiranga, 17",
@@ -417,7 +417,7 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
@@ -464,15 +464,15 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "EMEI/EMEF BENEDITO INÁCIO SOARES",
+    "nome": "EMEI/EMEF BENEDITO INACIO SOARES",
     "cep": "11677-340",
-    "bairro": "Massaguaçu",
+    "bairro": "Massaguacu",
     "endereco": "Avenida Regina Margareth Passos, 400",
     "latitude": -23.58238,
     "longitude": -45.33058,
@@ -511,7 +511,7 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
@@ -520,7 +520,7 @@
     "nome": "EMEI/EMEF PROF. BERNARDO FERREIRA LOUZADA",
     "cep": "11675-730",
     "bairro": "Rio do Ouro",
-    "endereco": "Rua Horto Florestal, s/n.º",
+    "endereco": "Rua Horto Florestal, s/n.",
     "latitude": -23.5965508,
     "longitude": -45.4296084,
     "fotos": null,
@@ -558,7 +558,7 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
@@ -566,7 +566,7 @@
   {
     "nome": "EMEI/EMEF CARLOS ALTERO ORTEGA",
     "cep": "11671-020",
-    "bairro": "Morro do Algodão",
+    "bairro": "Morro do Algodao",
     "endereco": "Rua Olavo Bilac (Antiga Rua 7), 15",
     "latitude": -23.6751431,
     "longitude": -45.4464027,
@@ -605,7 +605,7 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
@@ -613,7 +613,7 @@
   {
     "nome": "EMEF DR. CARLOS DE ALMEIDA RODRIGUES",
     "cep": "11665-191",
-    "bairro": "Indaiá",
+    "bairro": "Indaia",
     "endereco": "Avenida Pernambuco, 1101",
     "latitude": -23.6320185,
     "longitude": -45.424584,
@@ -652,15 +652,15 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "CEI/EMEI PROF.ª CÉLIA ROCHA LOBO",
+    "nome": "CEI/EMEI PROFA. CELIA ROCHA LOBO",
     "cep": "11668-000",
-    "bairro": "Perequê Mirim",
+    "bairro": "Pereque Mirim",
     "endereco": "Rua Benedito Jacinto do Prado, 100",
     "latitude": -23.7146577,
     "longitude": -45.4450363,
@@ -699,16 +699,16 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "EMEF PROF.ª DEBORA VALLE DA SILVA PILON",
+    "nome": "EMEF PROFA. DEBORA VALLE DA SILVA PILON",
     "cep": "11669-150",
-    "bairro": "Travessão",
-    "endereco": "Avenida José da Costa Pinheiro Júnior, 422",
+    "bairro": "Travessao",
+    "endereco": "Avenida Jose da Costa Pinheiro Junior, 422",
     "latitude": -23.699809,
     "longitude": -45.446472,
     "fotos": null,
@@ -746,16 +746,16 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "CEI PROF.ª DIOMAR BERTI FRANZOLIN",
+    "nome": "CEI PROFA. DIOMAR BERTI FRANZOLIN",
     "cep": "11671-206",
-    "bairro": "Morro do algodão",
-    "endereco": "Rua Barbara Rocha Essias, nº 85",
+    "bairro": "Morro do algodao",
+    "endereco": "Rua Barbara Rocha Essias, n. 85",
     "latitude": -23.6828328,
     "longitude": -45.4519071,
     "fotos": null,
@@ -793,7 +793,7 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
@@ -802,7 +802,7 @@
     "nome": "CEI DO BAIRRO POIARES",
     "cep": "11673-250",
     "bairro": "Poiares",
-    "endereco": "Avenida Marechal Floriano Peixoto, s/n.º",
+    "endereco": "Avenida Marechal Floriano Peixoto, s/n.",
     "latitude": -23.6393846,
     "longitude": -45.4347049,
     "fotos": null,
@@ -840,16 +840,16 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "CEI/EMEI DO SUMARÉ",
+    "nome": "CEI/EMEI DO SUMARE",
     "cep": "11661-160",
-    "bairro": "Sumaré",
-    "endereco": "Rua Sebastião Nepomuceno, 20",
+    "bairro": "Sumare",
+    "endereco": "Rua Sebastiao Nepomuceno, 20",
     "latitude": -23.6208094,
     "longitude": -45.3993334,
     "fotos": null,
@@ -887,13 +887,13 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "CEI/EMEI PROF.ª EDITH CASTRO DE MORAIS",
+    "nome": "CEI/EMEI PROFA. EDITH CASTRO DE MORAIS",
     "cep": "11676-010",
     "bairro": "Jetuba",
     "endereco": "Rua Geraldo Cordeiro de Souza, 501",
@@ -934,15 +934,15 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "CIEFI PROF.ª EDNA MARIA NOGUEIRA FERRAZ",
+    "nome": "CIEFI PROFA. EDNA MARIA NOGUEIRA FERRAZ",
     "cep": "11668-005",
-    "bairro": "Perequê Mirim",
+    "bairro": "Pereque Mirim",
     "endereco": "Rua Benedito Fortunato, 1355",
     "latitude": -23.7077314,
     "longitude": -45.4414404,
@@ -981,13 +981,13 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "CEI PROF.ª ELISA BUTSCHKAU",
+    "nome": "CEI PROFA. ELISA BUTSCHKAU",
     "cep": "11670-010",
     "bairro": "Barranco Alto",
     "endereco": "Rua Manoel Severino de Castro, 720",
@@ -1028,7 +1028,7 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
@@ -1036,7 +1036,7 @@
   {
     "nome": "CEI ESTER NUNES DE SOUZA",
     "cep": "11677-180",
-    "bairro": "Sertão dos Tourinhos",
+    "bairro": "Sertao dos Tourinhos",
     "endereco": "Rua Manoel Francisco Ricardo, 360",
     "latitude": -23.5797,
     "longitude": -45.3371,
@@ -1075,7 +1075,7 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
@@ -1083,8 +1083,8 @@
   {
     "nome": "EMEF PROF. EUCLYDES FERREIRA",
     "cep": "11667-826",
-    "bairro": "Perequê Mirim",
-    "endereco": "Avenida José Geraldo Fernandes da Silva Filho, 165",
+    "bairro": "Pereque Mirim",
+    "endereco": "Avenida Jose Geraldo Fernandes da Silva Filho, 165",
     "latitude": -23.7098909,
     "longitude": -45.4615009,
     "fotos": null,
@@ -1122,7 +1122,7 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
@@ -1130,8 +1130,8 @@
   {
     "nome": "CEI/EMEI PROF. FRANCISCO ASSIS DE CARVALHO",
     "cep": "11669-470",
-    "bairro": "Perequê Mirim",
-    "endereco": "Rua José Geraldo Fernandes da Silva Filho, 85",
+    "bairro": "Pereque Mirim",
+    "endereco": "Rua Jose Geraldo Fernandes da Silva Filho, 85",
     "latitude": -23.70548,
     "longitude": -45.4487,
     "fotos": null,
@@ -1169,7 +1169,7 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
@@ -1177,8 +1177,8 @@
   {
     "nome": "EMEF PROF. GERALDO DE LIMA",
     "cep": "11668-015",
-    "bairro": "Perequê Mirim",
-    "endereco": "Avenida Pedro Gonçalves Leite, 685",
+    "bairro": "Pereque Mirim",
+    "endereco": "Avenida Pedro Goncalves Leite, 685",
     "latitude": -23.7089572,
     "longitude": -45.4423111,
     "fotos": null,
@@ -1216,7 +1216,7 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
@@ -1225,7 +1225,7 @@
     "nome": "CRECHE GOLFINHO AMIGO",
     "cep": "11671-206",
     "bairro": "Golfinhos",
-    "endereco": "A. Inácio Batista Faria, 718",
+    "endereco": "A. Inacio Batista Faria, 718",
     "latitude": -23.6728418,
     "longitude": -45.4618314,
     "fotos": null,
@@ -1263,7 +1263,7 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
@@ -1271,7 +1271,7 @@
   {
     "nome": "CIASE GOVERNADOR ADHEMAR PEREIRA DE BARROS",
     "cep": "11669-301",
-    "bairro": "Travessão",
+    "bairro": "Travessao",
     "endereco": "Rua Henrique Maximiliano Coelho Neto, 100",
     "latitude": -23.7002977,
     "longitude": -45.4488386,
@@ -1310,16 +1310,16 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "CEI PROF.ª HONORINA PACHECO CORRÊA",
+    "nome": "CEI PROFA. HONORINA PACHECO CORREA",
     "cep": "11675-670",
     "bairro": "Rio do Ouro",
-    "endereco": "Avenida Américo Timóteo do Rosário, 255",
+    "endereco": "Avenida Americo Timoteo do Rosario, 255",
     "latitude": -23.6071901,
     "longitude": -45.4262606,
     "fotos": null,
@@ -1357,16 +1357,16 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "EMEF PROF.ª JANE URBANO FOCESI",
+    "nome": "EMEF PROFA. JANE URBANO FOCESI",
     "cep": "11668-315",
-    "bairro": "Perequê Mirim",
-    "endereco": "Rua São Roque, 450",
+    "bairro": "Pereque Mirim",
+    "endereco": "Rua Sao Roque, 450",
     "latitude": -23.7141025,
     "longitude": -45.4403337,
     "fotos": null,
@@ -1404,16 +1404,16 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "EMEI/EMEF PROF. JOÃO BAPTISTA GARDELIN",
+    "nome": "EMEI/EMEF PROF. JOO BAPTISTA GARDELIN",
     "cep": "11673-250",
     "bairro": "Poiares",
-    "endereco": "Rua Joaquim José da Silva Xavier, 180",
+    "endereco": "Rua Joaquim Jose da Silva Xavier, 180",
     "latitude": -23.6397817,
     "longitude": -45.4368416,
     "fotos": null,
@@ -1451,13 +1451,13 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "EMEI/EMEF PROF.ª JOÃO BENEDITO MARCONDES",
+    "nome": "EMEI/EMEF PROF. JOO BENEDITO MARCONDES",
     "cep": "11670-150",
     "bairro": "Barranco Alto",
     "endereco": "Rua Benedito Severino Castro, 248",
@@ -1498,13 +1498,13 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "CEI/EMEI JOÃO LINO DA CRUZ",
+    "nome": "CEI/EMEI JOO LINO DA CRUZ",
     "cep": "11670-010",
     "bairro": "Barranco Alto",
     "endereco": "Rua Luiz Jacinto da Silva, 205",
@@ -1545,16 +1545,16 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "EMEI/EMEF JOÃO THIMÓTEO DO ROSÁRIO",
+    "nome": "EMEI/EMEF JOO THIMTEO DO ROSRIO",
     "cep": "11661-395",
     "bairro": "Canta Galo",
-    "endereco": "Avenida Antônio Francisco Paschoal Peliciari, 1985",
+    "endereco": "Avenida Antonio Francisco Paschoal Peliciari, 1985",
     "latitude": -23.6008,
     "longitude": -45.4019,
     "fotos": null,
@@ -1592,7 +1592,7 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
@@ -1601,7 +1601,7 @@
     "nome": "EMEF PROF. JORGE PASSOS",
     "cep": "11675-300",
     "bairro": "Jaraguazinho",
-    "endereco": "Rua Oziel Egídio de Faria, s/n.º",
+    "endereco": "Rua Oziel Egidio de Faria, s/n.",
     "latitude": -23.6129025,
     "longitude": -45.433701,
     "fotos": null,
@@ -1639,16 +1639,16 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "CEI/EMEI PROF.ª JOSIANE APARECIDA RAMOS",
+    "nome": "CEI/EMEI PROFA. JOSIANE APARECIDA RAMOS",
     "cep": "11671-020",
     "bairro": "Golfinhos",
-    "endereco": "Avenida Emílio Manzano Lhorente, 670",
+    "endereco": "Avenida Emilio Manzano Lhorente, 670",
     "latitude": -23.6717785,
     "longitude": -45.4513579,
     "fotos": null,
@@ -1686,7 +1686,7 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
@@ -1694,8 +1694,8 @@
   {
     "nome": "CEI/EMEI LEONOR MENDES DE BARROS",
     "cep": "11669-301",
-    "bairro": "Travessão II",
-    "endereco": "Rua João Carlos Bálio, 240",
+    "bairro": "Travessao II",
+    "endereco": "Rua Joao Carlos Balio, 240",
     "latitude": -23.699637,
     "longitude": -45.4490524,
     "fotos": null,
@@ -1733,13 +1733,13 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "EMEI/EMEF PROF. LÚCIO JACINTO DOS SANTOS",
+    "nome": "EMEI/EMEF PROF. LUCIO JACINTO DOS SANTOS",
     "cep": "11674-480",
     "bairro": "Tinga",
     "endereco": "Rua Denilza Sebastiana dos Santos, 75",
@@ -1780,7 +1780,7 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
@@ -1788,8 +1788,8 @@
   {
     "nome": "EMEF PROF. LUIZ RIBEIRO MUNIZ",
     "cep": "11662-320",
-    "bairro": "Martim de Sá",
-    "endereco": "Rua Analândia, 355",
+    "bairro": "Martim de Sa",
+    "endereco": "Rua Analandia, 355",
     "latitude": -23.6175028,
     "longitude": -45.3899397,
     "fotos": null,
@@ -1827,7 +1827,7 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
@@ -1836,7 +1836,7 @@
     "nome": "EMEF PROF. LUIZ SILVAR DO PRADO",
     "cep": "11663-660",
     "bairro": "Casa Branca",
-    "endereco": "Rua José Pedro de Oliveira Barbosa, 805",
+    "endereco": "Rua Jose Pedro de Oliveira Barbosa, 805",
     "latitude": -23.6088625,
     "longitude": -45.3814371,
     "fotos": null,
@@ -1874,16 +1874,16 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "CEI/EMEI PROF.ª MAIRA MARQUES DE OLIVEIRA",
+    "nome": "CEI/EMEI PROFA. MAIRA MARQUES DE OLIVEIRA",
     "cep": "11677-290",
-    "bairro": "Massaguaçu",
-    "endereco": "Rua José Gerônimo Soares, s/n.º",
+    "bairro": "Massaguacu",
+    "endereco": "Rua Jose Geronimo Soares, s/n.",
     "latitude": -23.5730589,
     "longitude": -45.3400975,
     "fotos": null,
@@ -1921,13 +1921,13 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "EMEF PROF.ª MARIA APARECIDA DE CARVALHO",
+    "nome": "EMEF PROFA. MARIA APARECIDA DE CARVALHO",
     "cep": "11674-410",
     "bairro": "Tinga",
     "endereco": "Avenida Marechal Deodoro da Fonseca, 1155",
@@ -1968,13 +1968,13 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "EMEF PROF.ª MARIA APARECIDA UJIO",
+    "nome": "EMEF PROFA. MARIA APARECIDA UJIO",
     "cep": "11667-810",
     "bairro": "Porto Novo",
     "endereco": "Avenida Ezequiel da Silva Barreto, 285",
@@ -2015,15 +2015,15 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "CIEFI PROF.ª MARIA CARLITA SARAIVA GUEDES",
+    "nome": "CIEFI PROFA. MARIA CARLITA SARAIVA GUEDES",
     "cep": "11671-206",
-    "bairro": "Morro do Algodão",
+    "bairro": "Morro do Algodao",
     "endereco": "Travessa Cinco, 75",
     "latitude": -23.6826602,
     "longitude": -45.4523363,
@@ -2062,7 +2062,7 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
@@ -2070,7 +2070,7 @@
   {
     "nome": "EMEI MARIA DE LOURDES LUCARELLI PEREZ",
     "cep": "11665-071",
-    "bairro": "Indaiá",
+    "bairro": "Indaia",
     "endereco": "Avenida Santa Catarina, 455",
     "latitude": -23.6360428,
     "longitude": -45.4248273,
@@ -2109,13 +2109,13 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "CEI/EMEI PROF.ª MARIA ELMA MANSANO",
+    "nome": "CEI/EMEI PROFA. MARIA ELMA MANSANO",
     "cep": "11674-410",
     "bairro": "Tinga",
     "endereco": "Avenida Marechal Deodoro da Fonseca, 1155",
@@ -2156,16 +2156,16 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "CEI/EMEI PROF.ª MARIA EUGENIA ARANHA CHODOUNSKY",
+    "nome": "CEI/EMEI PROFA. MARIA EUGENIA ARANHA CHODOUNSKY",
     "cep": "11663-660",
     "bairro": "Casa Branca",
-    "endereco": "Rua José Pedro de Oliveira Barbosa, s/n.º",
+    "endereco": "Rua Jose Pedro de Oliveira Barbosa, s/n.",
     "latitude": -23.6078711,
     "longitude": -45.3801732,
     "fotos": null,
@@ -2203,13 +2203,13 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "EMEF PROF.ª MARIA MORAES DE OLIVEIRA",
+    "nome": "EMEF PROFA. MARIA MORAES DE OLIVEIRA",
     "cep": "11673-250",
     "bairro": "Jd. Gaivotas",
     "endereco": "Rua Pica-Pau, 495",
@@ -2250,16 +2250,16 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "CEI/EMEI PROF.ª MARIA ONICIE DIAS PEREIRA",
+    "nome": "CEI/EMEI PROFA. MARIA ONICIE DIAS PEREIRA",
     "cep": "11675-420",
     "bairro": "Jaraguazinho",
-    "endereco": "Rua José Neder, 100",
+    "endereco": "Rua Jose Neder, 100",
     "latitude": -23.6160563,
     "longitude": -45.4336562,
     "fotos": null,
@@ -2297,13 +2297,13 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "EMEI/EMEF PROF.ª MARIA THEREZA DE SOUZA CASTRO",
+    "nome": "EMEI/EMEF PROFA. MARIA THEREZA DE SOUZA CASTRO",
     "cep": "11676-403",
     "bairro": "Jetuba",
     "endereco": "Rua Seishi Yoshimoto, 120",
@@ -2344,7 +2344,7 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
@@ -2353,7 +2353,7 @@
     "nome": "EMEI/EMEF MASAKO SONE",
     "cep": "11667-826",
     "bairro": "Pegorelli",
-    "endereco": "Rua Abra de Dentro, s/n.º",
+    "endereco": "Rua Abra de Dentro, s/n.",
     "latitude": -23.720365,
     "longitude": -45.4580586,
     "fotos": null,
@@ -2391,7 +2391,7 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
@@ -2399,8 +2399,8 @@
   {
     "nome": "CRECHE MEI MEI DE CARAGUATATUBA",
     "cep": "11671-470",
-    "bairro": "Morro do Algodão",
-    "endereco": "Rua Antônio Teles de Souza, 64",
+    "bairro": "Morro do Algodao",
+    "endereco": "Rua Antonio Teles de Souza, 64",
     "latitude": -23.6822,
     "longitude": -45.4498,
     "fotos": null,
@@ -2438,7 +2438,7 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
@@ -2485,7 +2485,7 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
@@ -2494,7 +2494,7 @@
     "nome": "EMEF PROF. OSWALDO FERREIRA",
     "cep": "11663-660",
     "bairro": "Casa Branca",
-    "endereco": "Rua José Pedro de Oliveira Barbosa, 190",
+    "endereco": "Rua Jose Pedro de Oliveira Barbosa, 190",
     "latitude": -23.6078711,
     "longitude": -45.3801732,
     "fotos": null,
@@ -2532,13 +2532,13 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "EMEI/EMEF PEDRO JOÃO DE OLIVEIRA",
+    "nome": "EMEI/EMEF PEDRO JOO DE OLIVEIRA",
     "cep": "11679-200",
     "bairro": "Tabatinga",
     "endereco": "Rua Benedito Serrado, 130",
@@ -2579,15 +2579,15 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "CEI/EMEI PROF.ª REGINA CÉLIA SANTOS CHAPIRA BLAUSTEIN",
+    "nome": "CEI/EMEI PROFA. REGINA CELIA SANTOS CHAPIRA BLAUSTEIN",
     "cep": "11670-400",
-    "bairro": "Travessão I",
+    "bairro": "Travessao I",
     "endereco": "Rua Jacupiranga, 155",
     "latitude": -23.6967286,
     "longitude": -45.4429119,
@@ -2626,7 +2626,7 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
@@ -2673,15 +2673,15 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "CEI/EMEI PROF.ª SANTINA NARDI MARQUES",
+    "nome": "CEI/EMEI PROFA. SANTINA NARDI MARQUES",
     "cep": "11660-497",
-    "bairro": "Estrela D’Alva",
+    "bairro": "Estrela D'Alva",
     "endereco": "Rua Antonio Nardi, 200",
     "latitude": -23.6204649,
     "longitude": -45.4194731,
@@ -2720,7 +2720,7 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
@@ -2767,7 +2767,7 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
@@ -2775,8 +2775,8 @@
   {
     "nome": "CEI/EMEI STELA DA SILVA",
     "cep": "11669-301",
-    "bairro": "Travessão",
-    "endereco": "Rua João Carlos Bálio, 355",
+    "bairro": "Travessao",
+    "endereco": "Rua Joao Carlos Balio, 355",
     "latitude": -23.6984388,
     "longitude": -45.4492348,
     "fotos": null,
@@ -2814,13 +2814,13 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "CEI PROF.ª TELMA DO AMARANTE VEIGA SANTOS",
+    "nome": "CEI PROFA. TELMA DO AMARANTE VEIGA SANTOS",
     "cep": "11674-480",
     "bairro": "Tinga",
     "endereco": "Rua Antonio dos Santos, 70",
@@ -2861,13 +2861,13 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "CEI/EMEI PROF.ª THEREZA YANESSE SCHMIDT CARDOZO",
+    "nome": "CEI/EMEI PROFA. THEREZA YANESSE SCHMIDT CARDOZO",
     "cep": "11667-810",
     "bairro": "Porto Novo",
     "endereco": "Avenida Ezequiel da Silva Barreto, 200",
@@ -2908,13 +2908,13 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "CEI/EMEI PROF.ª VERA DA SILVA SANTOS",
+    "nome": "CEI/EMEI PROFA. VERA DA SILVA SANTOS",
     "cep": "11676-250",
     "bairro": "Jetuba",
     "endereco": "Rua das Azaleias, 418",
@@ -2955,7 +2955,7 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
@@ -3002,15 +3002,15 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "CIASE WILSON FRANCISCO VALENTE - SUMARÉ",
+    "nome": "CIASE WILSON FRANCISCO VALENTE - SUMARE",
     "cep": "11660-640",
-    "bairro": "Sumaré",
+    "bairro": "Sumare",
     "endereco": "Avenida Siqueira Campos, 705",
     "latitude": -23.6158347,
     "longitude": -45.4039946,
@@ -3049,7 +3049,7 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
@@ -3057,8 +3057,8 @@
   {
     "nome": "EMEI/EMEF PROF. YASUTADA NASU",
     "cep": "11668-015",
-    "bairro": "Perequê Mirim",
-    "endereco": "Avenida Pedro Gonçalves Leite, 685",
+    "bairro": "Pereque Mirim",
+    "endereco": "Avenida Pedro Goncalves Leite, 685",
     "latitude": -23.7090612,
     "longitude": -45.4428357,
     "fotos": null,
@@ -3096,7 +3096,7 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
@@ -3105,7 +3105,7 @@
     "nome": "CRIES CASA BRANCA",
     "cep": "11667-255",
     "bairro": "Casa Branca",
-    "endereco": "Rua Nicefaro Cabral de Melo, s/n.º",
+    "endereco": "Rua Nicefaro Cabral de Melo, s/n.",
     "latitude": -23.6079,
     "longitude": -45.3802,
     "fotos": null,
@@ -3143,7 +3143,7 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
@@ -3152,7 +3152,7 @@
     "nome": "CRIES TINGA",
     "cep": "11674-480",
     "bairro": "Tinga",
-    "endereco": "Rua Antônio dos Santos, 95",
+    "endereco": "Rua Antonio dos Santos, 95",
     "latitude": -23.6288,
     "longitude": -45.4359,
     "fotos": null,
@@ -3190,16 +3190,16 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "CRIES PEREQUÊ MIRIM",
+    "nome": "CRIES PEREQUE MIRIM",
     "cep": "11669-470",
-    "bairro": "Perequê Mirim",
-    "endereco": "Rua José Geraldo Fernandes da Silva Filho, 185",
+    "bairro": "Pereque Mirim",
+    "endereco": "Rua Jose Geraldo Fernandes da Silva Filho, 185",
     "latitude": -23.70548,
     "longitude": -45.4487,
     "fotos": null,
@@ -3237,7 +3237,7 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
@@ -3284,16 +3284,16 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "BIBLIOTECA CECÍLIA MEIRELES",
+    "nome": "BIBLIOTECA CECILIA MEIRELES",
     "cep": "11669-301",
-    "bairro": "Travessão",
-    "endereco": "Rua João Carlos Balio, 240",
+    "bairro": "Travessao",
+    "endereco": "Rua Joao Carlos Balio, 240",
     "latitude": -23.699637,
     "longitude": -45.4490524,
     "fotos": null,
@@ -3331,7 +3331,7 @@
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitório",
+        "ambiente": "Refeitorio",
         "codigo": "REF-01"
       }
     ]
