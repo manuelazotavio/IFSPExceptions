@@ -71,6 +71,9 @@ function mergeSchoolData(primarySchool, fallbackSchool) {
     descricao: primary.descricao || fallback.descricao || '',
     fotoNome: primary.fotoNome || fallback.fotoNome || '',
     fotoUrl: primary.fotoUrl || fallback.fotoUrl || '',
+    fotos: Array.isArray(primary.fotos) && primary.fotos.length
+      ? primary.fotos
+      : (Array.isArray(fallback.fotos) ? fallback.fotos : []),
     comodos: Array.isArray(primary.comodos) && primary.comodos.length
       ? primary.comodos
       : (fallback.comodos || []),
