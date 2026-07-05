@@ -18,9 +18,8 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const projectRoot = path.resolve(__dirname, '..')
 
-const mockPath = path.join(projectRoot, 'public', 'geo', 'unidades_seduc_caraguatatuba_mock.json')
 const geocodedPath = path.join(projectRoot, 'public', 'geo', 'unidades_seduc_caraguatatuba_geocoded.json')
-const finalPath = path.join(projectRoot, 'public', 'geo', 'unidades_seduc_caraguatatuba_final.json')
+const schoolsPath = path.join(projectRoot, 'public', 'geo', 'unidades_seduc_caraguatatuba.json')
 const pendingPath = path.join(projectRoot, 'public', 'geo', 'unidades_seduc_caraguatatuba_pendencias.json')
 const geocodeCachePath = path.join(projectRoot, 'scripts', 'cache', 'geocode-cache-seduc-caragua.json')
 const cepCachePath = path.join(projectRoot, 'scripts', 'cache', 'cep-cache-seduc-caragua.json')
@@ -740,12 +739,10 @@ function mergeFinalEdits(baseRecords, finalRecords) {
 
 async function loadWorkingRecords() {
   const hasGeocoded = await pathExists(geocodedPath)
-  const hasMock = await pathExists(mockPath)
-  const hasFinal = await pathExists(finalPath)
+  const hasSchools = await pathExists(schoolsPath)
 
   const geocodedRecords = hasGeocoded ? await readJson(geocodedPath, []) : null
-  const mockRecords = hasMock ? await readJson(mockPath, []) : null
-  const finalRecords = hasFinal ? await readJson(finalPath, []) : null
+  const schoolsRecords = hasSchools ? await readJson(schoolsPath, []) : null
 
   let sourceLabel = ''
   let sourcePath = ''
@@ -755,20 +752,16 @@ async function loadWorkingRecords() {
     sourceLabel = 'geocoded'
     sourcePath = geocodedPath
     baseRecords = geocodedRecords
-  } else if (Array.isArray(mockRecords) && mockRecords.length > 0) {
-    sourceLabel = 'mock'
-    sourcePath = mockPath
-    baseRecords = mockRecords
-  } else if (Array.isArray(finalRecords) && finalRecords.length > 0) {
-    sourceLabel = 'final'
-    sourcePath = finalPath
-    baseRecords = finalRecords
+  } else if (Array.isArray(schoolsRecords) && schoolsRecords.length > 0) {
+    sourceLabel = 'oficial'
+    sourcePath = schoolsPath
+    baseRecords = schoolsRecords
   } else {
     throw new Error('Nenhum arquivo de entrada valido foi encontrado.')
   }
 
-  if (Array.isArray(finalRecords) && finalRecords.length > 0 && sourceLabel !== 'final') {
-    baseRecords = mergeFinalEdits(baseRecords, finalRecords)
+  if (Array.isArray(schoolsRecords) && schoolsRecords.length > 0 && sourceLabel !== 'oficial') {
+    baseRecords = mergeFinalEdits(baseRecords, schoolsRecords)
   }
 
   return {
@@ -1252,7 +1245,7 @@ async function main() {
 
   validateFinalOutput(finalRecords)
   await writeJson(geocodedPath, enrichedRecords)
-  await writeJson(finalPath, finalRecords)
+  await writeJson(schoolsPath, finalRecords)
   await writeJson(pendingPath, pendingRecords)
 
   console.log('')
@@ -1266,7 +1259,7 @@ async function main() {
   console.log(`Geocodificacoes aproximadas: ${stats.approximated}`)
   console.log(`Falhas de geocodificacao: ${stats.failed}`)
   console.log(`Registros sem endereco: ${stats.withoutAddress}`)
-  console.log(`Arquivo final gerado: ${finalPath}`)
+  console.log(`Arquivo final gerado: ${schoolsPath}`)
   console.log(`Arquivo de pendencias: ${pendingPath}`)
 }
 

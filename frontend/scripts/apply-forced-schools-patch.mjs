@@ -6,7 +6,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const projectRoot = path.resolve(__dirname, '..')
 
-const finalPath = path.join(projectRoot, 'public', 'geo', 'unidades_seduc_caraguatatuba_final.json')
+const schoolsPath = path.join(projectRoot, 'public', 'geo', 'unidades_seduc_caraguatatuba.json')
 const pendingPath = path.join(projectRoot, 'public', 'geo', 'unidades_seduc_caraguatatuba_pendencias.json')
 const seedDir = path.join(projectRoot, 'src', 'seeds')
 const seedPath = path.join(seedDir, 'escolasSeed.js')
@@ -321,7 +321,7 @@ async function writeSeed(records) {
 }
 
 async function main() {
-  const originalRecords = await readJson(finalPath)
+  const originalRecords = await readJson(schoolsPath)
   if (!Array.isArray(originalRecords)) {
     throw new Error('O arquivo final não contém uma lista JSON.')
   }
@@ -369,7 +369,7 @@ async function main() {
     .filter((record) => record.latitude === null || record.longitude === null || record.cep === null)
     .map((record) => buildPendingRecord(record))
 
-  await writeJson(finalPath, updatedRecords)
+  await writeJson(schoolsPath, updatedRecords)
 
   const hasPendingImports = await findPendingImports(path.join(projectRoot, 'src'), 'unidades_seduc_caraguatatuba_pendencias.json')
   let pendingMessage = ''
@@ -399,7 +399,7 @@ async function main() {
   console.log(`Sem latitude/longitude: ${updatedRecords.length - withCoordinates}`)
   console.log(`Com CEP: ${withCep}`)
   console.log(`Sem CEP: ${updatedRecords.length - withCep}`)
-  console.log(`Arquivo final atualizado: ${finalPath}`)
+  console.log(`Arquivo final atualizado: ${schoolsPath}`)
   console.log(`Seed gerada: ${seedPath}`)
   console.log(`${pendingMessage}.`)
 
