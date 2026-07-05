@@ -5,6 +5,8 @@ import { criarEscola, listarOcorrencias } from '../services/api.js'
 import { Card, FilterSelect } from '../components/ui.jsx'
 import { Pagination } from '../components/Pagination.jsx'
 import { Icon } from '../components/Icons.jsx'
+import { ImageCropper } from '../components/ImageCropper.jsx'
+import { FotoThumbnail } from '../components/FotoThumbnail.jsx'
 import { formatDisplayLabel } from '../utils/labels.js'
 
 const ITENS_POR_PAGINA = 10
@@ -31,6 +33,8 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
     comodos: [],
   })
   const [novoComodo, setNovoComodo] = useState({ nome: '', codigo: '' })
+  const [filaCorte, setFilaCorte] = useState([])
+  const [arquivoEmCorte, setArquivoEmCorte] = useState(null)
   const escolaFiltrada = escolaIdFiltro ? schoolList.find((item) => item.id === escolaIdFiltro) : null
   const [filters, setFilters] = useState({
     busca: escolaFiltrada?.nome || '',
@@ -155,20 +159,44 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
 
   async function handleFotoSelecionada(event) {
     const files = Array.from(event.target.files || [])
+    event.target.value = ''
     if (!files.length) return
 
-    const novasFotos = await Promise.all(files.map((file) => readImageFile(file)))
+    const pendentes = await Promise.all(files.map((file) => readImageFile(file)))
+    setFilaCorte((prev) => [...prev, ...pendentes])
+  }
+
+  useEffect(() => {
+    if (!arquivoEmCorte && filaCorte.length > 0) {
+      const [proximo, ...resto] = filaCorte
+      setArquivoEmCorte({ nome: proximo.nome, src: proximo.url })
+      setFilaCorte(resto)
+    }
+  }, [filaCorte, arquivoEmCorte])
+
+  function aplicarFotoCadastro(novaFoto, indexParaSubstituir) {
     setNovoCadastro((prev) => {
-      const fotos = [...prev.fotos, ...novasFotos]
+      const fotos = indexParaSubstituir != null
+        ? prev.fotos.map((foto, i) => (i === indexParaSubstituir ? novaFoto : foto))
+        : [...prev.fotos, novaFoto]
       const capa = fotos[0] || { nome: '', url: '' }
-      return {
-        ...prev,
-        fotoNome: capa.nome,
-        fotoUrl: capa.url,
-        fotos,
-      }
+      return { ...prev, fotoNome: capa.nome, fotoUrl: capa.url, fotos }
     })
-    event.target.value = ''
+  }
+
+  async function handleCropConfirm(arquivoCortado) {
+    const dataUrl = await fileToDataUrl(arquivoCortado)
+    aplicarFotoCadastro({ nome: arquivoEmCorte.nome, url: dataUrl }, arquivoEmCorte.indexParaSubstituir)
+    setArquivoEmCorte(null)
+  }
+
+  function handleCropCancel() {
+    setArquivoEmCorte(null)
+  }
+
+  function handleRecortarFotoCadastro(index) {
+    const foto = novoCadastro.fotos[index]
+    setArquivoEmCorte({ nome: foto.nome, src: foto.url, indexParaSubstituir: index })
   }
 
   function removerFotoCadastro(index) {
@@ -454,13 +482,25 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
           >
             <div className="flex shrink-0 flex-col gap-3 border-b border-slate-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
               <div>
-                <h3 className="text-lg font-800 text-slate-950">Cadastrar escola</h3>
-                <p className="mt-1 text-sm text-slate-500">Adicione uma nova unidade para aparecer na listagem.</p>
+                <h3 className="text-lg font-800 text-slate-950">{arquivoEmCorte ? 'Cortar imagem' : 'Cadastrar escola'}</h3>
+                <p className="mt-1 text-sm text-slate-500">
+                  {arquivoEmCorte ? 'Ajuste o enquadramento antes de salvar a foto.' : 'Adicione uma nova unidade para aparecer na listagem.'}
+                </p>
               </div>
               <button type="button" onClick={() => setIsModalOpen(false)} aria-label="Fechar" className="cursor-pointer self-end rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 sm:self-auto">
                 <Icon name="close" className="h-5 w-5" />
               </button>
             </div>
+            {arquivoEmCorte ? (
+              <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
+                <ImageCropper
+                  imageSrc={arquivoEmCorte.src}
+                  fileName={arquivoEmCorte.nome}
+                  onCancel={handleCropCancel}
+                  onConfirm={handleCropConfirm}
+                />
+              </div>
+            ) : (
             <form onSubmit={handleCadastrarEscola} className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
               <label className="block">
                 <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Nome <span className="text-red-500">*</span></span>
@@ -536,17 +576,26 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                 {novoCadastro.fotos.length ? (
                   <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
                     {novoCadastro.fotos.map((foto, index) => (
-                      <div key={`${foto.nome}-${index}`} className="group relative aspect-video overflow-hidden rounded-md border border-slate-200">
-                        <img src={foto.url} alt={`Prévia ${index + 1}`} className="h-full w-full object-cover" />
-                        <button className="cursor-pointer"
-                          type="button"
-                          onClick={() => removerFotoCadastro(index)}
-                          aria-label={`Remover ${foto.nome}`}
-                          className="absolute right-1 top-1 cursor-pointer rounded-full bg-black/60 px-1.5 text-xs font-bold text-white hover:bg-black/80"
-                        >
-                          &times;
-                        </button>
-                      </div>
+                      <FotoThumbnail key={`${foto.nome}-${index}`} src={foto.url} alt={`Prévia ${index + 1}`}>
+                        <div className="absolute inset-x-1 top-1 flex justify-end gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleRecortarFotoCadastro(index)}
+                            aria-label={`Recortar ${foto.nome}`}
+                            className="cursor-pointer rounded-full bg-black/60 p-1 text-white hover:bg-black/80"
+                          >
+                            <Icon name="crop" className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removerFotoCadastro(index)}
+                            aria-label={`Remover ${foto.nome}`}
+                            className="cursor-pointer rounded-full bg-black/60 px-1.5 text-xs font-bold text-white hover:bg-black/80"
+                          >
+                            &times;
+                          </button>
+                        </div>
+                      </FotoThumbnail>
                     ))}
                   </div>
                 ) : null}
@@ -627,6 +676,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                 </button>
               </div>
             </form>
+            )}
           </div>
         </div>
       )}
@@ -650,6 +700,14 @@ function readImageFile(file) {
       nome: file.name,
       url: typeof reader.result === 'string' ? reader.result : '',
     })
+    reader.readAsDataURL(file)
+  })
+}
+
+function fileToDataUrl(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '')
     reader.readAsDataURL(file)
   })
 }
