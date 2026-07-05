@@ -1058,6 +1058,7 @@ export function Mapa({ onNavigate }) {
               <Select
                 size="xs"
                 className="mt-1"
+                direction="up"
                 value={mapStyleKey}
                 onChange={setMapStyleKey}
                 options={Object.entries(mapStyles).map(([styleKey, style]) => ({ value: styleKey, label: style.label }))}
