@@ -2,7 +2,7 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "CIEFI PROFA. ADOLFINA LEONOR SOARES DOS SANTOS",
     "cep": "11661-400",
-    "bairro": "Sumare",
+    "bairro": "Sumaré",
     "endereco": "Avenida Siqueira Campos, 1257",
     "latitude": -23.6168047,
     "longitude": -45.3987256,
@@ -41,7 +41,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -49,8 +49,8 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "CEI/EMEI ADI ADRIANA APARECIDA CASSIANO",
     "cep": "11668-315",
-    "bairro": "Pereque Mirim",
-    "endereco": "Rua Sao Roque, 410",
+    "bairro": "Perequê Mirim",
+    "endereco": "Rua São Roque, 410",
     "latitude": -23.7139088,
     "longitude": -45.4397189,
     "fotos": null,
@@ -88,7 +88,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -135,7 +135,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -143,7 +143,7 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "EMEI/EMEF PROFA. ALAOR XAVIER JUNQUEIRA",
     "cep": "11670-400",
-    "bairro": "Travessao",
+    "bairro": "Travessão",
     "endereco": "Rua Jose Ferreira dos Santos, 381",
     "latitude": -23.6969996,
     "longitude": -45.4423324,
@@ -182,7 +182,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -190,7 +190,7 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "CEI/EMEI PROFA. ANA MARIA AULICINO",
     "cep": "11660-497",
-    "bairro": "Jd. California",
+    "bairro": "Jd. Califórnia",
     "endereco": "Rua Manoel Amaral, 51",
     "latitude": -23.6180855,
     "longitude": -45.4172194,
@@ -229,7 +229,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -237,8 +237,8 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "EMEF PROFA. ANTONIA ANTUNES AROUCA",
     "cep": "11677-180",
-    "bairro": "Massaguacu",
-    "endereco": "Rua Italia Baffi Magni, 581",
+    "bairro": "Massaguaçu",
+    "endereco": "Rua Itália Baffi Magni, 581",
     "latitude": -23.5787219,
     "longitude": -45.3351767,
     "fotos": null,
@@ -276,7 +276,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -284,7 +284,7 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "CIEFI PROFA. ANTONIA RIBEIRO DA SILVA",
     "cep": "11660-497",
-    "bairro": "Jd. California",
+    "bairro": "Jd. Califórnia",
     "endereco": "Rua Alcides Alves Pereira, 140",
     "latitude": -23.6182953,
     "longitude": -45.4177527,
@@ -323,7 +323,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -370,7 +370,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -417,7 +417,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -464,7 +464,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -472,7 +472,7 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "EMEI/EMEF BENEDITO INACIO SOARES",
     "cep": "11677-340",
-    "bairro": "Massaguacu",
+    "bairro": "Massaguaçu",
     "endereco": "Avenida Regina Margareth Passos, 400",
     "latitude": -23.58238,
     "longitude": -45.33058,
@@ -511,7 +511,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -558,7 +558,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -566,7 +566,7 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "EMEI/EMEF CARLOS ALTERO ORTEGA",
     "cep": "11671-020",
-    "bairro": "Morro do Algodao",
+    "bairro": "Morro do Algodão",
     "endereco": "Rua Olavo Bilac (Antiga Rua 7), 15",
     "latitude": -23.6751431,
     "longitude": -45.4464027,
@@ -605,7 +605,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -613,7 +613,7 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "EMEF DR. CARLOS DE ALMEIDA RODRIGUES",
     "cep": "11665-191",
-    "bairro": "Indaia",
+    "bairro": "Indaiá",
     "endereco": "Avenida Pernambuco, 1101",
     "latitude": -23.6320185,
     "longitude": -45.424584,
@@ -652,7 +652,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -660,7 +660,7 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "CEI/EMEI PROFA. CELIA ROCHA LOBO",
     "cep": "11668-000",
-    "bairro": "Pereque Mirim",
+    "bairro": "Perequê Mirim",
     "endereco": "Rua Benedito Jacinto do Prado, 100",
     "latitude": -23.7146577,
     "longitude": -45.4450363,
@@ -699,7 +699,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -707,7 +707,7 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "EMEF PROFA. DEBORA VALLE DA SILVA PILON",
     "cep": "11669-150",
-    "bairro": "Travessao",
+    "bairro": "Travessão",
     "endereco": "Avenida Jose da Costa Pinheiro Junior, 422",
     "latitude": -23.699809,
     "longitude": -45.446472,
@@ -746,7 +746,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -754,7 +754,7 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "CEI PROFA. DIOMAR BERTI FRANZOLIN",
     "cep": "11671-206",
-    "bairro": "Morro do algodao",
+    "bairro": "Morro do Algodão",
     "endereco": "Rua Barbara Rocha Essias, n. 85",
     "latitude": -23.6828328,
     "longitude": -45.4519071,
@@ -793,7 +793,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -840,7 +840,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -848,8 +848,8 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "CEI/EMEI DO SUMARE",
     "cep": "11661-160",
-    "bairro": "Sumare",
-    "endereco": "Rua Sebastiao Nepomuceno, 20",
+    "bairro": "Sumaré",
+    "endereco": "Rua Sebastião Nepomuceno, 20",
     "latitude": -23.6208094,
     "longitude": -45.3993334,
     "fotos": null,
@@ -887,7 +887,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -934,7 +934,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -942,7 +942,7 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "CIEFI PROFA. EDNA MARIA NOGUEIRA FERRAZ",
     "cep": "11668-005",
-    "bairro": "Pereque Mirim",
+    "bairro": "Perequê Mirim",
     "endereco": "Rua Benedito Fortunato, 1355",
     "latitude": -23.7077314,
     "longitude": -45.4414404,
@@ -981,7 +981,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -1028,7 +1028,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -1036,7 +1036,7 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "CEI ESTER NUNES DE SOUZA",
     "cep": "11677-180",
-    "bairro": "Sertao dos Tourinhos",
+    "bairro": "Sertão dos Tourinhos",
     "endereco": "Rua Manoel Francisco Ricardo, 360",
     "latitude": -23.5797,
     "longitude": -45.3371,
@@ -1075,7 +1075,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -1083,7 +1083,7 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "EMEF PROF. EUCLYDES FERREIRA",
     "cep": "11667-826",
-    "bairro": "Pereque Mirim",
+    "bairro": "Perequê Mirim",
     "endereco": "Avenida Jose Geraldo Fernandes da Silva Filho, 165",
     "latitude": -23.7098909,
     "longitude": -45.4615009,
@@ -1122,7 +1122,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -1130,7 +1130,7 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "CEI/EMEI PROF. FRANCISCO ASSIS DE CARVALHO",
     "cep": "11669-470",
-    "bairro": "Pereque Mirim",
+    "bairro": "Perequê Mirim",
     "endereco": "Rua Jose Geraldo Fernandes da Silva Filho, 85",
     "latitude": -23.70548,
     "longitude": -45.4487,
@@ -1169,7 +1169,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -1177,8 +1177,8 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "EMEF PROF. GERALDO DE LIMA",
     "cep": "11668-015",
-    "bairro": "Pereque Mirim",
-    "endereco": "Avenida Pedro Goncalves Leite, 685",
+    "bairro": "Perequê Mirim",
+    "endereco": "Avenida Pedro Gonçalves Leite, 685",
     "latitude": -23.7089572,
     "longitude": -45.4423111,
     "fotos": null,
@@ -1216,7 +1216,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -1225,7 +1225,7 @@ export const escolasSeed = JSON.parse(String.raw`[
     "nome": "CRECHE GOLFINHO AMIGO",
     "cep": "11671-206",
     "bairro": "Golfinhos",
-    "endereco": "A. Inacio Batista Faria, 718",
+    "endereco": "A. Inácio Batista Faria, 718",
     "latitude": -23.6728418,
     "longitude": -45.4618314,
     "fotos": null,
@@ -1263,7 +1263,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -1271,7 +1271,7 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "CIASE GOVERNADOR ADHEMAR PEREIRA DE BARROS",
     "cep": "11669-301",
-    "bairro": "Travessao",
+    "bairro": "Travessão",
     "endereco": "Rua Henrique Maximiliano Coelho Neto, 100",
     "latitude": -23.7002977,
     "longitude": -45.4488386,
@@ -1310,7 +1310,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -1319,7 +1319,7 @@ export const escolasSeed = JSON.parse(String.raw`[
     "nome": "CEI PROFA. HONORINA PACHECO CORREA",
     "cep": "11675-670",
     "bairro": "Rio do Ouro",
-    "endereco": "Avenida Americo Timoteo do Rosario, 255",
+    "endereco": "Avenida Américo Timóteo do Rosário, 255",
     "latitude": -23.6071901,
     "longitude": -45.4262606,
     "fotos": null,
@@ -1357,7 +1357,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -1365,8 +1365,8 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "EMEF PROFA. JANE URBANO FOCESI",
     "cep": "11668-315",
-    "bairro": "Pereque Mirim",
-    "endereco": "Rua Sao Roque, 450",
+    "bairro": "Perequê Mirim",
+    "endereco": "Rua São Roque, 450",
     "latitude": -23.7141025,
     "longitude": -45.4403337,
     "fotos": null,
@@ -1404,13 +1404,13 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "EMEI/EMEF PROF. JOO BAPTISTA GARDELIN",
+    "nome": "EMEI/EMEF PROF. JOÃO BAPTISTA GARDELIN",
     "cep": "11673-250",
     "bairro": "Poiares",
     "endereco": "Rua Joaquim Jose da Silva Xavier, 180",
@@ -1451,13 +1451,13 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "EMEI/EMEF PROF. JOO BENEDITO MARCONDES",
+    "nome": "EMEI/EMEF PROF. JOÃO BENEDITO MARCONDES",
     "cep": "11670-150",
     "bairro": "Barranco Alto",
     "endereco": "Rua Benedito Severino Castro, 248",
@@ -1498,13 +1498,13 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "CEI/EMEI JOO LINO DA CRUZ",
+    "nome": "CEI/EMEI JOÃO LINO DA CRUZ",
     "cep": "11670-010",
     "bairro": "Barranco Alto",
     "endereco": "Rua Luiz Jacinto da Silva, 205",
@@ -1545,13 +1545,13 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "EMEI/EMEF JOO THIMTEO DO ROSRIO",
+    "nome": "EMEI/EMEF JOÃO TIMÓTEO DO ROSÁRIO",
     "cep": "11661-395",
     "bairro": "Canta Galo",
     "endereco": "Avenida Antonio Francisco Paschoal Peliciari, 1985",
@@ -1592,7 +1592,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -1639,7 +1639,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -1686,7 +1686,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -1694,7 +1694,7 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "CEI/EMEI LEONOR MENDES DE BARROS",
     "cep": "11669-301",
-    "bairro": "Travessao II",
+    "bairro": "Travessão II",
     "endereco": "Rua Joao Carlos Balio, 240",
     "latitude": -23.699637,
     "longitude": -45.4490524,
@@ -1733,7 +1733,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -1780,7 +1780,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -1788,8 +1788,8 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "EMEF PROF. LUIZ RIBEIRO MUNIZ",
     "cep": "11662-320",
-    "bairro": "Martim de Sa",
-    "endereco": "Rua Analandia, 355",
+    "bairro": "Martim de Sá",
+    "endereco": "Rua Analândia, 355",
     "latitude": -23.6175028,
     "longitude": -45.3899397,
     "fotos": null,
@@ -1827,7 +1827,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -1874,7 +1874,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -1882,7 +1882,7 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "CEI/EMEI PROFA. MAIRA MARQUES DE OLIVEIRA",
     "cep": "11677-290",
-    "bairro": "Massaguacu",
+    "bairro": "Massaguaçu",
     "endereco": "Rua Jose Geronimo Soares, s/n.",
     "latitude": -23.5730589,
     "longitude": -45.3400975,
@@ -1921,7 +1921,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -1968,7 +1968,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -2015,7 +2015,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -2023,7 +2023,7 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "CIEFI PROFA. MARIA CARLITA SARAIVA GUEDES",
     "cep": "11671-206",
-    "bairro": "Morro do Algodao",
+    "bairro": "Morro do Algodão",
     "endereco": "Travessa Cinco, 75",
     "latitude": -23.6826602,
     "longitude": -45.4523363,
@@ -2062,7 +2062,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -2070,7 +2070,7 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "EMEI MARIA DE LOURDES LUCARELLI PEREZ",
     "cep": "11665-071",
-    "bairro": "Indaia",
+    "bairro": "Indaiá",
     "endereco": "Avenida Santa Catarina, 455",
     "latitude": -23.6360428,
     "longitude": -45.4248273,
@@ -2109,7 +2109,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -2156,7 +2156,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -2203,7 +2203,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -2250,7 +2250,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -2297,7 +2297,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -2344,7 +2344,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -2391,7 +2391,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -2399,7 +2399,7 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "CRECHE MEI MEI DE CARAGUATATUBA",
     "cep": "11671-470",
-    "bairro": "Morro do Algodao",
+    "bairro": "Morro do Algodão",
     "endereco": "Rua Antonio Teles de Souza, 64",
     "latitude": -23.6822,
     "longitude": -45.4498,
@@ -2438,7 +2438,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -2485,7 +2485,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -2532,13 +2532,13 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
   },
   {
-    "nome": "EMEI/EMEF PEDRO JOO DE OLIVEIRA",
+    "nome": "EMEI/EMEF PEDRO JOÃO DE OLIVEIRA",
     "cep": "11679-200",
     "bairro": "Tabatinga",
     "endereco": "Rua Benedito Serrado, 130",
@@ -2579,7 +2579,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -2587,7 +2587,7 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "CEI/EMEI PROFA. REGINA CELIA SANTOS CHAPIRA BLAUSTEIN",
     "cep": "11670-400",
-    "bairro": "Travessao I",
+    "bairro": "Travessão I",
     "endereco": "Rua Jacupiranga, 155",
     "latitude": -23.6967286,
     "longitude": -45.4429119,
@@ -2626,7 +2626,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -2673,7 +2673,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -2720,7 +2720,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -2767,7 +2767,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -2775,7 +2775,7 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "CEI/EMEI STELA DA SILVA",
     "cep": "11669-301",
-    "bairro": "Travessao",
+    "bairro": "Travessão",
     "endereco": "Rua Joao Carlos Balio, 355",
     "latitude": -23.6984388,
     "longitude": -45.4492348,
@@ -2814,7 +2814,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -2861,7 +2861,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -2908,7 +2908,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -2955,7 +2955,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -3002,7 +3002,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -3010,7 +3010,7 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "CIASE WILSON FRANCISCO VALENTE - SUMARE",
     "cep": "11660-640",
-    "bairro": "Sumare",
+    "bairro": "Sumaré",
     "endereco": "Avenida Siqueira Campos, 705",
     "latitude": -23.6158347,
     "longitude": -45.4039946,
@@ -3049,7 +3049,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -3057,8 +3057,8 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "EMEI/EMEF PROF. YASUTADA NASU",
     "cep": "11668-015",
-    "bairro": "Pereque Mirim",
-    "endereco": "Avenida Pedro Goncalves Leite, 685",
+    "bairro": "Perequê Mirim",
+    "endereco": "Avenida Pedro Gonçalves Leite, 685",
     "latitude": -23.7090612,
     "longitude": -45.4428357,
     "fotos": null,
@@ -3096,7 +3096,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -3143,7 +3143,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -3190,7 +3190,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -3198,7 +3198,7 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "CRIES PEREQUE MIRIM",
     "cep": "11669-470",
-    "bairro": "Pereque Mirim",
+    "bairro": "Perequê Mirim",
     "endereco": "Rua Jose Geraldo Fernandes da Silva Filho, 185",
     "latitude": -23.70548,
     "longitude": -45.4487,
@@ -3237,7 +3237,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -3284,7 +3284,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]
@@ -3292,7 +3292,7 @@ export const escolasSeed = JSON.parse(String.raw`[
   {
     "nome": "BIBLIOTECA CECILIA MEIRELES",
     "cep": "11669-301",
-    "bairro": "Travessao",
+    "bairro": "Travessão",
     "endereco": "Rua Joao Carlos Balio, 240",
     "latitude": -23.699637,
     "longitude": -45.4490524,
@@ -3331,7 +3331,7 @@ export const escolasSeed = JSON.parse(String.raw`[
         "codigo": "BIB-01"
       },
       {
-        "ambiente": "Refeitorio",
+        "ambiente": "Refeitório",
         "codigo": "REF-01"
       }
     ]

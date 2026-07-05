@@ -7,6 +7,7 @@ import { Icon } from '../components/Icons.jsx'
 import { SchoolLocationMap } from '../components/SchoolLocationMap.jsx'
 import { formatDisplayLabel } from '../utils/labels.js'
 import { getComodoCodigo, getComodoNome, getSchoolRooms } from '../utils/comodos.js'
+import { normalizeText } from '../utils/schoolRecords.js'
 
 const allSalasKey = 'Todos'
 
@@ -147,7 +148,7 @@ export function EscolaDetalhe({ id, onNavigate }) {
   async function handleDeleteSchool() {
     if (!canDeleteSchool) return
 
-    const shouldDelete = window.confirm(`Deseja excluir a escola "${escola.nome}"? Esta acao remove o cadastro salvo no front.`)
+    const shouldDelete = window.confirm(`Deseja excluir a escola "${escola.nome}"? Esta ação remove o cadastro salvo no front.`)
     if (!shouldDelete) return
 
     await removeCustomSchool(escola.id)
@@ -243,8 +244,8 @@ export function EscolaDetalhe({ id, onNavigate }) {
         } catch (error) {
           setToast({
             type: 'info',
-            title: 'Edicao salva neste navegador',
-            message: error.message || 'Os dados principais nao puderam ser sincronizados agora.',
+            title: 'Edição salva neste navegador',
+            message: error.message || 'Os dados principais não puderam ser sincronizados agora.',
           })
         }
       }
@@ -462,7 +463,7 @@ export function EscolaDetalhe({ id, onNavigate }) {
             <input value={editForm.bairro} onChange={(event) => updateEditForm('bairro', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500" />
           </label>
           <label className="block">
-            <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Endereco</span>
+            <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Endereço</span>
             <input value={editForm.endereco} onChange={(event) => updateEditForm('endereco', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500" />
           </label>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -476,7 +477,7 @@ export function EscolaDetalhe({ id, onNavigate }) {
             </label>
           </div>
           <label className="block">
-            <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Descricao</span>
+            <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Descrição</span>
             <textarea value={editForm.descricao} onChange={(event) => updateEditForm('descricao', event.target.value)} className="min-h-24 w-full rounded-md border border-slate-200 bg-white p-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500" />
           </label>
 
@@ -502,19 +503,19 @@ export function EscolaDetalhe({ id, onNavigate }) {
 
           <div className="space-y-3">
             <div>
-              <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Comodos</span>
+              <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Cômodos</span>
               <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_140px_auto]">
                 <input
                   value={novoComodo.nome}
                   onChange={(event) => setNovoComodo((prev) => ({ ...prev, nome: event.target.value }))}
                   className="h-11 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
-                  placeholder="Nome do comodo"
+                  placeholder="Nome do cômodo"
                 />
                 <input
                   value={novoComodo.codigo}
                   onChange={(event) => setNovoComodo((prev) => ({ ...prev, codigo: event.target.value }))}
                   className="h-11 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
-                  placeholder="Codigo"
+                  placeholder="Código"
                 />
                 <button type="button" onClick={addEditComodo} className="cursor-pointer rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
                   Adicionar
@@ -527,7 +528,7 @@ export function EscolaDetalhe({ id, onNavigate }) {
                   {formatRoomLabel(comodo)} x
                 </button>
               ))}
-              {!editForm.comodos.length ? <p className="text-xs font-semibold text-slate-500">Nenhum comodo cadastrado.</p> : null}
+              {!editForm.comodos.length ? <p className="text-xs font-semibold text-slate-500">Nenhum cômodo cadastrado.</p> : null}
             </div>
           </div>
 
@@ -536,7 +537,7 @@ export function EscolaDetalhe({ id, onNavigate }) {
               Cancelar
             </button>
             <button type="submit" disabled={savingEdit} className="cursor-pointer rounded-md bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-strong disabled:cursor-wait disabled:opacity-60">
-              {savingEdit ? 'Salvando...' : 'Salvar alteracoes'}
+              {savingEdit ? 'Salvando...' : 'Salvar alterações'}
             </button>
           </div>
         </form>
@@ -640,7 +641,7 @@ function readPhotoFile(file) {
 }
 
 function getRoomCategory(sala) {
-  const value = getRoomName(sala).toLowerCase()
+  const value = normalizeText(getRoomName(sala))
   if (value.includes('banheiro')) return 'banheiro'
   if (value.includes('sala') || value.includes('maternal') || value.includes('pre ')) return 'sala'
   if (value.includes('secretaria') || value.includes('diretoria')) return 'administrativo'
@@ -655,9 +656,9 @@ function getRoomCategoryLabel(category) {
     banheiro: 'Banheiros',
     sala: 'Salas',
     administrativo: 'Administrativo',
-    alimentacao: 'Alimentacao',
-    apoio_pedagogico: 'Apoio pedagogico',
-    convivencia: 'Convivencia',
+    alimentacao: 'Alimentação',
+    apoio_pedagogico: 'Apoio pedagógico',
+    convivencia: 'Convivência',
     outros: 'Outros cômodos',
   }
   return labels[category] || 'Cômodos'
@@ -666,19 +667,19 @@ function getRoomCategoryLabel(category) {
 function getRoomTypeLabel(sala) {
   if (typeof sala === 'object' && sala?.nome) return sala.nome
 
-  const value = getRoomName(sala).toLowerCase()
+  const value = normalizeText(getRoomName(sala))
   if (value.includes('sala') || value.includes('maternal') || value.includes('pre ')) return 'Salas'
   if (value.includes('biblioteca')) return 'Biblioteca'
-  if (value.includes('laboratorio')) return 'Laboratorio'
+  if (value.includes('laboratorio')) return 'Laboratório'
   if (value.includes('secretaria')) return 'Secretaria'
   if (value.includes('diretoria')) return 'Diretoria'
   if (value.includes('cozinha')) return 'Cozinha'
-  if (value.includes('refeitorio')) return 'Refeitorio'
+  if (value.includes('refeitorio')) return 'Refeitório'
   if (value.includes('banheiro')) return 'Banheiro'
   if (value.includes('quadra')) return 'Quadra'
-  if (value.includes('patio')) return 'Patio'
+  if (value.includes('patio')) return 'Pátio'
   if (value.includes('brinquedoteca')) return 'Brinquedoteca'
-  if (value.includes('area externa')) return 'Area externa'
+  if (value.includes('area externa')) return 'Área externa'
   return sala
 }
 
@@ -738,7 +739,7 @@ function buildSchoolRoomReport({ escola, salas, roomSummary, roomTypeSummary, oc
   )).join('\n')
 
   return [
-    `RELATORIO DA ESCOLA: ${escola.nome}`,
+    `RELATÓRIO DA ESCOLA: ${escola.nome}`,
     `Gerado em: ${now}`,
     '',
     `Bairro: ${escola.bairro}`,
@@ -841,24 +842,24 @@ function buildSchoolPdfReport({ escola, roomTypeSummary, ocorrenciasEscola }) {
   const criticas = ocorrenciasEscola.filter((item) => item.criticidade === 'Critica' && item.status !== 'Resolvida').length
   const roomRows = roomTypeSummary.length
     ? roomTypeSummary.map((item) => `<tr><td>${escapeHtml(item.label)}</td><td class="number">${item.count}</td></tr>`).join('')
-    : '<tr><td colspan="2" class="empty">Nenhum comodo cadastrado.</td></tr>'
+    : '<tr><td colspan="2" class="empty">Nenhum cômodo cadastrado.</td></tr>'
   const occurrenceRows = ocorrenciasEscola.length
     ? ocorrenciasEscola.map((item) => `
       <tr>
         <td><strong>${escapeHtml(item.titulo)}</strong></td>
-        <td>${escapeHtml(item.localizacaoInterna || 'Nao informado')}</td>
-        <td><span class="pill">${escapeHtml(item.criticidade || 'Nao informada')}</span></td>
-        <td><span class="pill muted-pill">${escapeHtml(item.status || 'Nao informado')}</span></td>
+        <td>${escapeHtml(item.localizacaoInterna || 'Não informado')}</td>
+        <td><span class="pill">${escapeHtml(item.criticidade || 'Não informada')}</span></td>
+        <td><span class="pill muted-pill">${escapeHtml(item.status || 'Não informado')}</span></td>
         <td>${escapeHtml(item.dataEnvio || '-')}</td>
       </tr>
     `).join('')
-    : '<tr><td colspan="5" class="empty">Nenhuma ocorrencia cadastrada.</td></tr>'
+    : '<tr><td colspan="5" class="empty">Nenhuma ocorrência cadastrada.</td></tr>'
 
   return `<!doctype html>
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <title>Relatorio ${escapeHtml(escola.nome)}</title>
+  <title>Relatório ${escapeHtml(escola.nome)}</title>
   <style>
     * { box-sizing: border-box; }
     body { margin: 0; background: #f1f5f9; color: #0f172a; font-family: Arial, Helvetica, sans-serif; }
@@ -903,18 +904,18 @@ function buildSchoolPdfReport({ escola, roomTypeSummary, ocorrenciasEscola }) {
     <header class="hero">
       <div class="brand-bar">
         <div class="brand-title">
-          <strong>Relatorio de infraestrutura escolar</strong>
-          <span>Secretaria Municipal de Educacao - Caraguatatuba</span>
+          <strong>Relatório de infraestrutura escolar</strong>
+          <span>Secretaria Municipal de Educação - Caraguatatuba</span>
           <span>Gerado em ${escapeHtml(now)}</span>
         </div>
         <img class="brand-logo" src="/prefeitura-de-caraguatatuba-seeklogo.svg" alt="Prefeitura de Caraguatatuba" />
       </div>
       <div class="school-heading">
         <h1>${escapeHtml(escola.nome)}</h1>
-        <p class="subtitle">${escapeHtml(escola.bairro || 'Bairro nao informado')} - ${escapeHtml(escola.endereco || 'Endereco nao informado')}</p>
+        <p class="subtitle">${escapeHtml(escola.bairro || 'Bairro não informado')} - ${escapeHtml(escola.endereco || 'Endereço não informado')}</p>
         <div class="meta-grid">
-          <div class="meta-item"><span>Status</span>${escapeHtml(escola.status || 'Nao informado')}</div>
-          <div class="meta-item"><span>Cadastro</span>${escapeHtml(escola.dataCadastro || 'Nao informado')}</div>
+          <div class="meta-item"><span>Status</span>${escapeHtml(escola.status || 'Não informado')}</div>
+          <div class="meta-item"><span>Cadastro</span>${escapeHtml(escola.dataCadastro || 'Não informado')}</div>
           <div class="meta-item"><span>Latitude</span>${escapeHtml(formatCoordinate(escola.latitude))}</div>
           <div class="meta-item"><span>Longitude</span>${escapeHtml(formatCoordinate(escola.longitude))}</div>
         </div>
@@ -923,19 +924,19 @@ function buildSchoolPdfReport({ escola, roomTypeSummary, ocorrenciasEscola }) {
 
     <section class="metrics" aria-label="Indicadores da escola">
       <div class="metric"><strong>${totalComodos}</strong><span>Ambientes</span></div>
-      <div class="metric"><strong>${ocorrenciasEscola.length}</strong><span>Ocorrencias</span></div>
+      <div class="metric"><strong>${ocorrenciasEscola.length}</strong><span>Ocorrências</span></div>
       <div class="metric"><strong>${abertas}</strong><span>Abertas</span></div>
-      <div class="metric"><strong>${criticas}</strong><span>Criticas</span></div>
+      <div class="metric"><strong>${criticas}</strong><span>Críticas</span></div>
     </section>
 
     <section class="section">
-      <h2>Descricao da unidade</h2>
-      <p class="section-note">${escapeHtml(escola.descricao?.trim() || 'Nenhuma descricao cadastrada para esta escola.')}</p>
+      <h2>Descrição da unidade</h2>
+      <p class="section-note">${escapeHtml(escola.descricao?.trim() || 'Nenhuma descrição cadastrada para esta escola.')}</p>
     </section>
 
     <section class="section">
-      <h2>Comodos cadastrados</h2>
-      <p class="section-note">Quantidade de ambientes agrupada por tipo de comodo.</p>
+      <h2>Cômodos cadastrados</h2>
+      <p class="section-note">Quantidade de ambientes agrupada por tipo de cômodo.</p>
       <table>
         <thead><tr><th>Tipo</th><th>Quantidade</th></tr></thead>
         <tbody>${roomRows}</tbody>
@@ -943,10 +944,10 @@ function buildSchoolPdfReport({ escola, roomTypeSummary, ocorrenciasEscola }) {
     </section>
 
     <section class="section">
-      <h2>Ocorrencias da unidade</h2>
+      <h2>Ocorrências da unidade</h2>
       <p class="section-note">Lista consolidada das demandas vinculadas a esta escola.</p>
       <table>
-        <thead><tr><th>Titulo</th><th>Comodo</th><th>Criticidade</th><th>Status</th><th>Envio</th></tr></thead>
+        <thead><tr><th>Título</th><th>Cômodo</th><th>Criticidade</th><th>Status</th><th>Envio</th></tr></thead>
         <tbody>${occurrenceRows}</tbody>
       </table>
     </section>

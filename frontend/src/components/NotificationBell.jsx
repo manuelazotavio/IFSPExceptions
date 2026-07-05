@@ -15,7 +15,7 @@ export function NotificationBell({ notificacoes, onAbrir, onLimpar }) {
       <button className="cursor-pointer"
         type="button"
         onClick={() => setOpen((current) => !current)}
-        aria-label="Notificacoes"
+        aria-label="Notificações"
         className="relative cursor-pointer rounded-md border border-slate-200 p-2 text-slate-600 hover:bg-slate-50"
       >
         <Icon name="bell" className="h-4 w-4" />

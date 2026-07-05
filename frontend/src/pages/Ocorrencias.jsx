@@ -556,7 +556,7 @@ function KanbanOcorrencias({ lista, statusColunas, onNavigate, onStatusChange })
   }
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+    <div className={`grid gap-3 sm:grid-cols-2 lg:[grid-template-columns:repeat(${statusColunas.length},minmax(0,1fr))]`}>
       {statusColunas.map((status) => {
         const itens = lista.filter((item) => item.status === status)
 
