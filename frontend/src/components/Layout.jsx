@@ -28,6 +28,7 @@ export function Layout({ route, onNavigate, onExport, user, onLogout, children }
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const isExterno = user?.role === 'EXTERNO'
   const isDiretor = user?.role === 'DIRETOR'
+  const isMapaRoute = route === '/mapa'
   const [notificacoes, setNotificacoes] = useState([])
   const filtrosNotificacoes = {
     ...(isDiretor && user?.escolaId ? { escolaId: user.escolaId } : {}),
@@ -84,7 +85,7 @@ export function Layout({ route, onNavigate, onExport, user, onLogout, children }
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className={isMapaRoute ? 'h-dvh overflow-hidden bg-white' : 'min-h-screen bg-white'}>
       <Sidebar
         route={route}
         onNavigate={onNavigate}
@@ -97,8 +98,8 @@ export function Layout({ route, onNavigate, onExport, user, onLogout, children }
         roleLabel={roleLabel}
         onLogout={onLogout}
       />
-      <div className={`flex min-h-screen flex-col transition-[padding] duration-200 ${sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}`}>
-        <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-5 pt-4 pb-0 backdrop-blur sm:pb-4 lg:px-8">
+      <div className={`flex flex-col transition-[padding] duration-200 ${isMapaRoute ? 'h-full min-h-0 overflow-hidden' : 'min-h-screen'} ${sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}`}>
+        <header className="sticky top-0 z-30 shrink-0 border-b border-slate-200 bg-white/95 px-5 pt-4 pb-0 backdrop-blur sm:pb-4 lg:px-8">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="flex items-start justify-between gap-2 sm:items-center">
               <div className="flex items-center gap-3">
@@ -189,8 +190,10 @@ export function Layout({ route, onNavigate, onExport, user, onLogout, children }
             </div>
           </div>
         </header>
-        <main className="flex-1 px-5 py-6 lg:px-8">{children}</main>
-        <footer className="border-t border-slate-200 bg-white px-5 py-5 text-center text-xs font-semibold text-slate-400 lg:px-8">
+        <main className={isMapaRoute ? 'flex flex-1 min-h-0 flex-col overflow-hidden px-5 py-4 lg:px-8' : 'flex-1 px-5 py-6 lg:px-8'}>
+          {children}
+        </main>
+        <footer className="shrink-0 border-t border-slate-200 bg-white px-5 py-5 text-center text-xs font-semibold text-slate-400 lg:px-8">
           IFSP Exceptions © {new Date().getFullYear()} — Todos os direitos reservados.
         </footer>
       </div>
