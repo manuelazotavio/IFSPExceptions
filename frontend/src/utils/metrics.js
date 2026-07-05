@@ -1,5 +1,3 @@
-import { escolas, ocorrenciasAprovadas } from '../data/mockData.js'
-
 const peso = { Baixa: 1, Media: 2, Alta: 3, Critica: 4 }
 
 export function sortOcorrencias(lista) {
@@ -20,8 +18,8 @@ export function groupCount(items, key) {
   return items.reduce((acc, item) => ({ ...acc, [item[key]]: (acc[item[key]] || 0) + 1 }), {})
 }
 
-export function getSchoolStats(escolaId) {
-  const lista = ocorrenciasAprovadas.filter((item) => item.escolaId === escolaId)
+export function getSchoolStats(escolaId, ocorrencias) {
+  const lista = ocorrencias.filter((item) => item.escolaId === escolaId)
   const abertas = lista.filter((item) => item.status !== 'Resolvida')
   return {
     total: lista.length,
@@ -32,14 +30,14 @@ export function getSchoolStats(escolaId) {
   }
 }
 
-export function getSchoolSeverity(escolaId) {
-  const stats = getSchoolStats(escolaId)
+export function getSchoolSeverity(escolaId, ocorrencias) {
+  const stats = getSchoolStats(escolaId, ocorrencias)
   if (stats.criticas > 0) return 'red'
   if (stats.altas > 0 || stats.medias >= 3) return 'yellow'
   return 'green'
 }
 
-export function dashboardMetrics(lista = ocorrenciasAprovadas, totalEscolas = escolas.length) {
+export function dashboardMetrics(lista, totalEscolas) {
   return {
     escolas: totalEscolas,
     aprovadas: lista.length,
@@ -48,42 +46,4 @@ export function dashboardMetrics(lista = ocorrenciasAprovadas, totalEscolas = es
     resolvidas: lista.filter((item) => item.status === 'Resolvida').length,
     criticas: lista.filter((item) => item.criticidade === 'Critica' && item.status !== 'Resolvida').length,
   }
-}
-
-export function buildNotificacoes(user) {
-  const isExterno = user?.role === 'EXTERNO'
-  const isDiretor = user?.role === 'DIRETOR'
-
-  const escopo = isExterno
-    ? ocorrenciasAprovadas.filter((item) => item.criadoPorEmail === user.email)
-    : isDiretor
-      ? ocorrenciasAprovadas.filter((item) => item.escolaId === user.escolaId)
-      : ocorrenciasAprovadas
-
-  const urgentes = escopo
-    .filter((item) => item.criticidade === 'Critica' && item.status !== 'Resolvida')
-    .map((item) => ({
-      id: `urgente-${item.id}`,
-      ocorrenciaId: item.id,
-      tipo: 'urgente',
-      protocolo: item.protocolo,
-      descricao: `${item.titulo} - ${item.escola}`,
-      data: item.dataEnvio,
-    }))
-
-  const movimentacoes = escopo
-    .filter((item) => item.chatPendente)
-    .map((item) => {
-      const ultima = item.interacoes[item.interacoes.length - 1]
-      return {
-        id: `mov-${item.id}`,
-        ocorrenciaId: item.id,
-        tipo: 'movimentacao',
-        protocolo: item.protocolo,
-        descricao: ultima?.mensagem || item.titulo,
-        data: ultima?.data || item.ultimaAtualizacao,
-      }
-    })
-
-  return [...urgentes, ...movimentacoes].sort((a, b) => new Date(b.data) - new Date(a.data))
 }

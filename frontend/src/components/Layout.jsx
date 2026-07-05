@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Icon } from './Icons.jsx'
 import { NotificationBell } from './NotificationBell.jsx'
 import { Sidebar } from './Sidebar.jsx'
-import { buildNotificacoes } from '../utils/metrics.js'
+import { listarNotificacoes, marcarNotificacaoLida, marcarNotificacoesLidas } from '../services/api.js'
+
+const INTERVALO_ATUALIZACAO_NOTIFICACOES = 20000
 
 const titles = {
   '/dashboard': 'Dashboard',
@@ -11,6 +13,7 @@ const titles = {
   '/escolas': 'Escolas cadastradas',
   '/usuarios': 'Usuários',
   '/categorias': 'Categorias globais',
+  '/auditoria': 'Log de auditoria',
   '/configuracoes': 'Configurações',
 }
 
@@ -24,7 +27,48 @@ export function Layout({ route, onNavigate, onExport, user, onLogout, children }
   const [exportOpen, setExportOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const isExterno = user?.role === 'EXTERNO'
-  const notificacoes = buildNotificacoes(user)
+  const isDiretor = user?.role === 'DIRETOR'
+  const [notificacoes, setNotificacoes] = useState([])
+  const filtrosNotificacoes = {
+    ...(isDiretor && user?.escolaId ? { escolaId: user.escolaId } : {}),
+    ...(isExterno && user?.email ? { criadoPorEmail: user.email } : {}),
+  }
+
+  const carregarNotificacoes = useCallback(() => {
+    return listarNotificacoes(filtrosNotificacoes)
+      .then((dados) => setNotificacoes(dados))
+      .catch(() => setNotificacoes([]))
+  }, [isDiretor, isExterno, user?.escolaId, user?.email])
+
+  useEffect(() => {
+    let ativo = true
+    carregarNotificacoes()
+    const intervalo = setInterval(() => {
+      if (ativo) carregarNotificacoes()
+    }, INTERVALO_ATUALIZACAO_NOTIFICACOES)
+    return () => {
+      ativo = false
+      clearInterval(intervalo)
+    }
+  }, [carregarNotificacoes])
+
+  async function handleAbrirNotificacao(notificacao) {
+    if (!notificacao.lida) {
+      setNotificacoes((prev) => prev.map((item) => (item.id === notificacao.id ? { ...item, lida: true } : item)))
+      marcarNotificacaoLida(notificacao.id).catch(() => {})
+    }
+    onNavigate(`/ocorrencias/${notificacao.ocorrenciaId}`)
+  }
+
+  async function handleLimparNotificacoes() {
+    setNotificacoes((prev) => prev.map((item) => ({ ...item, lida: true })))
+    try {
+      await marcarNotificacoesLidas(filtrosNotificacoes)
+    } catch {
+      carregarNotificacoes()
+    }
+  }
+
   const nomeExibido = user?.role === 'SEDUC' ? 'João Beserra' : user?.nome
   const roleLabel = roleLabels[user?.role] || user?.role
   const title = isExterno
@@ -96,7 +140,7 @@ export function Layout({ route, onNavigate, onExport, user, onLogout, children }
                     )}
                   </div>
                 )}
-                <NotificationBell notificacoes={notificacoes} onNavigate={onNavigate} />
+                <NotificationBell notificacoes={notificacoes} onAbrir={handleAbrirNotificacao} onLimpar={handleLimparNotificacoes} />
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
@@ -126,7 +170,7 @@ export function Layout({ route, onNavigate, onExport, user, onLogout, children }
                 </div>
               )}
               <div className="hidden md:block">
-                <NotificationBell notificacoes={notificacoes} onNavigate={onNavigate} />
+                <NotificationBell notificacoes={notificacoes} onAbrir={handleAbrirNotificacao} onLimpar={handleLimparNotificacoes} />
               </div>
               <div className="hidden min-w-0 items-center gap-2 rounded-md bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 lg:flex">
                 <span className="max-w-[8rem] truncate sm:max-w-[14rem]">{nomeExibido}</span>

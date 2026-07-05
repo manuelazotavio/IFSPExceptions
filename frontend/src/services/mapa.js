@@ -1,6 +1,7 @@
 import { escolas, ocorrenciasAprovadas } from '../data/mockData.js'
 
-const endpoint = '/api/mapa/heatmap/ocorrencias'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3333/api'
+const endpoint = `${API_URL}/mapa/heatmap/ocorrencias`
 
 function normalizeCriticidade(value) {
   const normalized = String(value || '')
@@ -153,7 +154,7 @@ export async function fetchHeatmapOcorrencias(filters = {}, signal) {
 }
 
 export async function fetchEscolaOcorrencias(escolaId, signal) {
-  const response = await fetch(`/api/escolas/${escolaId}/ocorrencias`, { signal })
+  const response = await fetch(`${API_URL}/escolas/${escolaId}/ocorrencias`, { signal })
   if (!response.ok) {
     throw new Error('Nao foi possivel carregar o detalhe da escola.')
   }

@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getSchoolStats } from '../utils/metrics.js'
 import { loadCustomSchools, loadSchoolCatalog, saveCustomSchool } from '../utils/schools.js'
+import { criarEscola, listarOcorrencias } from '../services/api.js'
 import { Badge, Card, FilterSelect } from '../components/ui.jsx'
 
 export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
   const [schoolList, setSchoolList] = useState(loadCustomSchools)
+  const [ocorrencias, setOcorrencias] = useState([])
   const [loadingSchools, setLoadingSchools] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [salvandoEscola, setSalvandoEscola] = useState(false)
+  const [erroCadastro, setErroCadastro] = useState('')
   const [loadingCep, setLoadingCep] = useState(false)
   const [cepFeedback, setCepFeedback] = useState('')
   const [novoCadastro, setNovoCadastro] = useState({
@@ -16,7 +20,6 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
     endereco: '',
     latitude: '',
     longitude: '',
-    descricao: '',
     fotoNome: '',
     fotoUrl: '',
     comodos: [],
@@ -55,6 +58,16 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
     }
 
     refreshSchoolList()
+    return () => {
+      active = false
+    }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    listarOcorrencias()
+      .then((dados) => { if (active) setOcorrencias(dados) })
+      .catch(() => { if (active) setOcorrencias([]) })
     return () => {
       active = false
     }
@@ -163,26 +176,37 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
 
   async function handleCadastrarEscola(event) {
     event.preventDefault()
+    setErroCadastro('')
+    setSalvandoEscola(true)
 
-    const createdSchool = {
-      id: `esc-custom-${Date.now()}`,
-      nome: novoCadastro.nome.trim(),
+    let escolaCriada
+    try {
+      escolaCriada = await criarEscola({
+        nome: novoCadastro.nome.trim(),
+        bairro: novoCadastro.bairro.trim(),
+        endereco: novoCadastro.endereco.trim(),
+        latitude: Number(novoCadastro.latitude),
+        longitude: Number(novoCadastro.longitude),
+      })
+    } catch (error) {
+      setErroCadastro(error.message)
+      setSalvandoEscola(false)
+      return
+    }
+
+    saveCustomSchool({
+      ...escolaCriada,
       cep: normalizeCep(novoCadastro.cep),
-      bairro: novoCadastro.bairro.trim(),
-      endereco: novoCadastro.endereco.trim(),
-      latitude: Number(novoCadastro.latitude),
-      longitude: Number(novoCadastro.longitude),
-      descricao: novoCadastro.descricao.trim(),
+      descricao: '',
       status: 'Ativo',
       fotoNome: novoCadastro.fotoNome,
       fotoUrl: novoCadastro.fotoUrl,
       comodos: novoCadastro.comodos,
-      dataCadastro: new Date().toISOString().slice(0, 10),
+      dataCadastro: escolaCriada.criadoEm?.slice(0, 10) || new Date().toISOString().slice(0, 10),
       x: 50,
       y: 50,
-    }
+    })
 
-    saveCustomSchool(createdSchool)
     try {
       setSchoolList(await loadSchoolCatalog())
     } catch {
@@ -195,12 +219,12 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
       endereco: '',
       latitude: '',
       longitude: '',
-      descricao: '',
       fotoNome: '',
       fotoUrl: '',
       comodos: [],
     })
     setNovoComodo({ nome: '', codigo: '' })
+    setSalvandoEscola(false)
     setCepFeedback('')
     setIsModalOpen(false)
   }
@@ -277,7 +301,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
             </thead>
             <tbody>
               {escolasFiltradas.map((escola) => {
-                const stats = getSchoolStats(escola.id)
+                const stats = getSchoolStats(escola.id, ocorrencias)
                 return (
                   <tr
                     key={escola.id}
@@ -308,18 +332,18 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/45 px-4 py-8">
-          <div className="w-full max-w-lg rounded-lg border border-slate-200 bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+        <div className="fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-slate-950/45 px-3 py-4 sm:items-center sm:px-4 sm:py-8">
+          <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl sm:max-h-[calc(100vh-4rem)]">
+            <div className="flex shrink-0 flex-col gap-3 border-b border-slate-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
               <div>
                 <h3 className="text-lg font-800 text-slate-950">Cadastrar escola</h3>
                 <p className="mt-1 text-sm text-slate-500">Adicione uma nova unidade para aparecer na listagem.</p>
               </div>
-              <button type="button" onClick={() => setIsModalOpen(false)} className="rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700">
+              <button type="button" onClick={() => setIsModalOpen(false)} className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 sm:w-auto">
                 Fechar
               </button>
             </div>
-            <form onSubmit={handleCadastrarEscola} className="space-y-4 p-5">
+            <form onSubmit={handleCadastrarEscola} className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
               <label className="block">
                 <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Nome</span>
                 <input required value={novoCadastro.nome} onChange={(event) => updateNovoCadastro('nome', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500" />
@@ -445,12 +469,15 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                   {!novoCadastro.comodos.length && <p className="text-xs font-semibold text-slate-500">Nenhum comodo adicionado ainda.</p>}
                 </div>
               </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">
+              {erroCadastro && (
+                <p className="rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{erroCadastro}</p>
+              )}
+              <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="w-full rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 sm:w-auto">
                   Cancelar
                 </button>
-                <button type="submit" className="rounded-md bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-strong">
-                  Salvar escola
+                <button type="submit" disabled={salvandoEscola} className="w-full rounded-md bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-strong disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
+                  {salvandoEscola ? 'Salvando...' : 'Salvar escola'}
                 </button>
               </div>
             </form>

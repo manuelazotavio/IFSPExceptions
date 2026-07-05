@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { Icon } from './Icons.jsx'
 
-export function NotificationBell({ notificacoes, onNavigate }) {
+export function NotificationBell({ notificacoes, onAbrir, onLimpar }) {
   const [open, setOpen] = useState(false)
+  const naoLidas = notificacoes.filter((item) => !item.lida)
 
-  function abrirOcorrencia(ocorrenciaId) {
-    onNavigate(`/ocorrencias/${ocorrenciaId}`)
+  function abrirNotificacao(notificacao) {
+    onAbrir(notificacao)
     setOpen(false)
   }
 
@@ -18,9 +19,9 @@ export function NotificationBell({ notificacoes, onNavigate }) {
         className="relative cursor-pointer rounded-md border border-slate-200 p-2 text-slate-600 hover:bg-slate-50"
       >
         <Icon name="bell" className="h-4 w-4" />
-        {notificacoes.length > 0 && (
+        {naoLidas.length > 0 && (
           <span className="absolute -right-1 -top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-red-600 px-1 text-[9px] font-bold text-white">
-            {notificacoes.length > 9 ? '9+' : notificacoes.length}
+            {naoLidas.length > 9 ? '9+' : naoLidas.length}
           </span>
         )}
       </button>
@@ -29,7 +30,15 @@ export function NotificationBell({ notificacoes, onNavigate }) {
         <div className="absolute right-0 z-30 mt-2 w-72 rounded-lg border border-slate-200 bg-white shadow-lg">
           <div className="flex items-center justify-between border-b border-slate-100 px-3 py-2.5">
             <h3 className="text-sm font-800 text-slate-900">Notificações</h3>
-            {notificacoes.length > 0 && <span className="text-xs font-semibold text-slate-400">{notificacoes.length} no total</span>}
+            {naoLidas.length > 0 && (
+              <button
+                type="button"
+                onClick={onLimpar}
+                className="cursor-pointer text-xs font-semibold text-blue-600 hover:underline"
+              >
+                Limpar
+              </button>
+            )}
           </div>
 
           <div className="max-h-80 overflow-y-auto">
@@ -40,16 +49,16 @@ export function NotificationBell({ notificacoes, onNavigate }) {
               <button
                 key={item.id}
                 type="button"
-                onClick={() => abrirOcorrencia(item.ocorrenciaId)}
-                className="flex w-full cursor-pointer items-start gap-2.5 border-b border-slate-50 px-3 py-2.5 text-left last:border-0 hover:bg-slate-50"
+                onClick={() => abrirNotificacao(item)}
+                className={`flex w-full cursor-pointer items-start gap-2.5 border-b border-slate-50 px-3 py-2.5 text-left last:border-0 hover:bg-slate-50 ${item.lida ? 'opacity-60' : ''}`}
               >
-                <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${item.tipo === 'urgente' ? 'bg-red-100 text-red-600' : 'bg-primary-100 text-primary'}`}>
-                  <Icon name={item.tipo === 'urgente' ? 'alert' : 'bell'} className="h-3.5 w-3.5" />
+                <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${item.tipo === 'URGENTE' ? 'bg-red-100 text-red-600' : 'bg-primary-100 text-primary'}`}>
+                  <Icon name={item.tipo === 'URGENTE' ? 'alert' : 'bell'} className="h-3.5 w-3.5" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-bold text-slate-800">{item.tipo === 'urgente' ? 'Crítica em aberto' : 'Movimentação'}</p>
-                    <span className="shrink-0 text-xs font-semibold text-slate-400">{item.protocolo}</span>
+                    <p className="text-sm font-bold text-slate-800">{item.titulo}</p>
+                    {item.protocolo && <span className="shrink-0 text-xs font-semibold text-slate-400">{item.protocolo}</span>}
                   </div>
                   <p className="mt-1 text-sm leading-5 text-slate-600">{item.descricao}</p>
                 </div>

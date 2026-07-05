@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import { escolas, ocorrenciasAprovadas } from '../data/mockData.js'
+import { useEffect, useState } from 'react'
 import { dashboardMetrics, groupCount, sortOcorrencias } from '../utils/metrics.js'
+import { listarEscolas, listarOcorrencias } from '../services/api.js'
 import { BarList, Card } from '../components/ui.jsx'
 import { Icon } from '../components/Icons.jsx'
 
@@ -143,6 +143,38 @@ function formatLabel(label) {
 
 export function Dashboard({ onNavigate, user }) {
   const isDiretor = user?.role === 'DIRETOR'
+  const [escolas, setEscolas] = useState([])
+  const [ocorrenciasAprovadas, setOcorrenciasAprovadas] = useState([])
+  const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState('')
+
+  useEffect(() => {
+    let ativo = true
+
+    async function carregarDados() {
+      setCarregando(true)
+      setErro('')
+      try {
+        const [escolasApi, ocorrenciasApi] = await Promise.all([
+          listarEscolas(),
+          listarOcorrencias(isDiretor && user?.escolaId ? { escolaId: user.escolaId } : {}),
+        ])
+        if (!ativo) return
+        setEscolas(escolasApi)
+        setOcorrenciasAprovadas(ocorrenciasApi.filter((item) => item.aprovadaPelaEscola))
+      } catch (error) {
+        if (ativo) setErro(error.message)
+      } finally {
+        if (ativo) setCarregando(false)
+      }
+    }
+
+    carregarDados()
+    return () => {
+      ativo = false
+    }
+  }, [isDiretor, user?.escolaId])
+
   const minhaEscola = isDiretor ? escolas.find((escola) => escola.id === user.escolaId) : null
   const escopo = isDiretor ? ocorrenciasAprovadas.filter((item) => item.escolaId === user.escolaId) : ocorrenciasAprovadas
 
@@ -170,8 +202,15 @@ export function Dashboard({ onNavigate, user }) {
     criticas: ocorrenciasAprovadas.filter((item) => item.escolaId === escola.id && item.criticidade === 'Critica').length,
   })).sort((a, b) => b.total - a.total)
 
+  if (carregando) {
+    return <Card><p className="text-sm font-semibold text-slate-500">Carregando dados do dashboard...</p></Card>
+  }
+
   return (
     <div className="space-y-6">
+      {erro && (
+        <p className="rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{erro}</p>
+      )}
       <div className={`grid grid-cols-2 gap-4 md:grid-cols-3 ${isDiretor ? 'xl:grid-cols-5' : 'xl:grid-cols-6'}`}>
         {!isDiretor && <StatCard label="Escolas" value={metrics.escolas} tone="pink" />}
         <StatCard label="Aprovadas" value={metrics.aprovadas} tone="primary" />

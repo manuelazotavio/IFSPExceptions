@@ -1,8 +1,9 @@
+import { useEffect, useState } from 'react'
 import exteriorImage from '../assets/school-exterior.png'
 import courtyardImage from '../assets/school-courtyard.png'
 import corridorImage from '../assets/school-corridor.png'
 import { Icon } from '../components/Icons.jsx'
-import { escolas, ocorrenciasAprovadas } from '../data/mockData.js'
+import { listarEscolas, listarOcorrencias } from '../services/api.js'
 
 const niceLabels = {
   Indaia: 'Indaia',
@@ -33,7 +34,7 @@ function uniqueCount(items, key) {
   return new Set(items.map((item) => item[key])).size
 }
 
-function positiveMetrics() {
+function positiveMetrics(escolas, ocorrenciasAprovadas) {
   const resolvidas = ocorrenciasAprovadas.filter((item) => item.status === 'Resolvida')
   const emTratativa = ocorrenciasAprovadas.filter((item) => item.status !== 'Aberta' && item.status !== 'Resolvida')
   const bairros = uniqueCount(escolas, 'bairro')
@@ -61,7 +62,7 @@ function positiveMetrics() {
   }
 }
 
-function categoryHighlights() {
+function categoryHighlights(ocorrenciasAprovadas) {
   const counts = ocorrenciasAprovadas.reduce((acc, item) => {
     acc[item.tipo] = (acc[item.tipo] || 0) + 1
     return acc
@@ -73,7 +74,7 @@ function categoryHighlights() {
     .map(([label, value]) => ({ label: formatLabel(label), value }))
 }
 
-function neighborhoodCoverage() {
+function neighborhoodCoverage(escolas, ocorrenciasAprovadas) {
   return escolas.slice(0, 6).map((escola) => ({
     id: escola.id,
     nome: escola.nome,
@@ -82,7 +83,7 @@ function neighborhoodCoverage() {
   }))
 }
 
-function goodNewsChartData(metrics) {
+function goodNewsChartData(metrics, ocorrenciasAprovadas) {
   const movimentadas = ocorrenciasAprovadas.filter((item) => item.status !== 'Aberta').length
   const encaminhadas = ocorrenciasAprovadas.filter((item) => (
     item.status === 'Em andamento'
@@ -101,10 +102,32 @@ function goodNewsChartData(metrics) {
 }
 
 export function Landing({ onNavigate, user }) {
-  const metrics = positiveMetrics()
-  const categorias = categoryHighlights()
-  const cobertura = neighborhoodCoverage()
-  const dadosBons = goodNewsChartData(metrics)
+  const [escolas, setEscolas] = useState([])
+  const [ocorrenciasAprovadas, setOcorrenciasAprovadas] = useState([])
+
+  useEffect(() => {
+    let ativo = true
+    Promise.all([listarEscolas(), listarOcorrencias()])
+      .then(([escolasApi, ocorrenciasApi]) => {
+        if (!ativo) return
+        setEscolas(escolasApi)
+        setOcorrenciasAprovadas(ocorrenciasApi.filter((item) => item.aprovadaPelaEscola))
+      })
+      .catch(() => {
+        if (ativo) {
+          setEscolas([])
+          setOcorrenciasAprovadas([])
+        }
+      })
+    return () => {
+      ativo = false
+    }
+  }, [])
+
+  const metrics = positiveMetrics(escolas, ocorrenciasAprovadas)
+  const categorias = categoryHighlights(ocorrenciasAprovadas)
+  const cobertura = neighborhoodCoverage(escolas, ocorrenciasAprovadas)
+  const dadosBons = goodNewsChartData(metrics, ocorrenciasAprovadas)
   const primaryRoute = '/login'
 
   return (
