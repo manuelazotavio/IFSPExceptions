@@ -3,6 +3,7 @@ import { categorias } from '../data/mockData.js'
 import { dashboardMetrics, groupCount } from '../utils/metrics.js'
 import { atualizarUsuario, criarUsuario, listarAuditoria, listarEscolas, listarOcorrencias, listarUsuarios } from '../services/api.js'
 import { Badge, BarList, Card, FilterSelect, MetricCard, Modal, Select } from '../components/ui.jsx'
+import { Icon } from '../components/Icons.jsx'
 
 export function Indicadores() {
   const [escolas, setEscolas] = useState([])
@@ -34,6 +35,12 @@ const PERMISSOES = [
 
 const USUARIO_VAZIO = { nome: '', email: '', senha: '', role: 'EXTERNO', escolaId: '' }
 
+function formatarDataBR(dataIso) {
+  if (!dataIso) return ''
+  const [ano, mes, dia] = dataIso.slice(0, 10).split('-')
+  return `${dia}/${mes}/${ano}`
+}
+
 export function Usuarios() {
   const [lista, setLista] = useState([])
   const [escolas, setEscolas] = useState([])
@@ -43,6 +50,16 @@ export function Usuarios() {
   const [novoUsuario, setNovoUsuario] = useState(USUARIO_VAZIO)
   const [salvando, setSalvando] = useState(false)
   const [erroCriar, setErroCriar] = useState('')
+  const [busca, setBusca] = useState('')
+  const [expandidos, setExpandidos] = useState(() => new Set())
+  const toggleExpandido = (id) => {
+    setExpandidos((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   useEffect(() => {
     let ativo = true
@@ -130,16 +147,120 @@ export function Usuarios() {
   const formularioValido = novoUsuario.nome.trim() && novoUsuario.email.trim() && novoUsuario.senha.length >= 6
     && (novoUsuario.role !== 'DIRETOR' || novoUsuario.escolaId)
 
+  const listaFiltrada = lista.filter((user) => {
+    if (!busca.trim()) return true
+    const texto = `${user.nome} ${user.email}`.toLowerCase()
+    return texto.includes(busca.trim().toLowerCase())
+  })
+
+  async function exportarUsuariosPdf() {
+    const { jsPDF } = await import('jspdf')
+    const doc = new jsPDF()
+    const pageWidth = doc.internal.pageSize.getWidth()
+    const pageHeight = doc.internal.pageSize.getHeight()
+    const margin = 14
+
+    function drawHeader() {
+      doc.setFillColor(10, 37, 64)
+      doc.rect(0, 0, pageWidth, 22, 'F')
+      doc.setTextColor(255, 255, 255)
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(14)
+      doc.text('Usuários cadastrados', margin, 14)
+      doc.setTextColor(23, 32, 51)
+    }
+
+    function drawFooter() {
+      const pageCount = doc.internal.getNumberOfPages()
+      for (let page = 1; page <= pageCount; page += 1) {
+        doc.setPage(page)
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(8)
+        doc.setTextColor(100, 116, 139)
+        doc.text(`Página ${page} de ${pageCount}`, pageWidth - margin, pageHeight - 8, { align: 'right' })
+      }
+      doc.setTextColor(23, 32, 51)
+    }
+
+    function quebrarPagina(y, alturaNecessaria) {
+      if (y + alturaNecessaria <= pageHeight - 16) return y
+      doc.addPage()
+      drawHeader()
+      return 32
+    }
+
+    drawHeader()
+    let y = 32
+
+    listaFiltrada.forEach((user) => {
+      const escolaNome = escolas.find((escola) => escola.id === user.escolaId)?.nome || 'Sem vínculo'
+      const linhas = [
+        `Email: ${user.email}`,
+        `Permissão: ${PERMISSOES.find((item) => item.value === user.role)?.label || user.role}`,
+        `Escola vinculada: ${escolaNome}`,
+        `Status: ${user.ativo ? 'Ativo' : 'Inativo'}`,
+        `Cadastro: ${formatarDataBR(user.criadoEm)}`,
+      ]
+      const altura = 8 + linhas.length * 5 + 6
+
+      y = quebrarPagina(y, altura)
+
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(11)
+      doc.setTextColor(23, 32, 51)
+      doc.text(user.nome, margin, y + 5)
+      y += 8
+
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(9)
+      doc.setTextColor(71, 85, 105)
+      linhas.forEach((linha) => {
+        doc.text(linha, margin, y + 4)
+        y += 5
+      })
+
+      y += 4
+      doc.setDrawColor(226, 232, 240)
+      doc.line(margin, y - 2, pageWidth - margin, y - 2)
+    })
+
+    drawFooter()
+    doc.save('usuarios.pdf')
+  }
+
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-end">
-        <button
-          type="button"
-          onClick={() => setModalAberto(true)}
-          className="cursor-pointer rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-primary-strong"
-        >
-          + Novo usuário
-        </button>
+      <div className="flex w-full flex-col items-center justify-between gap-4 sm:flex-row">
+        <div className="relative w-full flex-1">
+          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+            <svg className="h-5 w-5 text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <input
+            type="text"
+            placeholder="Buscar usuários..."
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            className="block w-full rounded-lg border-0 py-2 pl-10 pr-4 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary text-sm"
+          />
+        </div>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          <button
+            type="button"
+            onClick={exportarUsuariosPdf}
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition-colors duration-200 hover:bg-slate-50 sm:w-auto"
+          >
+            Exportar PDF
+          </button>
+          <button
+            type="button"
+            onClick={() => setModalAberto(true)}
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white shadow-sm transition-colors duration-200 hover:bg-primary-strong sm:w-auto"
+          >
+            <span className="text-sm leading-none">+</span> Novo usuário
+          </button>
+        </div>
       </div>
       {erro && (
         <p className="rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{erro}</p>
@@ -147,45 +268,105 @@ export function Usuarios() {
       {carregando ? (
         <p className="text-sm font-semibold text-slate-500">Carregando usuários...</p>
       ) : (
-        <div className="overflow-x-auto w-full overflow-x-auto border border-slate-200 rounded-xl shadow-sm">
-          <table className="w-full min-w-[900px] border-collapse rounded-2 text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-extrabold tracking-wide">
-              <tr className="divide-x divide-slate-200">
-                {['Nome', 'Email', 'Permissão', 'Escola vinculada', 'Status', 'Cadastro'].map((head) => (
-                  <th key={head} className="px-4 py-3">
-                    {head}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {lista.map((user) => (
-                <tr key={user.id} className="divide-x divide-slate-200 border-x border-slate-200">
-                  <td className="px-4 py-3 font-bold text-slate-800">{user.nome}</td>
-                  <td className="px-4 py-3 text-slate-600">{user.email}</td>
-                  <td className="px-4 py-3">
-                    <Select value={user.role} onChange={(value) => alterarPermissao(user.id, value)} options={PERMISSOES} className="inline-block w-auto min-w-[10rem]" />
-                  </td>
-                  <td className="px-4 py-3">
-                    {user.role === 'DIRETOR' ? (
-                      <Select
-                        value={user.escolaId || ''}
-                        onChange={(value) => alterarEscola(user.id, value)}
-                        placeholder="Sem vinculo"
-                        options={escolas.map((escola) => ({ value: escola.id, label: escola.nome }))}
-                        className="w-full max-w-56"
-                      />
-                    ) : (
-                      <span className="text-slate-400">—</span>
+        <>
+          <div className="overflow-hidden rounded-xl border border-slate-200 shadow-sm sm:hidden">
+            <div className="border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-extrabold tracking-wide text-slate-700">
+              Nome
+            </div>
+            <div className="divide-y divide-slate-200">
+              {listaFiltrada.map((user) => {
+                const aberto = expandidos.has(user.id)
+                return (
+                  <div key={user.id}>
+                    <button
+                      type="button"
+                      onClick={() => toggleExpandido(user.id)}
+                      aria-expanded={aberto}
+                      className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-left hover:bg-slate-50"
+                    >
+                      <span className="font-bold text-slate-800">{user.nome}</span>
+                      <Icon name="chevron-down" className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${aberto ? 'rotate-180' : ''}`} />
+                    </button>
+                    {aberto && (
+                      <div className="space-y-3 border-t border-slate-200 bg-white px-4 py-3 text-sm">
+                        <div>
+                          <span className="block text-xs font-bold tracking-wide text-slate-500">Email:</span>
+                          <span className="block text-slate-700">{user.email}</span>
+                        </div>
+                        <div>
+                          <span className="block text-xs font-bold tracking-wide text-slate-500">Permissão:</span>
+                          <Select value={user.role} onChange={(value) => alterarPermissao(user.id, value)} options={PERMISSOES} />
+                        </div>
+                        {user.role === 'DIRETOR' && (
+                          <div>
+                            <span className="block text-xs font-bold tracking-wide text-slate-500">Escola vinculada:</span>
+                            <Select
+                              value={user.escolaId || ''}
+                              onChange={(value) => alterarEscola(user.id, value)}
+                              placeholder="Sem vinculo"
+                              options={escolas.map((escola) => ({ value: escola.id, label: escola.nome }))}
+                            />
+                          </div>
+                        )}
+                        <div>
+                          <span className="block text-xs font-bold tracking-wide text-slate-500">Status:</span>
+                          <span className="block text-slate-700">{user.ativo ? 'Ativo' : 'Inativo'}</span>
+                        </div>
+                        <div>
+                          <span className="block text-xs font-bold tracking-wide text-slate-500">Cadastro:</span>
+                          <span className="block text-slate-700">{formatarDataBR(user.criadoEm)}</span>
+                        </div>
+                      </div>
                     )}
-                  </td>
-                  <td className="px-4 py-3"><Badge>{user.ativo ? 'Ativo' : 'Inativo'}</Badge></td>
-                  <td className="px-4 py-3 text-slate-600">{user.criadoEm?.slice(0, 10)}</td>
+                  </div>
+                )
+              })}
+              {!listaFiltrada.length && (
+                <p className="px-4 py-8 text-center text-sm font-semibold text-slate-500">Nenhum usuário encontrado.</p>
+              )}
+            </div>
+          </div>
+
+          <div className="hidden w-full overflow-x-auto rounded-xl border border-slate-200 shadow-sm sm:block">
+            <table className="w-full min-w-[900px] border-collapse rounded-2 text-sm">
+              <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-extrabold tracking-wide">
+                <tr className="divide-x divide-slate-200">
+                  {['Nome', 'Email', 'Permissão', 'Escola vinculada', 'Status', 'Cadastro'].map((head) => (
+                    <th key={head} className="px-4 py-3">
+                      {head}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {listaFiltrada.map((user) => (
+                  <tr key={user.id} className="divide-x divide-slate-200 border-x border-slate-200">
+                    <td className="px-4 py-3 font-bold text-slate-800">{user.nome}</td>
+                    <td className="px-4 py-3 text-slate-600">{user.email}</td>
+                    <td className="px-4 py-3">
+                      <Select value={user.role} onChange={(value) => alterarPermissao(user.id, value)} options={PERMISSOES} className="inline-block w-auto min-w-[10rem]" />
+                    </td>
+                    <td className="px-4 py-3">
+                      {user.role === 'DIRETOR' ? (
+                        <Select
+                          value={user.escolaId || ''}
+                          onChange={(value) => alterarEscola(user.id, value)}
+                          placeholder="Sem vinculo"
+                          options={escolas.map((escola) => ({ value: escola.id, label: escola.nome }))}
+                          className="w-full max-w-56"
+                        />
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">{user.ativo ? 'Ativo' : 'Inativo'}</td>
+                    <td className="px-4 py-3 text-slate-600">{formatarDataBR(user.criadoEm)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       <Modal open={modalAberto} onClose={fecharModal} title="Novo usuário">
@@ -254,18 +435,21 @@ export function Usuarios() {
   )
 }
 
-const ACAO_CLASSES = {
-  CRIAR: 'bg-emerald-50 text-emerald-700',
-  ATUALIZAR: 'bg-blue-50 text-blue-700',
-  REMOVER: 'bg-red-50 text-red-700',
-}
-
 export function Auditoria() {
   const [logs, setLogs] = useState([])
   const [escolas, setEscolas] = useState([])
   const [escolaId, setEscolaId] = useState('')
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState('')
+  const [expandidos, setExpandidos] = useState(() => new Set())
+  const toggleExpandido = (id) => {
+    setExpandidos((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   useEffect(() => {
     let ativo = true
@@ -313,44 +497,92 @@ export function Auditoria() {
       {carregando ? (
         <p className="text-sm font-semibold text-slate-500">Carregando log de auditoria...</p>
       ) : (
-        <div className="overflow-x-auto w-full overflow-x-auto border border-slate-200 rounded-xl shadow-sm">
-          <table className="w-full min-w-[900px] border-collapse rounded-2 text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-extrabold tracking-wide">
-              <tr className="divide-x divide-slate-200">
-                {['Data/Hora', 'Ação', 'Entidade', 'Descrição', 'Usuário', 'Escola'].map((head) => (
-                  <th key={head} className="px-4 py-3">
-                    {head}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {logs.map((log) => (
-                <tr key={log.id} className="divide-x divide-slate-200 border-x border-slate-200">
-                  <td className="whitespace-nowrap px-4 py-3 text-slate-600">
-                    {new Date(log.criadoEm).toLocaleString('pt-BR')}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${ACAO_CLASSES[log.acao] || 'bg-slate-100 text-slate-700'}`}>
-                      {log.acao}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 font-bold text-slate-800">{log.entidade}</td>
-                  <td className="px-4 py-3 text-slate-600">{log.descricao}</td>
-                  <td className="px-4 py-3 text-slate-600">{log.usuarioNome || log.usuarioEmail || '—'}</td>
-                  <td className="px-4 py-3 text-slate-600">{log.escola || '—'}</td>
-                </tr>
-              ))}
+        <>
+          <div className="overflow-hidden rounded-xl border border-slate-200 shadow-sm sm:hidden">
+            <div className="border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-extrabold tracking-wide text-slate-700">
+              Ação
+            </div>
+            <div className="divide-y divide-slate-200">
+              {logs.map((log) => {
+                const aberto = expandidos.has(log.id)
+                return (
+                  <div key={log.id}>
+                    <button
+                      type="button"
+                      onClick={() => toggleExpandido(log.id)}
+                      aria-expanded={aberto}
+                      className="flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-left hover:bg-slate-50"
+                    >
+                      <span className="min-w-0">
+                        <span className="font-bold text-slate-800">{log.acao}</span>
+                        <span className="ml-2 font-bold text-slate-800">{log.entidade}</span>
+                      </span>
+                      <Icon name="chevron-down" className={`h-4 w-4 shrink-0 text-slate-500 transition-transform ${aberto ? 'rotate-180' : ''}`} />
+                    </button>
+                    {aberto && (
+                      <div className="space-y-3 border-t border-slate-200 bg-white px-4 py-3 text-sm">
+                        <div>
+                          <span className="block text-xs font-bold tracking-wide text-slate-500">Data/Hora:</span>
+                          <span className="block text-slate-700">{new Date(log.criadoEm).toLocaleString('pt-BR')}</span>
+                        </div>
+                        <div>
+                          <span className="block text-xs font-bold tracking-wide text-slate-500">Descrição:</span>
+                          <span className="block text-slate-700">{log.descricao}</span>
+                        </div>
+                        <div>
+                          <span className="block text-xs font-bold tracking-wide text-slate-500">Usuário:</span>
+                          <span className="block text-slate-700">{log.usuarioNome || log.usuarioEmail || '—'}</span>
+                        </div>
+                        <div>
+                          <span className="block text-xs font-bold tracking-wide text-slate-500">Escola:</span>
+                          <span className="block text-slate-700">{log.escola || '—'}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
               {!logs.length && (
-                <tr>
-                  <td colSpan="6" className="px-4 py-8 text-center text-sm font-semibold text-slate-500">
-                    Nenhum registro de auditoria encontrado.
-                  </td>
-                </tr>
+                <p className="px-4 py-8 text-center text-sm font-semibold text-slate-500">Nenhum registro de auditoria encontrado.</p>
               )}
-            </tbody>
-          </table>
-        </div>
+            </div>
+          </div>
+
+          <div className="hidden w-full overflow-x-auto rounded-xl border border-slate-200 shadow-sm sm:block">
+            <table className="w-full min-w-[900px] border-collapse rounded-2 text-sm">
+              <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-extrabold tracking-wide">
+                <tr className="divide-x divide-slate-200">
+                  {['Data/Hora', 'Ação', 'Entidade', 'Descrição', 'Usuário', 'Escola'].map((head) => (
+                    <th key={head} className="px-4 py-3">
+                      {head}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {logs.map((log) => (
+                  <tr key={log.id} className="divide-x divide-slate-200 border-x border-slate-200">
+                    <td className="whitespace-nowrap px-4 py-3 text-slate-600">
+                      {new Date(log.criadoEm).toLocaleString('pt-BR')}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">{log.acao}</td>
+                    <td className="px-4 py-3 font-bold text-slate-800">{log.entidade}</td>
+                    <td className="px-4 py-3 text-slate-600">{log.descricao}</td>
+                    <td className="px-4 py-3 text-slate-600">{log.usuarioNome || log.usuarioEmail || '—'}</td>
+                    <td className="px-4 py-3 text-slate-600">{log.escola || '—'}</td>
+                  </tr>
+                ))}
+                {!logs.length && (
+                  <tr>
+                    <td colSpan="6" className="px-4 py-8 text-center text-sm font-semibold text-slate-500">
+                      Nenhum registro de auditoria encontrado.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   )
@@ -389,7 +621,7 @@ export function Categorias() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-end">
-        <button className="cursor-pointer"
+        <button
           type="button"
           onClick={() => setModalAberto(true)}
           className="cursor-pointer rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-primary-strong"
@@ -397,7 +629,30 @@ export function Categorias() {
           + Nova categoria
         </button>
       </div>
-      <div className="overflow-x-auto w-full overflow-x-auto border border-slate-200 rounded-xl shadow-sm">
+
+      <div className="overflow-hidden rounded-xl border border-slate-200 shadow-sm sm:hidden">
+        <div className="border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-extrabold tracking-wide text-slate-700">
+          Nome
+        </div>
+        <div className="divide-y divide-slate-200">
+          {lista.map((categoria) => (
+            <div key={categoria} className="flex items-center justify-between gap-3 px-4 py-3">
+              <div className="min-w-0">
+                <p className="truncate font-bold text-slate-800">{categoria}</p>
+                <p className="mt-1 text-xs text-slate-500">{contagem[categoria] || 0} ocorrências · Global</p>
+              </div>
+              <button type="button" onClick={() => removerCategoria(categoria)} className="cursor-pointer shrink-0 text-sm font-bold text-red-600 hover:underline">
+                Remover
+              </button>
+            </div>
+          ))}
+          {!lista.length && (
+            <p className="px-4 py-8 text-center text-sm font-semibold text-slate-500">Nenhuma categoria cadastrada.</p>
+          )}
+        </div>
+      </div>
+
+      <div className="hidden w-full overflow-x-auto rounded-xl border border-slate-200 shadow-sm sm:block">
         <table className="w-full min-w-[600px] border-collapse rounded-2 text-sm">
           <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-extrabold tracking-wide">
             <tr className="divide-x divide-slate-200">
@@ -415,7 +670,7 @@ export function Categorias() {
                 <td className="px-4 py-3">{contagem[categoria] || 0}</td>
                 <td className="px-4 py-3"><Badge>Global</Badge></td>
                 <td className="px-4 py-3 text-right">
-                  <button className="cursor-pointer" type="button" onClick={() => removerCategoria(categoria)} className="cursor-pointer text-sm font-bold text-red-600 hover:underline">
+                  <button type="button" onClick={() => removerCategoria(categoria)} className="cursor-pointer text-sm font-bold text-red-600 hover:underline">
                     Remover
                   </button>
                 </td>
@@ -443,7 +698,7 @@ export function Categorias() {
             />
           </label>
           <div className="flex justify-end gap-2 pt-2">
-            <button className="cursor-pointer" type="button" onClick={() => setModalAberto(false)} className="cursor-pointer rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">
+            <button type="button" onClick={() => setModalAberto(false)} className="cursor-pointer rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">
               Cancelar
             </button>
             <button
