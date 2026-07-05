@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Layout } from './components/Layout.jsx'
-import { clearStoredUser, getStoredUser, setStoredUser } from './auth/session.js'
+import { clearStoredUser, getStoredUser, setStoredToken, setStoredUser } from './auth/session.js'
 import { listarEscolas, listarOcorrencias } from './services/api.js'
 import { Cadastro } from './pages/Cadastro.jsx'
 import { Dashboard } from './pages/Dashboard.jsx'
@@ -86,8 +86,9 @@ export default function App() {
     setRoute(path)
   }
 
-  function handleLogin(loggedUser) {
+  function handleLogin(loggedUser, token) {
     setStoredUser(loggedUser)
+    setStoredToken(token)
     setUser(loggedUser)
     navigate(loggedUser.role === 'EXTERNO' ? '/ocorrencias' : '/dashboard')
   }

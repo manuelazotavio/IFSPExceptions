@@ -1,21 +1,28 @@
-import { getStoredUser } from '../auth/session.js'
+import { clearStoredUser, getStoredToken } from '../auth/session.js'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3333/api'
 
-function actorHeaders() {
-  const user = getStoredUser()
-  if (!user) return {}
-  return {
-    'x-user-email': user.email || '',
-    'x-user-nome': user.nome || '',
-  }
+function authHeaders() {
+  const token = getStoredToken()
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+function handleSessaoExpirada() {
+  clearStoredUser()
+  window.location.hash = '/login'
+  window.location.reload()
 }
 
 async function request(path, options = {}) {
   const response = await fetch(`${API_URL}${path}`, {
     ...options,
-    headers: { 'Content-Type': 'application/json', ...actorHeaders(), ...options.headers },
+    headers: { 'Content-Type': 'application/json', ...authHeaders(), ...options.headers },
   })
+
+  if (response.status === 401 && !path.startsWith('/auth/')) {
+    handleSessaoExpirada()
+  }
+
   const data = await response.json().catch(() => null)
   if (!response.ok) throw new Error(data?.message || 'Erro inesperado')
   return data
@@ -93,7 +100,12 @@ export async function uploadFotosOcorrencia(id, arquivos) {
   const formData = new FormData()
   arquivos.forEach((arquivo) => formData.append('fotos', arquivo))
 
-  const response = await fetch(`${API_URL}/ocorrencias/${id}/fotos`, { method: 'POST', body: formData, headers: actorHeaders() })
+  const response = await fetch(`${API_URL}/ocorrencias/${id}/fotos`, { method: 'POST', body: formData, headers: authHeaders() })
+
+  if (response.status === 401) {
+    handleSessaoExpirada()
+  }
+
   const data = await response.json().catch(() => null)
   if (!response.ok) throw new Error(data?.message || 'Erro inesperado')
   return data

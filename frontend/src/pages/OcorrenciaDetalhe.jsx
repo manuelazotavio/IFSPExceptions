@@ -73,6 +73,7 @@ export function OcorrenciaDetalhe({ id, onNavigate, user }) {
 }
 
 function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }) {
+  const podeEditarOcorrencia = user?.role !== 'EXTERNO'
   const [escolas, setEscolas] = useState([])
   useEffect(() => {
     let ativo = true
@@ -105,6 +106,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
   const [historicoAberto, setHistoricoAberto] = useState(false)
 
   const handleSalvar = async () => {
+    if (!podeEditarOcorrencia) return
     setSalvando(true)
     setErroSalvar('')
     try {
@@ -185,7 +187,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
       ['Status', status],
       ['Descrição', form.descricao],
       ['Endereço', escolaSelecionada.endereco],
-      ['Localização', formatDisplayLabel(form.localizacaoInterna)],
+      ['Localização', form.localizacaoInterna ? formatDisplayLabel(form.localizacaoInterna) : 'Não informada'],
       ['Tipo', formatDisplayLabel(form.tipo)],
       ['Envio', formatarDataBR(form.dataEnvio)],
       ['Aprovação', formatarDataBR(form.dataAprovacao)],
@@ -422,12 +424,14 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
                 >
                   Exportar PDF
                 </button>
-                <button
-                  onClick={() => setModalEdicaoAberto(true)}
-                  className="flex-1 cursor-pointer rounded-md border border-slate-300 px-3 py-1.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 sm:flex-none"
-                >
-                  Editar
-                </button>
+                {podeEditarOcorrencia ? (
+                  <button
+                    onClick={() => setModalEdicaoAberto(true)}
+                    className="flex-1 cursor-pointer rounded-md border border-slate-300 px-3 py-1.5 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50 sm:flex-none"
+                  >
+                    Editar
+                  </button>
+                ) : null}
               </div>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -449,7 +453,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
             </div>
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <InfoField label="Endereço" value={escolaSelecionada.endereco} />
-              <InfoField label="Localização" value={formatDisplayLabel(form.localizacaoInterna)} />
+              <InfoField label="Localização" value={form.localizacaoInterna ? formatDisplayLabel(form.localizacaoInterna) : 'Não informada'} />
               <InfoField label="Tipo" value={formatDisplayLabel(form.tipo)} />
               <InfoField label="Envio" value={formatarDataBR(form.dataEnvio)} />
               <InfoField label="Aprovação" value={formatarDataBR(form.dataAprovacao)} />
@@ -588,7 +592,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
           </div>
         </Card>
       </div>
-      <Modal open={modalEdicaoAberto} onClose={() => setModalEdicaoAberto(false)} title="Editar ocorrência">
+      <Modal open={modalEdicaoAberto && podeEditarOcorrencia} onClose={() => setModalEdicaoAberto(false)} title="Editar ocorrência">
         <div className="space-y-4">
           <label className="block">
             <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Escola</span>
@@ -626,6 +630,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
             <label className="block">
               <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Localização</span>
               <select value={form.localizacaoInterna} onChange={(e) => updateForm('localizacaoInterna', e.target.value)} className={campoClasse('h-9 text-sm font-semibold text-slate-800')}>
+                <option value="">Não informada</option>
                 {locaisInternos.map((item) => <option key={item} value={item}>{formatDisplayLabel(item)}</option>)}
               </select>
             </label>
