@@ -65,7 +65,7 @@ async function main() {
   const senhaHash = await bcrypt.hash('123456', 10)
 
   const usuarios = [
-    { email: 'seduc@escola.gov.br', nome: 'Administrador SEDUC', role: 'SEDUC', escolaId: null },
+    { email: 'seduc@escola.gov.br', nome: 'João Beserra', role: 'SEDUC', escolaId: null },
     { email: 'diretor@escola.gov.br', nome: 'Diretora Alberto Souza', role: 'DIRETOR', escolaId: 'esc-001' },
     { email: 'externo@escola.gov.br', nome: 'Usuario Externo', role: 'EXTERNO', escolaId: 'esc-001' },
   ]

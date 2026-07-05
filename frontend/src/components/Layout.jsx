@@ -100,7 +100,7 @@ export function Layout({ route, onNavigate, onExport, user, onLogout, children }
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="flex items-start justify-between gap-2 sm:items-center">
               <div className="flex items-center gap-3">
-                <img src="/geo/logo_fundo_branco.svg" alt="Escola em Dia" className="hidden h-8 w-auto sm:block lg:hidden" />
+                <img src="/geo/logo_fundo_branco.svg" alt="ZelaMais" className="hidden h-8 w-auto sm:block lg:hidden" />
                 <div className="relative flex flex-col sm:flex-row sm:items-center sm:gap-2">
                   <button
                     type="button"

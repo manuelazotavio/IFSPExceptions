@@ -43,7 +43,7 @@ export function Sidebar({ route, onNavigate, user, open = false, onClose, nomeEx
         }`}
       >
         <div className="mb-7 flex items-center justify-between gap-3 ps-2">
-          <img src="/geo/logo_fundo_branco.svg" alt="Escola em Dia" className="h-8 w-auto" />
+        <img src="/geo/logo_fundo_branco.svg" alt="ZelaMais" className="h-8 w-auto" />
           <button
             type="button"
             onClick={onClose}

@@ -59,7 +59,7 @@ export function Cadastro({ onNavigate }) {
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">
       <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
         <div className="mb-6 flex items-center gap-3">
-          <img src="/geo/logo_fundo_branco.svg" alt="Escola em Dia" className="h-8 w-auto" />
+          <img src="/geo/logo_fundo_branco.svg" alt="ZelaMais" className="h-8 w-auto" />
         </div>
 
         <h1 className="text-xl font-800 text-slate-950">Criar conta</h1>

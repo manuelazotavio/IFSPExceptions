@@ -58,7 +58,7 @@ model Ocorrencia {
   criadoPorEmail     String
   criadoPorNome      String    @default("")
   chatPendente       Boolean   @default(false)
-  fotos              String    @default("[]") @db.Text
+  fotos              String    @db.Text
   criadoEm           DateTime  @default(now())
   atualizadoEm       DateTime  @updatedAt
 
@@ -74,7 +74,7 @@ model Interacao {
   autor    String
   mensagem String   @db.Text
   status   String?
-  anexos   String   @default("[]") @db.Text
+  anexos   String   @db.Text
   criadoEm DateTime @default(now())
 
   ocorrenciaId String
