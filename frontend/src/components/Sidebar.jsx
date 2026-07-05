@@ -91,12 +91,16 @@ export function Sidebar({ route, onNavigate, user, open = false, onClose, collap
         </nav>
 
         <div className={`relative mt-4 border-t border-white/15 pt-4 ${collapsed ? 'lg:flex lg:justify-center' : ''}`}>
-          <div className="flex items-center justify-center rounded-md bg-white/10 px-3 py-3 ring-1 ring-white/15">
+          <div className="flex items-center gap-3 rounded-md bg-white/10 px-3 py-3 ring-1 ring-white/15">
             <img
               src="/prefeitura-de-caraguatatuba-seeklogo.svg"
               alt="Prefeitura de Caraguatatuba"
               className="h-10 w-10 shrink-0 rounded bg-white p-1.5"
             />
+            <div className={`min-w-0 ${collapsed ? 'lg:hidden' : ''}`}>
+              <span className="block text-[10px] font-bold uppercase tracking-wide text-blue-100">Prefeitura de</span>
+              <span className="block truncate text-sm font-800 text-white">Caraguatatuba</span>
+            </div>
           </div>
         </div>
 
