@@ -77,7 +77,7 @@ export function Layout({ route, onNavigate, onExport, user, onLogout, children }
     : titles[route]
       || (route.startsWith('/ocorrencias/') ? 'Detalhe da ocorrência' : '')
       || (route.startsWith('/escolas/') ? 'Detalhe da escola' : '')
-      || 'Dashboard geral'
+      || 'Dashboard'
 
   function handleExport(format) {
     onExport(format)
