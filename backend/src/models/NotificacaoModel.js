@@ -15,11 +15,17 @@ export class NotificacaoModel {
     })
   }
 
-  static async findAll({ escolaId, criadoPorEmail } = {}) {
+  static async findAll({ escolaId, criadoPorEmail, ocultarAguardandoAprovacao } = {}) {
     return prisma.notificacao.findMany({
       where: {
         ...(escolaId ? { escolaId } : {}),
         ...(criadoPorEmail ? { criadoPorEmail } : {}),
+        ...(ocultarAguardandoAprovacao ? {
+          OR: [
+            { ocorrenciaId: null },
+            { ocorrencia: { status: { not: 'Aguardando aprovacao' } } },
+          ],
+        } : {}),
       },
       orderBy: { criadoEm: 'desc' },
       take: 100,

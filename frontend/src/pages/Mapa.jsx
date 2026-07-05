@@ -57,7 +57,7 @@ const mapStyles = {
     attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
   },
   cartoLightNoLabels: {
-    label: 'Claro sem rotulos',
+    label: 'Claro sem rótulos',
     url: 'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',
     attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
   },
@@ -72,7 +72,7 @@ const mapStyles = {
     attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
   },
   osmPadrao: {
-    label: 'OSM padrao',
+    label: 'OSM padrão',
     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     attribution: '&copy; OpenStreetMap contributors',
   },
@@ -292,11 +292,11 @@ function sortOcorrenciasByUrgencia(left, right) {
 function buildMetricItems({ metrics }) {
   return [
     {
-      label: 'Ocorrencias',
+      label: 'Ocorrências',
       value: Number(metrics.totalOcorrencias || 0),
     },
     {
-      label: 'Criticas',
+      label: 'Críticas',
       value: Number(metrics.criticas || 0),
     },
   ]
@@ -357,7 +357,7 @@ function getContextMetrics({
 
   return {
     title: 'Geral',
-    message: `${visibleSchoolCount} escola${visibleSchoolCount === 1 ? '' : 's'} visiveis no contexto atual.`,
+    message: `${visibleSchoolCount} escola${visibleSchoolCount === 1 ? '' : 's'} visíveis no contexto atual.`,
     items: buildMetricItems({
       metrics: summaryMetrics,
       maxIntensity: summaryMetrics.intensidade || 0,
@@ -484,7 +484,7 @@ export function Mapa({ onNavigate }) {
 
         setSchoolCatalog(getAllSchools())
         setOccurrenceCatalog([])
-        setErroMapa(error.message || 'Nao foi possivel carregar os dados do mapa.')
+        setErroMapa(error.message || 'Não foi possível carregar os dados do mapa.')
       } finally {
         if (!controller.signal.aborted) {
           setLoadingMapa(false)
@@ -691,7 +691,7 @@ export function Mapa({ onNavigate }) {
     if (!erroMapa) return null
 
     return {
-      title: 'Alguns dados estao em fallback local porque a API nao respondeu.',
+      title: 'Alguns dados estão em fallback local porque a API não respondeu.',
       detail: erroMapa,
     }
   }, [erroMapa])
@@ -1021,7 +1021,7 @@ export function Mapa({ onNavigate }) {
                     ) : (
                       <div className="space-y-1">
                         <strong>{item.escolaNome}</strong>
-                        <p>{item.totalOcorrencias} ocorrencias</p>
+                        <p>{item.totalOcorrencias} ocorrências</p>
                       </div>
                     )}
                   </Tooltip>
@@ -1048,7 +1048,7 @@ export function Mapa({ onNavigate }) {
                 type="button"
                 onClick={() => setIsMapStyleExpanded((current) => !current)}
                 className="rounded-md border border-slate-200 p-1 text-slate-500 hover:bg-slate-50 sm:hidden"
-                aria-label={isMapStyleExpanded ? 'Recolher opcoes do mapa' : 'Expandir opcoes do mapa'}
+                aria-label={isMapStyleExpanded ? 'Recolher opções do mapa' : 'Expandir opções do mapa'}
               >
                 <ChevronIcon direction={isMapStyleExpanded ? 'up' : 'down'} />
               </button>
@@ -1059,6 +1059,7 @@ export function Mapa({ onNavigate }) {
                 size="xs"
                 dropUp
                 className="mt-1"
+                direction="up"
                 value={mapStyleKey}
                 onChange={setMapStyleKey}
                 options={Object.entries(mapStyles).map(([styleKey, style]) => ({ value: styleKey, label: style.label }))}
@@ -1090,7 +1091,7 @@ export function Mapa({ onNavigate }) {
                   </p>
                   <p className="mt-1 text-[11px] font-semibold text-slate-500">
                     {selectedBairroStats.totalEscolas > 0
-                      ? `${selectedBairroStats.totalEscolas} escola${selectedBairroStats.totalEscolas > 1 ? 's' : ''} com ${selectedBairroStats.totalSolicitacoes} ocorrencia${selectedBairroStats.totalSolicitacoes === 1 ? '' : 's'}.`
+                      ? `${selectedBairroStats.totalEscolas} escola${selectedBairroStats.totalEscolas > 1 ? 's' : ''} com ${selectedBairroStats.totalSolicitacoes} ocorrência${selectedBairroStats.totalSolicitacoes === 1 ? '' : 's'}.`
                       : 'Sem escolas associadas no cadastro atual.'}
                   </p>
                   <button
@@ -1110,7 +1111,7 @@ export function Mapa({ onNavigate }) {
           {loadingMapa ? (
             <div className="absolute inset-0 z-[550] flex items-center justify-center bg-white/70 backdrop-blur-[1px]">
               <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm">
-                Carregando escolas e ocorrencias...
+                Carregando escolas e ocorrências...
               </div>
             </div>
           ) : null}
@@ -1181,7 +1182,7 @@ function MapColorScaleControl({ colorScale, isExpanded, legendGradient, legendRa
       <div className={`${isExpanded ? 'block' : 'hidden'} sm:block`}>
         {isExpanded ? (
           <div className="mt-3 grid grid-cols-3 gap-2">
-            <ColorScaleField label="Inicio" value={colorScale.start} onChange={(value) => onChangeScale((current) => ({ ...current, start: value }))} />
+            <ColorScaleField label="Início" value={colorScale.start} onChange={(value) => onChangeScale((current) => ({ ...current, start: value }))} />
             <ColorScaleField label="Meio" value={colorScale.middle} onChange={(value) => onChangeScale((current) => ({ ...current, middle: value }))} />
             <ColorScaleField label="Fim" value={colorScale.end} onChange={(value) => onChangeScale((current) => ({ ...current, end: value }))} />
           </div>
@@ -1315,7 +1316,7 @@ function MapContextDrawer({
                 </div>
               ) : bairroOcorrencias.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-semibold text-slate-500">
-                  Nenhuma solicitacao encontrada para as escolas deste bairro com os filtros atuais.
+                  Nenhuma solicitação encontrada para as escolas deste bairro com os filtros atuais.
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -1356,14 +1357,14 @@ function MapContextDrawer({
                       />
                     )) : (
                       <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-semibold text-slate-500">
-                        Nenhuma ocorrencia encontrada para esta escola.
+                        Nenhuma ocorrência encontrada para esta escola.
                       </div>
                     )}
                   </div>
                 </div>
               ) : !loadingDetalhe ? (
                 <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-semibold text-slate-500">
-                  Nao foi possivel localizar os dados desta escola.
+                  Não foi possível localizar os dados desta escola.
                 </div>
               ) : null}
             </>

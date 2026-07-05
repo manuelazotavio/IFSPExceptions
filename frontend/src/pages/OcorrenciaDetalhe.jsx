@@ -371,10 +371,10 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
       doc.setTextColor(255, 255, 255)
       doc.setFont('helvetica', 'bold')
       doc.setFontSize(13)
-      doc.text('Relatorio de ocorrencia', pageWidth - margin, 12, { align: 'right' })
+      doc.text('Relatório de ocorrência', pageWidth - margin, 12, { align: 'right' })
       doc.setFont('helvetica', 'normal')
       doc.setFontSize(8.5)
-      doc.text('Secretaria Municipal de Educacao - Caraguatatuba', pageWidth - margin, 18, { align: 'right' })
+      doc.text('Secretaria Municipal de Educação - Caraguatatuba', pageWidth - margin, 18, { align: 'right' })
       doc.text(`Protocolo ${ocorrencia.protocolo}`, pageWidth - margin, 24, { align: 'right' })
       doc.setTextColor(15, 23, 42)
     }
@@ -389,7 +389,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
         doc.setFontSize(8)
         doc.setTextColor(100, 116, 139)
         doc.text('Zela+ - IFSP Exceptions', margin, pageHeight - 8)
-        doc.text(`Pagina ${page} de ${pageCount}`, pageWidth - margin, pageHeight - 8, { align: 'right' })
+        doc.text(`Página ${page} de ${pageCount}`, pageWidth - margin, pageHeight - 8, { align: 'right' })
       }
       doc.setTextColor(15, 23, 42)
     }
@@ -457,7 +457,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(18)
     doc.setTextColor(15, 23, 42)
-    doc.text(doc.splitTextToSize(form.titulo || 'Ocorrencia sem titulo', contentWidth), margin, y)
+    doc.text(doc.splitTextToSize(form.titulo || 'Ocorrência sem título', contentWidth), margin, y)
     y += 16
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(9)
@@ -472,13 +472,13 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
     drawMetric('Envio', formatarDataBR(form.dataEnvio), margin + (metricWidth + 3) * 3, y, metricWidth)
     y += 30
 
-    y = drawSectionTitle('Dados da ocorrencia', y)
+    y = drawSectionTitle('Dados da ocorrência', y)
     y = drawInfoRows([
-      ['Descricao', form.descricao],
-      ['Endereco', escolaSelecionada.endereco],
-      ['Localizacao', form.localizacaoInterna ? formatDisplayLabel(form.localizacaoInterna) : 'Nao informada'],
-      ['Aprovacao', formatarDataBR(form.dataAprovacao) || 'Nao informada'],
-      ['Resolucao', formatarDataBR(form.dataResolucao) || 'Nao informada'],
+      ['Descrição', form.descricao],
+      ['Endereço', escolaSelecionada.endereco],
+      ['Localização', form.localizacaoInterna ? formatDisplayLabel(form.localizacaoInterna) : 'Não informada'],
+      ['Aprovação', formatarDataBR(form.dataAprovacao) || 'Não informada'],
+      ['Resolução', formatarDataBR(form.dataResolucao) || 'Não informada'],
     ], y)
 
     if (fotos.length > 0) {
@@ -527,10 +527,10 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
       doc.setTextColor(255, 255, 255)
       doc.setFont('helvetica', 'bold')
       doc.setFontSize(13)
-      doc.text('Historico da ocorrencia', pageWidth - margin, 12, { align: 'right' })
+      doc.text('Histórico da ocorrência', pageWidth - margin, 12, { align: 'right' })
       doc.setFont('helvetica', 'normal')
       doc.setFontSize(8.5)
-      doc.text('Secretaria Municipal de Educacao - Caraguatatuba', pageWidth - margin, 18, { align: 'right' })
+      doc.text('Secretaria Municipal de Educação - Caraguatatuba', pageWidth - margin, 18, { align: 'right' })
       doc.text(`Protocolo ${ocorrencia.protocolo}`, pageWidth - margin, 24, { align: 'right' })
       doc.setTextColor(15, 23, 42)
     }
@@ -545,7 +545,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
         doc.setFontSize(8)
         doc.setTextColor(100, 116, 139)
         doc.text('Zela+ - IFSP Exceptions', margin, pageHeight - 8)
-        doc.text(`Pagina ${page} de ${pageCount}`, pageWidth - margin, pageHeight - 8, { align: 'right' })
+        doc.text(`Página ${page} de ${pageCount}`, pageWidth - margin, pageHeight - 8, { align: 'right' })
       }
       doc.setTextColor(15, 23, 42)
     }
@@ -562,7 +562,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(18)
     doc.setTextColor(15, 23, 42)
-    doc.text('Linha do tempo da ocorrencia', margin, y)
+    doc.text('Linha do tempo da ocorrência', margin, y)
     y += 7
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(9)
@@ -577,7 +577,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
       doc.setFont('helvetica', 'bold')
       doc.setFontSize(9)
       doc.setTextColor(100, 116, 139)
-      doc.text('Nenhuma interacao registrada.', pageWidth / 2, y + 12, { align: 'center' })
+      doc.text('Nenhuma interação registrada.', pageWidth / 2, y + 12, { align: 'center' })
     }
 
     interacoes.forEach((entry, index) => {
@@ -596,7 +596,7 @@ function OcorrenciaDetalheConteudo({ ocorrencia, onNavigate, user, onAtualizar }
       doc.setFont('helvetica', 'bold')
       doc.setFontSize(9)
       doc.setTextColor(0, 18, 156)
-      doc.text(`${cabecalho} - ${entry.data}${entry.hora ? ` as ${entry.hora}` : ''}`, margin + 12, y + 8)
+      doc.text(`${cabecalho} - ${entry.data}${entry.hora ? ` às ${entry.hora}` : ''}`, margin + 12, y + 8)
       let textY = y + 15
       if (linhasMensagem.length) {
         doc.setFont('helvetica', 'normal')

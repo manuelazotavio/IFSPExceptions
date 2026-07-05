@@ -27,8 +27,8 @@ export function Cadastro({ onNavigate }) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
         <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-8 text-center shadow-sm">
-          <h1 className="text-xl font-800 text-slate-950">Cadastro concluido</h1>
-          <p className="mt-2 text-sm text-slate-500">Sua conta foi criada. Voce ja pode entrar.</p>
+          <h1 className="text-xl font-800 text-slate-950">Cadastro concluído</h1>
+          <p className="mt-2 text-sm text-slate-500">Sua conta foi criada. Você já pode entrar.</p>
           <button className="cursor-pointer"
             type="button"
             onClick={() => onNavigate('/login')}
@@ -94,7 +94,7 @@ export function Cadastro({ onNavigate }) {
         </form>
 
         <p className="mt-6 text-center text-sm text-slate-500">
-          Ja tem uma conta?{' '}
+          Já tem uma conta?{' '}
           <button className="cursor-pointer" type="button" onClick={() => onNavigate('/login')} className="cursor-pointer font-bold text-primary-strong">
             Entrar
           </button>

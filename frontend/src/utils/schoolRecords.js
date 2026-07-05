@@ -1,13 +1,13 @@
 const CRITICIDADE_LABELS = {
   baixa: 'Baixa',
-  atencao: 'Atencao',
-  critica: 'Critica',
+  atencao: 'Atenção',
+  critica: 'Crítica',
 }
 
 const STATUS_LABELS = {
   aberta: 'Aberta',
-  em_analise: 'Em analise',
-  em_execucao: 'Em execucao',
+  em_analise: 'Em análise',
+  em_execucao: 'Em execução',
   resolvida: 'Resolvida',
 }
 

@@ -31,6 +31,7 @@ const COR_KANBAN_CRITICIDADE = {
 export function Ocorrencias({ onNavigate, user }) {
   const isDiretor = user?.role === 'DIRETOR'
   const isExterno = user?.role === 'EXTERNO'
+  const statusOpcoes = (isDiretor || isExterno) ? statusValues : statusValues.filter((status) => status !== 'Aguardando aprovacao')
   const [filters, setFilters] = useState({ bairro: '', status: '', criticidade: '', tipo: '' })
   const setFilter = (key, value) => { setFilters((prev) => ({ ...prev, [key]: value })); setPagina(1) }
   const [ocorrencias, setOcorrencias] = useState([])
@@ -311,7 +312,7 @@ export function Ocorrencias({ onNavigate, user }) {
       <Card>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
           <FilterSelect label="Bairro" value={filters.bairro} onChange={(v) => setFilter('bairro', v)} options={bairros} />
-          <FilterSelect label="Status" value={filters.status} onChange={(v) => setFilter('status', v)} options={statusValues} />
+          <FilterSelect label="Status" value={filters.status} onChange={(v) => setFilter('status', v)} options={statusOpcoes} />
           <FilterSelect label="Criticidade" value={filters.criticidade} onChange={(v) => setFilter('criticidade', v)} options={criticidadeValues} />
           <FilterSelect label="Tipo" value={filters.tipo} onChange={(v) => setFilter('tipo', v)} options={categorias} />
         </div>
@@ -438,7 +439,7 @@ export function Ocorrencias({ onNavigate, user }) {
         <Pagination page={pagina} totalPages={totalPaginas} onPageChange={setPagina} totalItems={lista.length} pageSize={ITENS_POR_PAGINA} />
       )}
       {visualizacao === 'kanban' && !isExterno && (
-        <KanbanOcorrencias lista={lista} onNavigate={onNavigate} onStatusChange={alterarStatusKanban} />
+        <KanbanOcorrencias lista={lista} statusColunas={statusOpcoes} onNavigate={onNavigate} onStatusChange={alterarStatusKanban} />
       )}
       <Modal open={modalAberto} onClose={() => setModalAberto(false)} title={arquivoEmCorte ? 'Cortar imagem' : 'Nova ocorrência'}>
         {arquivoEmCorte ? (
@@ -542,7 +543,7 @@ export function Ocorrencias({ onNavigate, user }) {
   )
 }
 
-function KanbanOcorrencias({ lista, onNavigate, onStatusChange }) {
+function KanbanOcorrencias({ lista, statusColunas, onNavigate, onStatusChange }) {
   const [arrastandoId, setArrastandoId] = useState('')
   const [statusDestino, setStatusDestino] = useState('')
 
@@ -555,8 +556,8 @@ function KanbanOcorrencias({ lista, onNavigate, onStatusChange }) {
   }
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
-      {statusValues.map((status) => {
+    <div className={`grid gap-3 sm:grid-cols-2 lg:[grid-template-columns:repeat(${statusColunas.length},minmax(0,1fr))]`}>
+      {statusColunas.map((status) => {
         const itens = lista.filter((item) => item.status === status)
 
         return (

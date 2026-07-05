@@ -147,7 +147,7 @@ export function Select({ value, onChange, options, placeholder = 'Selecione...',
       </button>
 
       {open && !disabled && (
-        <ul role="listbox" className={`absolute z-[5000] max-h-60 w-full overflow-auto rounded-md border border-slate-200 bg-white p-1 shadow-lg ${dropUp ? 'bottom-full mb-1' : 'mt-1'}`}>
+        <ul role="listbox" className={`absolute z-[5000] max-h-60 w-full overflow-auto rounded-md border border-slate-200 bg-white p-1 shadow-lg ${direction === 'up' ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
           {normalized.map((item) => {
             const active = item.value === value
             return (

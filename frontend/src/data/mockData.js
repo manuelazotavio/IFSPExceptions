@@ -76,7 +76,7 @@ const bairroSchoolSeeds = [
     ],
   },
   {
-    bairro: 'Indaia',
+    bairro: 'Indaiá',
     points: [
       { latitude: -23.631478, longitude: -45.419728 },
       { latitude: -23.634071, longitude: -45.425101 },
@@ -97,14 +97,14 @@ const bairroSchoolSeeds = [
     ],
   },
   {
-    bairro: 'Jardim Atlantico',
+    bairro: 'Jardim Atlântico',
     points: [
       { latitude: -23.653929, longitude: -45.428106 },
       { latitude: -23.64879, longitude: -45.429084 },
     ],
   },
   {
-    bairro: 'Jardim California',
+    bairro: 'Jardim Califórnia',
     points: [
       { latitude: -23.619167, longitude: -45.41832 },
       { latitude: -23.617826, longitude: -45.416388 },
@@ -118,21 +118,21 @@ const bairroSchoolSeeds = [
     ],
   },
   {
-    bairro: 'Martim de Sa',
+    bairro: 'Martim de Sá',
     points: [
       { latitude: -23.632555, longitude: -45.38731 },
       { latitude: -23.621571, longitude: -45.385203 },
     ],
   },
   {
-    bairro: 'Massaguacu',
+    bairro: 'Massaguaçu',
     points: [
       { latitude: -23.585698, longitude: -45.339312 },
       { latitude: -23.595496, longitude: -45.343728 },
     ],
   },
   {
-    bairro: 'Morro do Algodao',
+    bairro: 'Morro do Algodão',
     points: [
       { latitude: -23.681814, longitude: -45.447555 },
       { latitude: -23.677173, longitude: -45.451081 },
@@ -153,7 +153,7 @@ const bairroSchoolSeeds = [
     ],
   },
   {
-    bairro: 'Pereque Mirim',
+    bairro: 'Perequê Mirim',
     points: [
       { latitude: -23.707754, longitude: -45.430901 },
       { latitude: -23.72027, longitude: -45.438537 },
@@ -181,7 +181,7 @@ const bairroSchoolSeeds = [
     ],
   },
   {
-    bairro: 'Sumare',
+    bairro: 'Sumaré',
     points: [
       { latitude: -23.621901, longitude: -45.395098 },
       { latitude: -23.619077, longitude: -45.403545 },
@@ -195,7 +195,7 @@ const bairroSchoolSeeds = [
     ],
   },
   {
-    bairro: 'Travessao',
+    bairro: 'Travessão',
     points: [
       { latitude: -23.70111, longitude: -45.445239 },
       { latitude: -23.692572, longitude: -45.445316 },
@@ -222,14 +222,14 @@ const descriptorCycle = ['Costa Norte', 'Serra do Mar', 'Vila Caicara', 'Parque 
 const streetTypeCycle = ['Rua', 'Avenida', 'Travessa', 'Alameda', 'Estrada Municipal']
 const streetNameCycle = ['das Palmeiras', 'do Contorno', 'dos Ipes', 'da Restinga', 'do Farol', 'dos Coqueiros', 'do Mirante', 'da Lagoa', 'da Serra', 'do Pontal']
 const issueTemplates = [
-  { tipo: 'Hidraulica', titulo: 'Infiltracao identificada na', locais: ['Biblioteca', 'Cozinha', 'Refeitorio', 'Banheiro infantil', 'Sala 2'] },
-  { tipo: 'Eletrica', titulo: 'Oscilacao eletrica registrada em', locais: ['Laboratorio', 'Sala 4', 'Secretaria', 'Sala dos professores', 'Bloco A'] },
+  { tipo: 'Hidraulica', titulo: 'Infiltração identificada na', locais: ['Biblioteca', 'Cozinha', 'Refeitorio', 'Banheiro infantil', 'Sala 2'] },
+  { tipo: 'Eletrica', titulo: 'Oscilação elétrica registrada em', locais: ['Laboratorio', 'Sala 4', 'Secretaria', 'Sala dos professores', 'Bloco A'] },
   { tipo: 'Estrutural', titulo: 'Fissura observada em', locais: ['Patio coberto', 'Corredor', 'Sala multifuncional', 'Bloco B', 'Area externa'] },
   { tipo: 'Seguranca', titulo: 'Ponto de risco encontrado em', locais: ['Entrada', 'Entrada lateral', 'Portaria', 'Diretoria', 'Cobertura'] },
   { tipo: 'Acessibilidade', titulo: 'Ajuste de acessibilidade pendente em', locais: ['Entrada', 'Corredor', 'Sala 1', 'Patio', 'Secretaria'] },
-  { tipo: 'Equipamento', titulo: 'Equipamento indisponivel em', locais: ['Laboratorio', 'Biblioteca', 'Sala 3', 'Sala 5', 'Refeitorio'] },
-  { tipo: 'Mobiliario', titulo: 'Mobiliario danificado em', locais: ['Sala 1', 'Sala 2', 'Sala 3', 'Sala 4', 'Diretoria'] },
-  { tipo: 'Limpeza', titulo: 'Demanda de limpeza reforcada em', locais: ['Patio', 'Corredor', 'Refeitorio', 'Area externa', 'Banheiro infantil'] },
+  { tipo: 'Equipamento', titulo: 'Equipamento indisponível em', locais: ['Laboratorio', 'Biblioteca', 'Sala 3', 'Sala 5', 'Refeitorio'] },
+  { tipo: 'Mobiliario', titulo: 'Mobiliário danificado em', locais: ['Sala 1', 'Sala 2', 'Sala 3', 'Sala 4', 'Diretoria'] },
+  { tipo: 'Limpeza', titulo: 'Demanda de limpeza reforçada em', locais: ['Patio', 'Corredor', 'Refeitorio', 'Area externa', 'Banheiro infantil'] },
   { tipo: 'Tecnologia', titulo: 'Falha de conectividade em', locais: ['Laboratorio', 'Sala 4', 'Sala 5', 'Secretaria', 'Bloco B'] },
   { tipo: 'Outros', titulo: 'Ajuste operacional solicitado para', locais: ['Portaria', 'Almoxarifado', 'Cobertura', 'Sala dos professores', 'Area externa'] },
 ]

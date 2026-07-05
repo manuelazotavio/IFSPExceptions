@@ -196,8 +196,8 @@ export function Usuarios() {
       doc.text('Usuários cadastrados', margin, 14)
       doc.setFont('helvetica', 'normal')
       doc.setFontSize(8.5)
-      doc.text('Secretaria Municipal de Educacao - Caraguatatuba', margin, 21)
-      doc.text('Relatorio administrativo de acessos do sistema', margin, 27)
+      doc.text('Secretaria Municipal de Educação - Caraguatatuba', margin, 21)
+      doc.text('Relatório administrativo de acessos do sistema', margin, 27)
       doc.setTextColor(23, 32, 51)
     }
 

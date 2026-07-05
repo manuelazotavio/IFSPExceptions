@@ -24,7 +24,9 @@ const LEGACY_ESCOLA_IDS = new Map([
 ])
 
 function mojibakeScore(value) {
-  return (String(value ?? '').match(/[\u00C3\u00C2]/g) || []).length
+  const text = String(value ?? '')
+  if (/\uFFFD/.test(text)) return Infinity
+  return (text.match(/[\u00C3\u00C2]/g) || []).length
 }
 
 function repairText(value) {
@@ -92,7 +94,7 @@ function toOptionalComodos(record, escolaNome) {
 
   return rawComodos.map((item, index) => {
     const codigo = cleanRequiredAsciiText(item?.codigo, 'codigo', `${escolaNome} / comodo ${index + 1}`)
-    const nome = cleanRequiredAsciiText(item?.ambiente ?? item?.nome, 'nome', `${escolaNome} / comodo ${index + 1}`)
+    const nome = cleanRequiredText(item?.ambiente ?? item?.nome, 'nome', `${escolaNome} / comodo ${index + 1}`)
 
     if (seenCodes.has(codigo)) {
       throw new Error(`Codigo de comodo duplicado detectado para ${escolaNome}: ${codigo}.`)
@@ -123,6 +125,15 @@ const STATUS_SEED_MAP = new Map([
   ['resolvida', 'Resolvida'],
   ['concluida', 'Resolvida'],
   ['fechada', 'Resolvida'],
+])
+
+const STATUS_DISPLAY_LABELS = new Map([
+  ['Aberta', 'Aberta'],
+  ['Aguardando aprovacao', 'Aguardando aprovação'],
+  ['Em analise', 'Em análise'],
+  ['Em andamento', 'Em andamento'],
+  ['Aguardando visita tecnica', 'Aguardando visita técnica'],
+  ['Resolvida', 'Resolvida'],
 ])
 
 function mapSeedEnum(value, fieldName, optionsMap, recordName) {
@@ -229,7 +240,7 @@ async function loadOcorrenciasSeed(escolas) {
       throw new Error(`Ocorrencia com escola invalida no arquivo oficial: ${escolaId}.`)
     }
 
-    const titulo = cleanRequiredAsciiText(record?.titulo, 'titulo', `ocorrencia ${seedIndex}`)
+    const titulo = cleanRequiredText(record?.titulo, 'titulo', `ocorrencia ${seedIndex}`)
     const dataEnvio = cleanRequiredText(record?.dataEnvio, 'dataEnvio', titulo)
     const aprovadaPelaEscola = record?.aprovadaPelaEscola !== false
     const status = mapSeedEnum(record?.status, 'status', STATUS_SEED_MAP, titulo)
@@ -239,18 +250,18 @@ async function loadOcorrenciasSeed(escolas) {
       protocolo: String(700000 + index + 1),
       escolaId,
       titulo,
-      descricao: cleanRequiredAsciiText(record?.descricao, 'descricao', titulo),
-      tipo: cleanRequiredAsciiText(record?.tipo, 'tipo', titulo),
+      descricao: cleanRequiredText(record?.descricao, 'descricao', titulo),
+      tipo: cleanRequiredText(record?.tipo, 'tipo', titulo),
       criticidade: mapSeedEnum(record?.criticidade, 'criticidade', CRITICIDADE_SEED_MAP, titulo),
       status,
-      localizacaoInterna: cleanOptionalAsciiText(record?.localizacaoInterna),
-      endereco: cleanOptionalAsciiText(record?.endereco),
+      localizacaoInterna: cleanOptionalText(record?.localizacaoInterna),
+      endereco: cleanOptionalText(record?.endereco),
       dataEnvio,
       dataAprovacao: aprovadaPelaEscola ? addDays(dataEnvio, 4) : null,
       dataResolucao: status === 'Resolvida' ? addDays(dataEnvio, 8) : null,
       aprovadaPelaEscola,
       criadoPorEmail: cleanRequiredText(record?.criadoPorEmail, 'criadoPorEmail', titulo).toLowerCase(),
-      criadoPorNome: cleanOptionalAsciiText(record?.criadoPorNome),
+      criadoPorNome: cleanOptionalText(record?.criadoPorNome),
       fotos: Array.isArray(record?.fotos)
         ? record.fotos.map((item) => cleanOptionalAsciiText(item)).filter(Boolean)
         : [],
@@ -261,11 +272,11 @@ async function loadOcorrenciasSeed(escolas) {
 const ocorrenciasSeed = await loadOcorrenciasSeed(escolasSeed)
 
 const usuariosExternosSeed = [
-  { email: 'externo@escola.gov.br', nome: 'Usuario Externo', escolaId: 'esc-001' },
+  { email: 'externo@escola.gov.br', nome: 'Usuário Externo', escolaId: 'esc-001' },
   { email: 'externo.esc-001@escola.gov.br', nome: 'Fernanda Souza', escolaId: 'esc-001' },
   { email: 'externo.esc-003@escola.gov.br', nome: 'Juliana Costa', escolaId: 'esc-003' },
   { email: 'externo.esc-004@escola.gov.br', nome: 'Marcos Pereira', escolaId: 'esc-004' },
-  { email: 'externo.esc-005@escola.gov.br', nome: 'Patricia Lima', escolaId: 'esc-005' },
+  { email: 'externo.esc-005@escola.gov.br', nome: 'Patrícia Lima', escolaId: 'esc-005' },
   { email: 'externo.esc-006@escola.gov.br', nome: 'Anderson Santos', escolaId: 'esc-006' },
   { email: 'externo.esc-007@escola.gov.br', nome: 'Camila Rocha', escolaId: 'esc-007' },
   { email: 'externo.esc-008@escola.gov.br', nome: 'Diego Martins', escolaId: 'esc-008' },
@@ -280,8 +291,8 @@ function buildOcorrenciaInteracoes(ocorrencia) {
     origem: 'sistema',
     autor: 'Sistema',
     mensagem: ocorrencia.aprovadaPelaEscola
-      ? 'Ocorrencia aberta pela escola.'
-      : 'Ocorrencia enviada e aguardando aprovacao.',
+      ? 'Ocorrência aberta pela escola.'
+      : 'Ocorrência enviada e aguardando aprovação.',
     status: ocorrencia.aprovadaPelaEscola ? 'Aberta' : 'Aguardando aprovacao',
   }]
 
@@ -289,20 +300,20 @@ function buildOcorrenciaInteracoes(ocorrencia) {
     interacoes.push({
       origem: 'seduc',
       autor: 'Ernesto Cavalcanti',
-      mensagem: 'Protocolo homologado, estamos comecando as tratativas.',
+      mensagem: 'Protocolo homologado, estamos começando as tratativas.',
     })
   }
 
   if (ocorrencia.status !== 'Aberta' && ocorrencia.status !== 'Aguardando aprovacao') {
     interacoes.push({
       origem: 'escola',
-      autor: 'Direcao da escola',
-      mensagem: 'Os tecnicos vieram aqui hoje para avaliar o problema.',
+      autor: 'Direção da escola',
+      mensagem: 'Os técnicos vieram aqui hoje para avaliar o problema.',
     })
     interacoes.push({
       origem: 'sistema',
       autor: 'Sistema',
-      mensagem: `Status atualizado para "${ocorrencia.status}".`,
+      mensagem: `Status atualizado para "${STATUS_DISPLAY_LABELS.get(ocorrencia.status) || ocorrencia.status}".`,
       status: ocorrencia.status,
     })
   }
@@ -311,7 +322,7 @@ function buildOcorrenciaInteracoes(ocorrencia) {
     interacoes.push({
       origem: 'seduc',
       autor: 'Ernesto Cavalcanti',
-      mensagem: 'Servico concluido. Ocorrencia finalizada.',
+      mensagem: 'Serviço concluído. Ocorrência finalizada.',
       status: 'Resolvida',
     })
   }
@@ -338,17 +349,22 @@ async function main() {
     await prisma.escola.upsert({
       where: { id: escola.id },
       update: escolaPayload,
-      create: {
-        ...escolaPayload,
-        ...(comodos.length ? { comodos: { create: comodos } } : {}),
-      },
+      create: escolaPayload,
     })
+
+    await prisma.comodo.deleteMany({ where: { escolaId: escola.id } })
+
+    if (comodos.length > 0) {
+      await prisma.comodo.createMany({
+        data: comodos.map((comodo) => ({ ...comodo, escolaId: escola.id })),
+      })
+    }
   }
 
   const senhaHash = await bcrypt.hash('123456', 10)
 
   const usuarios = [
-    { email: 'seduc@escola.gov.br', nome: 'Joao Beserra', role: 'SEDUC', escolaId: null },
+    { email: 'seduc@escola.gov.br', nome: 'João Beserra', role: 'SEDUC', escolaId: null },
     { email: 'diretor@escola.gov.br', nome: 'Diretora Alberto Souza', role: 'DIRETOR', escolaId: 'esc-001' },
     ...usuariosExternosSeed.map((usuario) => ({ ...usuario, role: 'EXTERNO' })),
   ]
