@@ -556,7 +556,7 @@ function KanbanOcorrencias({ lista, statusColunas, onNavigate, onStatusChange })
   }
 
   return (
-    <div className="flex flex-wrap gap-3 pb-2">
+    <div className="flex gap-3 pb-2">
       {statusColunas.map((status) => {
         const itens = lista.filter((item) => item.status === status)
 
@@ -570,7 +570,7 @@ function KanbanOcorrencias({ lista, statusColunas, onNavigate, onStatusChange })
             }}
             onDragLeave={() => setStatusDestino((current) => (current === status ? '' : current))}
             onDrop={(event) => handleDrop(event, status)}
-            className={`min-h-96 min-w-64 flex-1 rounded-xl border bg-slate-50/70 transition ${statusDestino === status ? 'border-primary bg-primary-50/40' : 'border-slate-200'}`}
+            className={`min-h-96 min-w-0 flex-1 rounded-xl border bg-slate-50/70 transition ${statusDestino === status ? 'border-primary bg-primary-50/40' : 'border-slate-200'}`}
           >
             <div className="flex min-h-14 items-start justify-between gap-2 border-b border-slate-200 px-3 py-3">
               <h2 className="text-sm font-800 leading-tight text-slate-900">{formatDisplayLabel(status)}</h2>
