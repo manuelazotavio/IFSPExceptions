@@ -8,7 +8,7 @@ const prisma = new PrismaClient()
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-const escolasJsonPath = path.resolve(__dirname, '../../frontend/public/geo/unidades_seduc_caraguatatuba.json')
+const escolasJsonPath = path.resolve(__dirname, 'seeds/unidades_seduc_caraguatatuba.json')
 
 // Preserve ids already referenced by ocorrencias and usuarios seeds.
 const LEGACY_ESCOLA_IDS = new Map([
