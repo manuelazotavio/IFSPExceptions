@@ -81,7 +81,7 @@ async function fetchFirstAvailableGeoJson(urls) {
         return data
       }
 
-      throw new Error(`GeoJSON invalido em ${url}`)
+      throw new Error(`GeoJSON inválido em ${url}`)
     } catch (error) {
       console.warn(error.message)
     }
@@ -606,7 +606,7 @@ export function Mapa({ onNavigate }) {
   const avisoGlobal = useMemo(() => {
     if (erroMapa) {
       return {
-        title: 'Alguns dados estao sendo exibidos em modo temporario porque a API nao respondeu.',
+        title: 'Alguns dados estão sendo exibidos em modo temporário porque a API não respondeu.',
         detail: erroMapa,
       }
     }
@@ -919,7 +919,7 @@ export function Mapa({ onNavigate }) {
               <button
                 type="button"
                 onClick={handleSearchEscola}
-                className="h-10 shrink-0 rounded-md bg-primary px-3 text-sm font-bold text-white hover:bg-primary-strong"
+                className="cursor-pointer h-10 shrink-0 rounded-md bg-primary px-3 text-sm font-bold text-white hover:bg-primary-strong"
               >
                 Buscar
               </button>
@@ -952,8 +952,8 @@ export function Mapa({ onNavigate }) {
               {metricContext.title}
             </p>
             <div className="mt-2 grid grid-cols-2 gap-2">
-              <MetricCompact label="Ocorrencias" value={metricContext.metrics.totalOcorrencias} />
-              <MetricCompact label="Criticas" value={metricContext.metrics.criticas} />
+              <MetricCompact label="Ocorrências" value={metricContext.metrics.totalOcorrencias} />
+              <MetricCompact label="Críticas" value={metricContext.metrics.criticas} />
               <MetricCompact label="Atencao" value={metricContext.metrics.atencao} />
               <MetricCompact label="Baixas" value={metricContext.metrics.baixas} />
               <div className="col-span-2">
@@ -996,7 +996,7 @@ export function Mapa({ onNavigate }) {
                 <Tooltip direction="top" offset={[0, -16]}>
                   <div className="space-y-1">
                     <strong>{item.escolaNome}</strong>
-                    <p>{item.totalOcorrencias} ocorrencias</p>
+                    <p>{item.totalOcorrencias} ocorrências</p>
                   </div>
                 </Tooltip>
               </Marker>
@@ -1036,7 +1036,7 @@ export function Mapa({ onNavigate }) {
                   onChange={(event) => setShowBairrosLayer(event.target.checked)}
                   className="h-3.5 w-3.5 rounded border border-slate-300 text-primary"
                 />
-                Divisao por bairros
+                Divisão por bairros
               </label>
               <label className="flex items-center gap-2">
                 <input
@@ -1053,7 +1053,7 @@ export function Mapa({ onNavigate }) {
                 <p className="truncate text-[10px] font-bold uppercase tracking-wide text-slate-500">
                   Bairro: {selectedBairroStats.nome}
                 </p>
-                <button
+                <button className="cursor-pointer"
                   type="button"
                   onClick={() => setSelectedBairro('')}
                   className="mt-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-50"
@@ -1117,13 +1117,13 @@ function EscolaDrawer({ detalhe, drawerAberto, loadingDetalhe, ocorrencias, onCl
             <button
               type="button"
               onClick={onOpenSchoolRegistry}
-              className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-4 py-2 text-left text-sm font-bold text-slate-700 hover:bg-slate-50"
+              className="cursor-pointer min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-4 py-2 text-left text-sm font-bold text-slate-700 hover:bg-slate-50"
             >
               <span className="block truncate">
                 {detalhe?.escolaNome || detalhe?.nome || 'Detalhe da escola'}
               </span>
             </button>
-            <button type="button" onClick={onClose} className="shrink-0 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
+            <button type="button" onClick={onClose} className="cursor-pointer shrink-0 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
               Fechar
             </button>
           </div>
@@ -1158,12 +1158,12 @@ function EscolaDrawer({ detalhe, drawerAberto, loadingDetalhe, ocorrencias, onCl
                         <span className="text-xs font-semibold text-slate-500">{ocorrencia.data || 'Sem data'}</span>
                       </div>
                       <p className="mt-3 text-sm leading-6 text-slate-600">
-                        {ocorrencia.descricao || 'Sem descricao resumida para esta ocorrencia.'}
+                        {ocorrencia.descricao || 'Sem descrição resumida para esta ocorrência.'}
                       </p>
                     </article>
                   )) : (
                     <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-semibold text-slate-500">
-                      Nenhuma ocorrencia encontrada para esta escola.
+                      Nenhuma ocorrência encontrada para esta escola.
                     </div>
                   )}
                 </div>
@@ -1171,7 +1171,7 @@ function EscolaDrawer({ detalhe, drawerAberto, loadingDetalhe, ocorrencias, onCl
             </>
           ) : !loadingDetalhe ? (
             <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm font-semibold text-slate-500">
-              Nao foi possivel localizar os dados desta escola.
+              Não foi possível localizar os dados desta escola.
             </div>
           ) : null}
         </div>

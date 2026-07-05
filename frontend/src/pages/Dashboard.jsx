@@ -240,7 +240,7 @@ export function Dashboard({ onNavigate, user }) {
           <Card>
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-800 text-slate-950">Escolas com mais ocorrências</h2>
-              <button onClick={() => onNavigate('/ocorrencias')} className="cursor-pointer text-sm font-bold text-primary-strong">Ver lista</button>
+              <button className="cursor-pointer" onClick={() => onNavigate('/ocorrencias')} className="cursor-pointer text-sm font-bold text-primary-strong">Ver lista</button>
             </div>
             <div className="space-y-3">
               {escolasRank.slice(0, 5).map((escola) => (
@@ -273,7 +273,7 @@ export function Dashboard({ onNavigate, user }) {
           <h2 className="mb-4 text-lg font-800 text-slate-950">Prioridades mais antigas</h2>
           <div className="space-y-3">
             {sortOcorrencias(escopo).slice(0, 5).map((item) => (
-              <button key={item.id} onClick={() => onNavigate(`/ocorrencias/${item.id}`)} className="block w-full cursor-pointer rounded-md border border-slate-100 px-3 py-2 text-left hover:bg-slate-50">
+              <button className="cursor-pointer" key={item.id} onClick={() => onNavigate(`/ocorrencias/${item.id}`)} className="block w-full cursor-pointer rounded-md border border-slate-100 px-3 py-2 text-left hover:bg-slate-50">
                 <p className="font-bold text-slate-800">{formatLabel(item.titulo)}</p>
                 <p className="text-sm text-slate-500">{formatLabel(item.escola)} - {item.dataEnvio}</p>
               </button>
@@ -323,7 +323,7 @@ function SchoolChartSelect({ value, onChange, escolas }) {
 
   return (
     <div className="relative">
-      <button
+      <button className="cursor-pointer"
         type="button"
         onClick={() => setOpen((current) => !current)}
         className={`flex h-12 w-full cursor-pointer items-center justify-between rounded-lg border bg-white px-3 text-left transition ${open ? 'border-primary-500 ring-4 ring-primary-50' : 'border-slate-200 hover:border-primary-300'
@@ -351,7 +351,7 @@ function SchoolChartSelect({ value, onChange, escolas }) {
             </label>
           </div>
 
-          <button
+          <button className="cursor-pointer"
             type="button"
             onClick={() => selectValue('')}
             className={`flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-left text-sm font-bold transition ${value === '' ? 'bg-primary-50 text-primary-strong' : 'text-slate-700 hover:bg-slate-50'
@@ -365,7 +365,7 @@ function SchoolChartSelect({ value, onChange, escolas }) {
           </button>
 
           {filteredEscolas.map((escola) => (
-            <button
+            <button className="cursor-pointer"
               key={escola.id}
               type="button"
               onClick={() => selectValue(escola.id)}

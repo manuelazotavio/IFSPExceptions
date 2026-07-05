@@ -3,6 +3,7 @@ import { getSchoolStats } from '../utils/metrics.js'
 import { loadCustomSchools, loadSchoolCatalog, saveCustomSchool } from '../utils/schools.js'
 import { criarEscola, listarOcorrencias } from '../services/api.js'
 import { Badge, Card, FilterSelect } from '../components/ui.jsx'
+import { formatDisplayLabel } from '../utils/labels.js'
 
 export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
   const [schoolList, setSchoolList] = useState(loadCustomSchools)
@@ -101,7 +102,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
   async function preencherEnderecoPorCep() {
     const cep = normalizeCep(novoCadastro.cep)
     if (cep.length !== 8) {
-      setCepFeedback('Informe um CEP valido com 8 digitos.')
+      setCepFeedback('Informe um CEP válido com 8 dígitos.')
       return
     }
 
@@ -127,9 +128,9 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
         longitude: geocode?.longitude || prev.longitude,
       }))
 
-      setCepFeedback(geocode ? 'Endereco preenchido com latitude e longitude.' : 'Endereco preenchido. Ajuste latitude e longitude se necessario.')
+      setCepFeedback(geocode ? 'Endereço preenchido com latitude e longitude.' : 'Endereço preenchido. Ajuste latitude e longitude se necessário.')
     } catch (error) {
-      setCepFeedback(error.message || 'Nao foi possivel localizar o CEP informado.')
+      setCepFeedback(error.message || 'Não foi possível localizar o CEP informado.')
     } finally {
       setLoadingCep(false)
     }
@@ -240,7 +241,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
               Exibindo a escola selecionada no mapa de calor.
             </p>
           </div>
-          <button
+          <button className="cursor-pointer"
             type="button"
             onClick={() => onNavigate('/escolas')}
             className="rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
@@ -259,11 +260,11 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
+              className="cursor-pointer rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
             >
               Importar csv
             </button>
-            <button
+            <button className="cursor-pointer"
               type="button"
               onClick={() => setIsModalOpen(true)}
               className="rounded-md bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-strong"
@@ -296,7 +297,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
           <table className="w-full min-w-[900px] text-sm">
             <thead className="bg-slate-50 text-left text-xs font-800 uppercase text-slate-500">
               <tr>
-                {['Nome', 'Bairro', 'Endereco', 'Status', 'Ocorrencias', 'Criticas', 'Cadastro'].map((head) => <th key={head} className="px-4 py-3">{head}</th>)}
+                {['Nome', 'Bairro', 'Endereço', 'Status', 'Ocorrências', 'Críticas', 'Cadastro'].map((head) => <th key={head} className="px-4 py-3">{head}</th>)}
               </tr>
             </thead>
             <tbody>
@@ -309,7 +310,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                     className="cursor-pointer border-t border-slate-100 hover:bg-primary-50/40"
                   >
                     <td className="px-4 py-3 font-bold">{escola.nome}</td>
-                    <td className="px-4 py-3">{escola.bairro}</td>
+                    <td className="px-4 py-3">{formatDisplayLabel(escola.bairro)}</td>
                     <td className="px-4 py-3">{escola.endereco}</td>
                     <td className="px-4 py-3"><Badge>{escola.status}</Badge></td>
                     <td className="px-4 py-3">{stats.total}</td>
@@ -339,7 +340,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                 <h3 className="text-lg font-800 text-slate-950">Cadastrar escola</h3>
                 <p className="mt-1 text-sm text-slate-500">Adicione uma nova unidade para aparecer na listagem.</p>
               </div>
-              <button type="button" onClick={() => setIsModalOpen(false)} className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 sm:w-auto">
+              <button className="cursor-pointer" type="button" onClick={() => setIsModalOpen(false)} className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 sm:w-auto">
                 Fechar
               </button>
             </div>
@@ -368,7 +369,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                   type="button"
                   onClick={preencherEnderecoPorCep}
                   disabled={loadingCep}
-                  className="mt-[22px] rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60"
+                  className="cursor-pointer mt-[22px] rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60"
                 >
                   {loadingCep ? 'Buscando...' : 'Preencher'}
                 </button>
@@ -379,7 +380,7 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                 <input required value={novoCadastro.bairro} onChange={(event) => updateNovoCadastro('bairro', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500" />
               </label>
               <label className="block">
-                <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Endereco</span>
+                <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Endereço</span>
                 <input required value={novoCadastro.endereco} onChange={(event) => updateNovoCadastro('endereco', event.target.value)} className="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500" />
               </label>
               <div className="grid gap-4 md:grid-cols-2">
@@ -413,21 +414,17 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                 </label>
               </div>
               <label className="block">
-                <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Descricao</span>
-                <textarea value={novoCadastro.descricao} onChange={(event) => updateNovoCadastro('descricao', event.target.value)} className="min-h-24 w-full rounded-md border border-slate-200 bg-white p-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500" placeholder="Descreva a escola e seus ambientes principais..." />
-              </label>
-              <label className="block">
                 <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Foto</span>
                 <input type="file" accept="image/*" onChange={handleFotoSelecionada} className="block w-full text-sm font-semibold text-slate-600 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-bold file:text-slate-700 hover:file:bg-slate-200" />
                 {novoCadastro.fotoNome ? <p className="mt-2 text-xs font-semibold text-slate-500">Arquivo selecionado: {novoCadastro.fotoNome}</p> : null}
                 {novoCadastro.fotoUrl ? (
                   <div className="mt-3 overflow-hidden rounded-md border border-slate-200">
-                    <img src={novoCadastro.fotoUrl} alt="Previa da escola" className="h-40 w-full object-cover" />
+                    <img src={novoCadastro.fotoUrl} alt="Prévia da escola" className="h-40 w-full object-cover" />
                   </div>
                 ) : null}
               </label>
               <div className="block">
-                <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Comodos cadastrados</span>
+                <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-slate-500">Cômodos cadastrados</span>
                 <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_140px_auto]">
                   <input
                     value={novoComodo.nome}
@@ -451,32 +448,32 @@ export function Escolas({ onNavigate, escolaIdFiltro = '' }) {
                       }
                     }}
                     className="h-11 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-primary-500"
-                    placeholder="Codigo"
+                    placeholder="Código"
                   />
-                  <button type="button" onClick={addComodo} className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
+                  <button type="button" onClick={addComodo} className="cursor-pointer rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
                     Adicionar
                   </button>
                 </div>
                 <p className="mt-2 text-xs font-semibold text-slate-500">
-                  Cadastre cada ambiente como "Comodo - Codigo". No relatorio, comodos iguais sao somados automaticamente.
+                  Cadastre cada ambiente como "Cômodo - Código". No relatório, cômodos iguais são somados automaticamente.
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {novoCadastro.comodos.map((comodo) => (
-                    <button key={`${comodo.nome}-${comodo.codigo}`} type="button" onClick={() => removeComodo(comodo)} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-700 hover:bg-slate-100">
+                    <button className="cursor-pointer" key={`${comodo.nome}-${comodo.codigo}`} type="button" onClick={() => removeComodo(comodo)} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-700 hover:bg-slate-100">
                       {comodo.nome} - {comodo.codigo} x
                     </button>
                   ))}
-                  {!novoCadastro.comodos.length && <p className="text-xs font-semibold text-slate-500">Nenhum comodo adicionado ainda.</p>}
+                  {!novoCadastro.comodos.length && <p className="text-xs font-semibold text-slate-500">Nenhum cômodo adicionado ainda.</p>}
                 </div>
               </div>
               {erroCadastro && (
                 <p className="rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{erroCadastro}</p>
               )}
               <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="w-full rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 sm:w-auto">
+                <button className="cursor-pointer" type="button" onClick={() => setIsModalOpen(false)} className="w-full rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 sm:w-auto">
                   Cancelar
                 </button>
-                <button type="submit" disabled={salvandoEscola} className="w-full rounded-md bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-strong disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
+                <button type="submit" disabled={salvandoEscola} className="cursor-pointer w-full rounded-md bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-strong disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
                   {salvandoEscola ? 'Salvando...' : 'Salvar escola'}
                 </button>
               </div>
@@ -505,12 +502,12 @@ function formatCepInput(value) {
 async function fetchCepData(cep) {
   const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
   if (!response.ok) {
-    throw new Error('Nao foi possivel consultar o CEP.')
+    throw new Error('Não foi possível consultar o CEP.')
   }
 
   const data = await response.json()
   if (data.erro) {
-    throw new Error('CEP nao encontrado.')
+    throw new Error('CEP não encontrado.')
   }
 
   return data

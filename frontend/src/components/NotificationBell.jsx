@@ -12,7 +12,7 @@ export function NotificationBell({ notificacoes, onAbrir, onLimpar }) {
 
   return (
     <div className="relative">
-      <button
+      <button className="cursor-pointer"
         type="button"
         onClick={() => setOpen((current) => !current)}
         aria-label="Notificacoes"
@@ -46,7 +46,7 @@ export function NotificationBell({ notificacoes, onAbrir, onLimpar }) {
               <p className="px-4 py-8 text-center text-sm font-semibold text-slate-400">Nenhuma notificação no momento.</p>
             )}
             {notificacoes.map((item) => (
-              <button
+              <button className="cursor-pointer"
                 key={item.id}
                 type="button"
                 onClick={() => abrirNotificacao(item)}

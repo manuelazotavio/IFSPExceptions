@@ -4,7 +4,8 @@ import { diasEmAberto, sortOcorrencias } from '../utils/metrics.js'
 import { Card, FilterSelect, Modal, Toast } from '../components/ui.jsx'
 import { Pagination } from '../components/Pagination.jsx'
 import { Icon } from '../components/Icons.jsx'
-import { criarOcorrencia, listarEscolas, listarOcorrencias, uploadFotosOcorrencia } from '../services/api.js'
+import { atualizarOcorrencia, criarOcorrencia, listarEscolas, listarOcorrencias, uploadFotosOcorrencia } from '../services/api.js'
+import { formatDisplayLabel } from '../utils/labels.js'
 
 const CAMPOS_VAZIOS = { escolaId: '', titulo: '', tipo: '', criticidade: '', localizacaoInterna: '', descricao: '' }
 const ITENS_POR_PAGINA = 10
@@ -17,10 +18,10 @@ const COR_LINHA_CRITICIDADE = {
 }
 
 const COR_KANBAN_CRITICIDADE = {
-  Critica: 'border-red-200 bg-red-50 text-red-700',
-  Alta: 'border-orange-200 bg-orange-50 text-orange-700',
-  Media: 'border-amber-200 bg-amber-50 text-amber-700',
-  Baixa: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+  Critica: 'bg-red-100/60 hover:border-red-100 hover:bg-red-100/80',
+  Alta: 'bg-orange-100/60 hover:border-orange-100 hover:bg-orange-100/80',
+  Media: 'bg-amber-100/60 hover:border-amber-100 hover:bg-amber-100/80',
+  Baixa: 'bg-emerald-100/60 hover:border-emerald-100 hover:bg-emerald-100/80',
 }
 
 export function Ocorrencias({ onNavigate, user }) {
@@ -179,9 +180,39 @@ export function Ocorrencias({ onNavigate, user }) {
     }
   }
 
+  const alterarStatusKanban = async (ocorrenciaId, novoStatus) => {
+    const ocorrenciaAtual = ocorrencias.find((item) => item.id === ocorrenciaId)
+    if (!ocorrenciaAtual || ocorrenciaAtual.status === novoStatus) return
+
+    setOcorrencias((prev) => prev.map((item) => (
+      item.id === ocorrenciaId ? { ...item, status: novoStatus } : item
+    )))
+
+    try {
+      const atualizada = await atualizarOcorrencia(ocorrenciaId, { status: novoStatus })
+      setOcorrencias((prev) => prev.map((item) => (
+        item.id === ocorrenciaId ? atualizada : item
+      )))
+      setToast({
+        type: 'success',
+        title: 'Status atualizado',
+        message: `${ocorrenciaAtual.protocolo} movida para ${formatDisplayLabel(novoStatus)}.`,
+      })
+    } catch (error) {
+      setOcorrencias((prev) => prev.map((item) => (
+        item.id === ocorrenciaId ? ocorrenciaAtual : item
+      )))
+      setToast({
+        type: 'error',
+        title: 'Erro ao mover ocorrência',
+        message: error.message,
+      })
+    }
+  }
+
   const exportarCsv = () => {
-    const cabecalho = ['Protocolo', 'Escola', 'Bairro', 'Tipo', 'Criticidade', 'Status', 'Localizacao', 'Envio']
-    const linhas = lista.map((item) => [item.protocolo, item.escola, item.bairro, item.tipo, item.criticidade, item.status, item.localizacaoInterna, item.dataEnvio])
+    const cabecalho = ['Protocolo', 'Escola', 'Bairro', 'Tipo', 'Criticidade', 'Status', 'Localização', 'Envio']
+    const linhas = lista.map((item) => [item.protocolo, item.escola, formatDisplayLabel(item.bairro), formatDisplayLabel(item.tipo), formatDisplayLabel(item.criticidade), formatDisplayLabel(item.status), formatDisplayLabel(item.localizacaoInterna), item.dataEnvio])
     const csv = [cabecalho, ...linhas].map((linha) => linha.map((valor) => `"${String(valor).replace(/"/g, '""')}"`).join(',')).join('\n')
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }))
     const link = document.createElement('a')
@@ -212,11 +243,11 @@ export function Ocorrencias({ onNavigate, user }) {
         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
           <button
             onClick={exportarCsv}
-            className="w-full sm:w-auto rounded-lg border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors duration-200 flex items-center justify-center gap-2"
+            className="cursor-pointer w-full sm:w-auto rounded-lg border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors duration-200 flex items-center justify-center gap-2"
           >
             Exportar
           </button>
-          <button
+          <button className="cursor-pointer"
             onClick={() => setModalAberto(true)}
             className="w-full sm:w-auto rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-primary-strong transition-colors duration-200 flex items-center justify-center gap-2"
           >
@@ -243,7 +274,7 @@ export function Ocorrencias({ onNavigate, user }) {
           ['listagem', 'Listagem'],
           ['kanban', 'Kanban'],
         ].map(([valor, label]) => (
-          <button
+          <button className="cursor-pointer"
             key={valor}
             type="button"
             onClick={() => setVisualizacao(valor)}
@@ -262,7 +293,7 @@ export function Ocorrencias({ onNavigate, user }) {
             const aberto = expandidos.has(item.id)
             return (
               <div key={item.id}>
-                <button
+                <button className="cursor-pointer"
                   type="button"
                   onClick={() => toggleExpandido(item.id)}
                   aria-expanded={aberto}
@@ -279,29 +310,29 @@ export function Ocorrencias({ onNavigate, user }) {
                     </div>
                     <div>
                       <span className="block text-xs font-bold tracking-wide text-slate-500">Bairro:</span>
-                      <span className="block text-slate-700">{item.bairro}</span>
+                      <span className="block text-slate-700">{formatDisplayLabel(item.bairro)}</span>
                     </div>
                     <div>
                       <span className="block text-xs font-bold tracking-wide text-slate-500">Tipo:</span>
-                      <span className="block text-slate-700">{item.tipo}</span>
+                      <span className="block text-slate-700">{formatDisplayLabel(item.tipo)}</span>
                     </div>
                     <div>
                       <span className="block text-xs font-bold tracking-wide text-slate-500">Criticidade:</span>
-                      <span className="block text-slate-700">{item.criticidade}</span>
+                      <span className="block text-slate-700">{formatDisplayLabel(item.criticidade)}</span>
                     </div>
                     <div>
                       <span className="block text-xs font-bold tracking-wide text-slate-500">Status:</span>
-                      <span className="block text-slate-700">{item.status}</span>
+                      <span className="block text-slate-700">{formatDisplayLabel(item.status)}</span>
                     </div>
                     <div>
-                      <span className="block text-xs font-bold tracking-wide text-slate-500">Localizacao:</span>
-                      <span className="block text-slate-700">{item.localizacaoInterna}</span>
+                      <span className="block text-xs font-bold tracking-wide text-slate-500">Localização:</span>
+                      <span className="block text-slate-700">{formatDisplayLabel(item.localizacaoInterna)}</span>
                     </div>
                     <div>
                       <span className="block text-xs font-bold tracking-wide text-slate-500">Dias em aberto:</span>
                       <span className="block text-slate-700">{diasEmAberto(item.dataEnvio)}</span>
                     </div>
-                    <button
+                    <button className="cursor-pointer"
                       type="button"
                       onClick={() => onNavigate(`/ocorrencias/${item.id}`)}
                       className="mt-2 w-full rounded-md border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
@@ -324,7 +355,7 @@ export function Ocorrencias({ onNavigate, user }) {
         <table className="w-full min-w-[1100px] border-collapse rounded-2 text-sm">
           <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs font-extrabold tracking-wide">
             <tr className="divide-x divide-slate-200">
-              {['Protocolo', 'Escola', 'Bairro', 'Tipo', 'Criticidade', 'Status', 'Localizacao', 'Dias em aberto'].map((head) => (
+              {['Protocolo', 'Escola', 'Bairro', 'Tipo', 'Criticidade', 'Status', 'Localização', 'Dias em aberto'].map((head) => (
                 <th key={head} className="px-4 py-3">
                   {head}
                 </th>
@@ -340,11 +371,11 @@ export function Ocorrencias({ onNavigate, user }) {
               >
                 <td className="px-4 py-3 font-bold text-slate-800">{item.protocolo}</td>
                 <td className="px-4 py-3 font-bold text-slate-800">{item.escola}</td>
-                <td className="px-4 py-3 text-slate-600">{item.bairro}</td>
-                <td className="px-4 py-3 text-slate-600">{item.tipo}</td>
-                <td className="px-4 py-3">{item.criticidade}</td>
-                <td className="px-4 py-3">{item.status}</td>
-                <td className="px-4 py-3 text-slate-600">{item.localizacaoInterna}</td>
+                <td className="px-4 py-3 text-slate-600">{formatDisplayLabel(item.bairro)}</td>
+                <td className="px-4 py-3 text-slate-600">{formatDisplayLabel(item.tipo)}</td>
+                <td className="px-4 py-3">{formatDisplayLabel(item.criticidade)}</td>
+                <td className="px-4 py-3">{formatDisplayLabel(item.status)}</td>
+                <td className="px-4 py-3 text-slate-600">{formatDisplayLabel(item.localizacaoInterna)}</td>
                 <td className="px-4 py-3 text-slate-600">{diasEmAberto(item.dataEnvio)}</td>
               </tr>
             ))}
@@ -355,19 +386,19 @@ export function Ocorrencias({ onNavigate, user }) {
         <Pagination page={pagina} totalPages={totalPaginas} onPageChange={setPagina} totalItems={lista.length} pageSize={ITENS_POR_PAGINA} />
       )}
       {visualizacao === 'kanban' && (
-        <KanbanOcorrencias lista={lista} onNavigate={onNavigate} />
+        <KanbanOcorrencias lista={lista} onNavigate={onNavigate} onStatusChange={alterarStatusKanban} />
       )}
-      <Modal open={modalAberto} onClose={() => setModalAberto(false)} title="Nova ocorrencia">
+      <Modal open={modalAberto} onClose={() => setModalAberto(false)} title="Nova ocorrência">
         <div className="space-y-3">
           <label className="block">
             <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Escola <span className="text-red-500">*</span></span>
             <select value={novaOcorrencia.escolaId} onChange={(e) => setCampo('escolaId', e.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500">
               <option value="">Selecione...</option>
-              {escolas.map((escola) => <option key={escola.id} value={escola.id}>{escola.nome} - {escola.bairro}</option>)}
+              {escolas.map((escola) => <option key={escola.id} value={escola.id}>{escola.nome} - {formatDisplayLabel(escola.bairro)}</option>)}
             </select>
           </label>
           <label className="block">
-            <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Titulo <span className="text-red-500">*</span></span>
+            <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Título <span className="text-red-500">*</span></span>
             <input value={novaOcorrencia.titulo} onChange={(e) => setCampo('titulo', e.target.value)} className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm text-slate-700 outline-none focus:border-primary-500" />
           </label>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -387,7 +418,7 @@ export function Ocorrencias({ onNavigate, user }) {
             </label>
           </div>
           <label className="block">
-            <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Localizacao interna <span className="text-red-500">*</span></span>
+            <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Localização interna <span className="text-red-500">*</span></span>
             <select value={novaOcorrencia.localizacaoInterna} onChange={(e) => setCampo('localizacaoInterna', e.target.value)} className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-primary-500">
               <option value="">Selecione...</option>
               {locaisInternos.map((item) => <option key={item} value={item}>{item}</option>)}
@@ -400,7 +431,7 @@ export function Ocorrencias({ onNavigate, user }) {
           <div>
             <span className="mb-1 block text-xs font-bold tracking-wide text-slate-500">Fotos <span className="text-red-500">*</span></span>
             <input ref={fotoInputRef} type="file" accept="image/*" multiple onChange={handleFotoChange} className="hidden" />
-            <button type="button" onClick={handleFotoInputClick} className="flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
+            <button type="button" onClick={handleFotoInputClick} className="cursor-pointer flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
               <Icon name="image" className="h-4 w-4" />
               Adicionar fotos
             </button>
@@ -409,7 +440,7 @@ export function Ocorrencias({ onNavigate, user }) {
                 {novasFotos.map((file, index) => (
                   <div key={`${file.name}-${index}`} className="group relative aspect-square overflow-hidden rounded-md border border-slate-200">
                     <img src={previewsFotos[index]} alt={file.name} className="h-full w-full object-cover" />
-                    <button
+                    <button className="cursor-pointer"
                       type="button"
                       onClick={() => removerFoto(index)}
                       aria-label={`Remover ${file.name}`}
@@ -426,8 +457,8 @@ export function Ocorrencias({ onNavigate, user }) {
             <p className="rounded-md bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{erroCadastro}</p>
           )}
           <div className="flex justify-end gap-2 pt-2">
-            <button onClick={cancelarNovaOcorrencia} className="rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">Cancelar</button>
-            <button onClick={cadastrarOcorrencia} disabled={!formularioValido || salvandoOcorrencia} className="rounded-md bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-strong disabled:cursor-not-allowed disabled:opacity-50">
+            <button onClick={cancelarNovaOcorrencia} className="cursor-pointer rounded-md border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700">Cancelar</button>
+            <button onClick={cadastrarOcorrencia} disabled={!formularioValido || salvandoOcorrencia} className="cursor-pointer rounded-md bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-strong disabled:cursor-not-allowed disabled:opacity-50">
               {salvandoOcorrencia ? 'Salvando...' : 'Cadastrar'}
             </button>
           </div>
@@ -443,7 +474,7 @@ export function Ocorrencias({ onNavigate, user }) {
             A ocorrência foi registrada com sucesso e já está disponível na listagem.
           </p>
           <div className="flex justify-end">
-            <button
+            <button className="cursor-pointer"
               type="button"
               onClick={() => setProtocoloCriado('')}
               className="cursor-pointer rounded-md bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-primary-strong"
@@ -457,16 +488,37 @@ export function Ocorrencias({ onNavigate, user }) {
   )
 }
 
-function KanbanOcorrencias({ lista, onNavigate }) {
+function KanbanOcorrencias({ lista, onNavigate, onStatusChange }) {
+  const [arrastandoId, setArrastandoId] = useState('')
+  const [statusDestino, setStatusDestino] = useState('')
+
+  function handleDrop(event, status) {
+    event.preventDefault()
+    const ocorrenciaId = event.dataTransfer.getData('text/plain')
+    setStatusDestino('')
+    setArrastandoId('')
+    if (ocorrenciaId) onStatusChange(ocorrenciaId, status)
+  }
+
   return (
-    <div className="grid gap-4 xl:grid-cols-4">
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
       {statusValues.map((status) => {
         const itens = lista.filter((item) => item.status === status)
 
         return (
-          <section key={status} className="min-h-96 rounded-xl border border-slate-200 bg-slate-50/70">
-            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-              <h2 className="text-sm font-800 text-slate-800">{status}</h2>
+          <section
+            key={status}
+            onDragOver={(event) => {
+              event.preventDefault()
+              event.dataTransfer.dropEffect = 'move'
+              setStatusDestino(status)
+            }}
+            onDragLeave={() => setStatusDestino((current) => (current === status ? '' : current))}
+            onDrop={(event) => handleDrop(event, status)}
+            className={`min-h-96 min-w-0 rounded-xl border bg-slate-50/70 transition ${statusDestino === status ? 'border-primary bg-primary-50/40' : 'border-slate-200'}`}
+          >
+            <div className="flex min-h-14 items-start justify-between gap-2 border-b border-slate-200 px-3 py-3">
+              <h2 className="text-sm font-800 leading-tight text-slate-900">{formatDisplayLabel(status)}</h2>
               <span className="rounded-full bg-white px-2.5 py-1 text-xs font-800 text-slate-500 ring-1 ring-slate-200">
                 {itens.length}
               </span>
@@ -476,19 +528,24 @@ function KanbanOcorrencias({ lista, onNavigate }) {
                 <button
                   key={item.id}
                   type="button"
+                  draggable
+                  onDragStart={(event) => {
+                    event.dataTransfer.setData('text/plain', item.id)
+                    event.dataTransfer.effectAllowed = 'move'
+                    setArrastandoId(item.id)
+                  }}
+                  onDragEnd={() => {
+                    setArrastandoId('')
+                    setStatusDestino('')
+                  }}
                   onClick={() => onNavigate(`/ocorrencias/${item.id}`)}
-                  className="w-full cursor-pointer rounded-lg border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:border-blue-200 hover:bg-blue-50/40"
+                  className={`w-full cursor-pointer rounded-lg border border-slate-200 p-3 text-left shadow-sm transition ${arrastandoId === item.id ? 'opacity-50 ring-2 ring-primary/25' : ''} ${COR_KANBAN_CRITICIDADE[item.criticidade] || 'bg-white hover:border-blue-200 hover:bg-blue-50/40'}`}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <strong className="text-sm font-800 leading-snug text-slate-900">{item.titulo}</strong>
-                    <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-800 ${COR_KANBAN_CRITICIDADE[item.criticidade] || 'border-slate-200 bg-slate-50 text-slate-600'}`}>
-                      {item.criticidade}
-                    </span>
-                  </div>
+                  <strong className="block text-xs font-800 leading-snug text-slate-800">{item.titulo}</strong>
                   <p className="mt-2 text-xs font-bold text-slate-500">{item.protocolo}</p>
                   <p className="mt-1 line-clamp-2 text-xs font-semibold text-slate-600">{item.escola}</p>
                   <div className="mt-3 flex items-center justify-between gap-2 text-xs font-semibold text-slate-500">
-                    <span>{item.tipo}</span>
+                    <span>{formatDisplayLabel(item.tipo)}</span>
                     <span>{diasEmAberto(item.dataEnvio)} dias</span>
                   </div>
                 </button>

@@ -67,8 +67,8 @@ export function Login({ onLogin, onNavigate }) {
         </form>
 
         <p className="mt-6 text-center text-sm text-slate-500">
-          Nao tem uma conta?{' '}
-          <button type="button" onClick={() => onNavigate('/cadastro')} className="cursor-pointer font-bold text-primary-strong">
+          Não tem uma conta?{' '}
+          <button className="cursor-pointer" type="button" onClick={() => onNavigate('/cadastro')} className="cursor-pointer font-bold text-primary-strong">
             Cadastre-se
           </button>
         </p>

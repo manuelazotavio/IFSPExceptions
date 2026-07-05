@@ -21,7 +21,7 @@ export function SchoolLocationMap({ escola, className = 'h-80 w-full rounded-md'
   if (!hasCoordinates) {
     return (
       <div className="flex h-80 items-center justify-center rounded-md border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm font-semibold text-slate-500">
-        Esta escola ainda nao possui latitude e longitude cadastradas para exibicao no mapa.
+        Esta escola ainda não possui latitude e longitude cadastradas para exibição no mapa.
       </div>
     )
   }
